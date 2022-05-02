@@ -8,6 +8,8 @@ use std::fs;
 use std::io;
 use tree_node::{TreeNode, FileType};
 
+const BRANCH_SEP: &'static str = "  ";
+
 pub type FileTreeResult<'a> = Result<FileTree<'a>, io::Error>;
 
 pub struct FileTree<'a> {
@@ -19,9 +21,9 @@ impl<'a> FileTree<'a> {
     pub fn new<S>(root_location: &'a S) -> FileTreeResult<'a>
         where S: AsRef<Path> + ?Sized
     {
-        let root_md = fs::metadata(root_location)?;
+        let root_node_md = fs::metadata(root_location)?;
 
-        if !root_md.is_dir() {
+        if !root_node_md.is_dir() {
             return Err(error::not_dir_err())
         }
 
@@ -43,41 +45,52 @@ impl<'a> FileTree<'a> {
     }
 
     pub fn len(&self) -> u64 {
-        self.root_node.get_metadata().len()
+        self.root_node.len()
     }
 
     pub fn display(&self) {
         let root_node = self.get_root_node();
-        let buffer = "".to_string();
-        let result = Self::sprintf_output(&root_node, buffer);
+        let mut buffer = "".to_string();
+        
+        Self::sprintf_row(&root_node, &mut buffer, "");
+        Self::sprintf_branches(&root_node, &mut buffer, "");
 
-        println!("{}", result);
+        println!("{}", buffer);
     }
 
-    fn sprintf_output(node: &TreeNode, mut buffer: String) -> String {
-        buffer.push_str(&Self::sprintf_row(&node));
-        buffer.push_str("\n");
+    fn sprintf_branches(node: &TreeNode, buffer: &mut String, base_prefix: &str) {
+        let iter_childen = node.iter_children();
+        
+        let (last_child, children) = match iter_childen.as_slice().split_last() {
+            Some((child, children)) => (Some(child), children.iter()),
+            None => (None, iter_childen)
+        };
 
-        for child in node.iter_children() {
+        for child in children {
+            let prefix = format!("{}\x1B[36m\u{251C}\u{2500}\x1B[0m{}", base_prefix, BRANCH_SEP);
+            Self::sprintf_row(child, buffer, &prefix);
+
             if child.is_dir() {
-                buffer = Self::sprintf_output(child, buffer);
-            } else {
-                buffer.push_str(&Self::sprintf_row(&child));
-                buffer.push_str("\n");
+                let base = format!("{}\x1B[36m\u{2502} \x1B[0m{}", base_prefix, BRANCH_SEP);
+                Self::sprintf_branches(child, buffer, &base);
             }
         }
 
-        buffer
+        if let Some(child) = last_child {
+            let prefix = format!("{}\x1B[36m\u{2514}\u{2500}\x1B[0m{}", base_prefix, BRANCH_SEP);
+            Self::sprintf_row(child, buffer, &prefix);
+
+            if child.is_dir() {
+                let base = format!("{}  {}", base_prefix, BRANCH_SEP);
+                Self::sprintf_branches(child, buffer, &base);
+            }
+        }
     }
 
-    fn sprintf_row(node: &TreeNode) -> String {
-        let mut prefix = "".to_string();
+    fn sprintf_row(node: &TreeNode, buffer: &mut String, prefix: &str) {
+        let fmt_row = format!("{}{} ({})\n", prefix, node.sprintf_file_name(), node.sprintf_len());
 
-        for _ in 0..node.get_generation() {
-            prefix.push_str("\t")
-        }
-
-        format!("{}{} {}", prefix, node.get_file_name(), node.len())
+        buffer.push_str(&fmt_row);
     }
 }
 
@@ -90,7 +103,6 @@ mod test {
 
         let file_tree = FileTree::new("./assets/").unwrap();
         let root_node = file_tree.get_root_node();
-
         assert_eq!(root_node.get_generation(), 0);
         assert_eq!(root_node.num_children(), 3);
 
@@ -107,5 +119,9 @@ mod test {
             .unwrap();
 
         assert_eq!(second_gen_child.get_generation(), 2);
+
+        let tree_len = file_tree.len();
+
+        assert_eq!(tree_len, 13);
     }
 }

@@ -1,3 +1,4 @@
+use crate::utils::bytes::{self, UnitPrefix};
 use std::fs;
 use std::io;
 use std::path::{PathBuf, Path};
@@ -10,7 +11,7 @@ pub struct TreeNode {
     location: PathBuf,
     file_type: FileType,
     file_name: String,
-    metadata: fs::Metadata,
+    len: u64,
     generation: u64,
     children: Children
 }
@@ -26,28 +27,27 @@ impl TreeNode {
     pub fn new<S>(location: &S, file_type: FileType, file_name: String, generation: u64) -> Self
         where S: AsRef<Path> + ?Sized
     {
-        let metadata = fs::metadata(location).unwrap();
-
         let mut node = Self {
             location: location.as_ref().to_path_buf(),
             file_type,
             file_name,
-            metadata,
+            len: 0,
             generation,
             children: vec![]
         };
 
-        node.construct_branches(generation).unwrap();
+        if node.is_dir() {
+            node.construct_branches(generation).unwrap();
+        } else {
+            let file_len = fs::metadata(location).unwrap().len();
+            node.len = file_len;
+        }
 
         node
     }
 
     pub fn get_location(&self) -> &Path {
         &self.location
-    }
-
-    pub fn get_metadata(&self) -> &fs::Metadata {
-        &self.metadata
     }
 
     pub fn is_dir(&self) -> bool {
@@ -83,7 +83,23 @@ impl TreeNode {
     }
 
     pub fn len(&self) -> u64 {
-        self.metadata.len()
+        self.len
+    }
+
+    pub fn sprintf_file_name(&self) -> String {
+        if let FileType::Dir = self.get_file_type() {
+            format!("\x1B[1;33m{}\x1B[0m", self.get_file_name())
+        } else {
+            self.get_file_name().to_string()
+        }
+    }
+
+    pub fn sprintf_len(&self) -> String {
+        let len_in_bytes = self.len();
+        let presentable_unit = bytes::pretty_unit(len_in_bytes);
+        let presentable_len = bytes::convert(len_in_bytes, UnitPrefix::None, presentable_unit.clone());
+
+        format!("\x1B[1;31m{:.*}\x1B[0m \x1B[31m{:?}\x1B[0m", 2, presentable_len, presentable_unit)
     }
 
     fn ascertain_file_type(entry: &fs::DirEntry) -> io::Result<FileType> {
@@ -96,8 +112,6 @@ impl TreeNode {
     }
 
     fn construct_branches(&mut self, generation: u64) -> Result<(), io::Error> {
-        if self.is_not_dir() { return Ok(()) }
-
         for possible_entry in fs::read_dir(self.get_location())? {
             if let Err(_) = possible_entry { continue }
 
@@ -110,6 +124,8 @@ impl TreeNode {
             };
 
             let new_node = Self::new(&epath, ftype, fname, generation + 1);
+
+            self.len += new_node.len();
 
             self.add_child(new_node);
         }
