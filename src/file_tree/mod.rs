@@ -15,11 +15,12 @@ pub type FileTreeResult<'a> = Result<FileTree<'a>, io::Error>;
 pub struct FileTree<'a> {
     root_location: &'a Path,
     ignore_patterns: Option<Vec<&'a str>>,
-    root_node: TreeNode
+    root_node: TreeNode,
+    depth: Option<u64>
 }
 
 impl<'a> FileTree<'a> {
-    pub fn new<S>(root_location: &'a S, ignore_patterns: Option<&'a str>) -> FileTreeResult<'a>
+    pub fn new<S>(root_location: &'a S, ignore_patterns: Option<&'a str>, depth: Option<u64>) -> FileTreeResult<'a>
         where S: AsRef<Path> + ?Sized
     {
         let root_node_md = fs::metadata(root_location)?;
@@ -45,7 +46,8 @@ impl<'a> FileTree<'a> {
         Ok(Self {
             root_location: root_location.as_ref(),
             ignore_patterns,
-            root_node
+            root_node,
+            depth
         })
     }
 
@@ -60,14 +62,21 @@ impl<'a> FileTree<'a> {
     pub fn display(&self) {
         let root_node = self.get_root_node();
         let mut buffer = "".to_string();
+
+        let max_depth = match self.depth {
+            Some(depth) => depth,
+            None => u64::MAX
+        };
         
         Self::sprintf_row(&root_node, &mut buffer, "");
-        Self::sprintf_branches(&root_node, &mut buffer, "");
+        Self::sprintf_branches(&root_node, &mut buffer, "", max_depth);
 
         println!("{}", buffer);
     }
 
-    fn sprintf_branches(node: &TreeNode, buffer: &mut String, base_prefix: &str) {
+    fn sprintf_branches(node: &TreeNode, buffer: &mut String, base_prefix: &str, depth: u64) {
+        if node.get_generation() >= depth { return }
+
         let iter_childen = node.iter_children();
         
         let (last_child, children) = match iter_childen.as_slice().split_last() {
@@ -81,7 +90,7 @@ impl<'a> FileTree<'a> {
 
             if child.is_dir() {
                 let base = format!("{}\x1B[36m\u{2502} \x1B[0m{}", base_prefix, BRANCH_SEP);
-                Self::sprintf_branches(child, buffer, &base);
+                Self::sprintf_branches(child, buffer, &base, depth);
             }
         }
 
@@ -91,7 +100,7 @@ impl<'a> FileTree<'a> {
 
             if child.is_dir() {
                 let base = format!("{}  {}", base_prefix, BRANCH_SEP);
-                Self::sprintf_branches(child, buffer, &base);
+                Self::sprintf_branches(child, buffer, &base, depth);
             }
         }
     }

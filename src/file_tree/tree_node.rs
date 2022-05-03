@@ -24,7 +24,13 @@ pub enum FileType {
 }
 
 impl TreeNode {
-    pub fn new<S>(location: &S, file_type: FileType, file_name: String, ignore_patterns: &Option<Vec<&str>>, generation: u64) -> Self
+    pub fn new<S>(
+        location: &S,
+        file_type: FileType,
+        file_name: String,
+        ignore_patterns: &Option<Vec<&str>>,
+        generation: u64,
+        ) -> Self
         where S: AsRef<Path> + ?Sized
     {
         let mut node = Self {
