@@ -14,11 +14,12 @@ pub type FileTreeResult<'a> = Result<FileTree<'a>, io::Error>;
 
 pub struct FileTree<'a> {
     root_location: &'a Path,
+    ignore_patterns: Option<Vec<&'a str>>,
     root_node: TreeNode
 }
 
 impl<'a> FileTree<'a> {
-    pub fn new<S>(root_location: &'a S) -> FileTreeResult<'a>
+    pub fn new<S>(root_location: &'a S, ignore_patterns: Option<&'a str>) -> FileTreeResult<'a>
         where S: AsRef<Path> + ?Sized
     {
         let root_node_md = fs::metadata(root_location)?;
@@ -27,15 +28,23 @@ impl<'a> FileTree<'a> {
             return Err(error::not_dir_err())
         }
 
+        let ignore_patterns = if let Some(patterns) = ignore_patterns {
+            Some(patterns.split(",").into_iter().collect::<Vec<&'a str>>())
+        } else {
+            None
+        };
+
         let root_node = TreeNode::new(
             root_location,
             FileType::Dir,
             ".".to_string(),
+            &ignore_patterns,
             0
         );
 
         Ok(Self {
             root_location: root_location.as_ref(),
+            ignore_patterns,
             root_node
         })
     }
@@ -101,7 +110,7 @@ mod test {
         use super::FileTree;
         use super::tree_node::FileType;
 
-        let file_tree = FileTree::new("./assets/").unwrap();
+        let file_tree = FileTree::new("./assets/", Some(".")).unwrap();
         let root_node = file_tree.get_root_node();
         assert_eq!(root_node.get_generation(), 0);
         assert_eq!(root_node.num_children(), 3);

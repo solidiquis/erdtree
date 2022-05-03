@@ -13,7 +13,7 @@ pub struct TreeNode {
     file_name: String,
     len: u64,
     generation: u64,
-    children: Children
+    children: Children,
 }
 
 #[derive(PartialEq)]
@@ -24,7 +24,7 @@ pub enum FileType {
 }
 
 impl TreeNode {
-    pub fn new<S>(location: &S, file_type: FileType, file_name: String, generation: u64) -> Self
+    pub fn new<S>(location: &S, file_type: FileType, file_name: String, ignore_patterns: &Option<Vec<&str>>, generation: u64) -> Self
         where S: AsRef<Path> + ?Sized
     {
         let mut node = Self {
@@ -33,11 +33,11 @@ impl TreeNode {
             file_name,
             len: 0,
             generation,
-            children: vec![]
+            children: vec![],
         };
 
         if node.is_dir() {
-            node.construct_branches(generation).unwrap();
+            node.construct_branches(generation, ignore_patterns).unwrap();
         } else {
             let file_len = fs::metadata(location).unwrap().len();
             node.len = file_len;
@@ -99,7 +99,10 @@ impl TreeNode {
         let presentable_unit = bytes::pretty_unit(len_in_bytes);
         let presentable_len = bytes::convert(len_in_bytes, UnitPrefix::None, presentable_unit.clone());
 
-        format!("\x1B[1;31m{:.*}\x1B[0m \x1B[31m{:?}\x1B[0m", 2, presentable_len, presentable_unit)
+        match presentable_unit {
+            UnitPrefix::None => format!("\x1B[1;31m{}\x1B[0m \x1B[31m{:?}\x1B[0m", presentable_len, presentable_unit),
+            _ => format!("\x1B[1;31m{:.*}\x1B[0m \x1B[31m{:?}\x1B[0m", 2, presentable_len, presentable_unit)
+        }
     }
 
     fn ascertain_file_type(entry: &fs::DirEntry) -> io::Result<FileType> {
@@ -111,19 +114,29 @@ impl TreeNode {
        Ok(FileType::Symlink)
     }
 
-    fn construct_branches(&mut self, generation: u64) -> Result<(), io::Error> {
-        for possible_entry in fs::read_dir(self.get_location())? {
+    fn construct_branches(&mut self, generation: u64, ignore_patterns: &Option<Vec<&str>>) -> Result<(), io::Error> {
+        'entries: for possible_entry in fs::read_dir(self.get_location())? {
             if let Err(_) = possible_entry { continue }
 
             let entry = possible_entry.unwrap();
-            let epath = entry.path();
             let fname = entry.file_name().into_string().unwrap();
+
+            match ignore_patterns {
+                Some(ref patterns) => {
+                    for i in patterns.iter() {
+                        if fname.starts_with(i) { continue 'entries }
+                    }
+                },
+                _ => ()
+            }
+
+            let epath = entry.path();
             let ftype = match Self::ascertain_file_type(&entry) {
                 Ok(file_type) => file_type,
                 _ => continue
             };
 
-            let new_node = Self::new(&epath, ftype, fname, generation + 1);
+            let new_node = Self::new(&epath, ftype, fname, &None, generation + 1);
 
             self.len += new_node.len();
 
