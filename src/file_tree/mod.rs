@@ -19,6 +19,12 @@ pub struct FileTree<'a> {
     depth: Option<u64>
 }
 
+impl<'a> Default for FileTree<'a> {
+    fn default() -> Self {
+        FileTree::new(".", Some("."), None).unwrap()
+    }
+}
+
 impl<'a> FileTree<'a> {
     pub fn new<S>(root_location: &'a S, ignore_patterns: Option<&'a str>, depth: Option<u64>) -> FileTreeResult<'a>
         where S: AsRef<Path> + ?Sized
@@ -119,7 +125,7 @@ mod test {
         use super::FileTree;
         use super::tree_node::FileType;
 
-        let file_tree = FileTree::new("./assets/", Some(".")).unwrap();
+        let file_tree = FileTree::new("./assets/", Some("."), None).unwrap();
         let root_node = file_tree.get_root_node();
         assert_eq!(root_node.get_generation(), 0);
         assert_eq!(root_node.num_children(), 3);

@@ -126,22 +126,23 @@ impl TreeNode {
 
             let entry = possible_entry.unwrap();
             let fname = entry.file_name().into_string().unwrap();
+            let ftype = match Self::ascertain_file_type(&entry) {
+                Ok(file_type) => file_type,
+                _ => continue
+            };
 
             match ignore_patterns {
                 Some(ref patterns) => {
                     for i in patterns.iter() {
-                        if fname.starts_with(i) { continue 'entries }
+                        if fname.starts_with(i) && ftype == FileType::Dir {
+                            continue 'entries
+                        }
                     }
                 },
                 _ => ()
             }
 
             let epath = entry.path();
-            let ftype = match Self::ascertain_file_type(&entry) {
-                Ok(file_type) => file_type,
-                _ => continue
-            };
-
             let new_node = Self::new(&epath, ftype, fname, &None, generation + 1);
 
             self.len += new_node.len();
