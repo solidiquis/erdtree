@@ -13,7 +13,7 @@ OPTIONS:
 -d        Directory to traverse. Defaults to current working directory.
 -l        Unsigned integer indicating many nested directory levels to display. Defaults to all.
 -p        Comma-separated list of prefixes. Directories containing any of
-          these prefixes will not be traversed. They're memory size will also be ignored.
+          these prefixes will not be traversed. Their memory size will also be ignored.
 -h        Displays help prompt.
 ```
 
