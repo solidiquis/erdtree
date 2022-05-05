@@ -39,6 +39,10 @@ _Q: Why did you make this? It's totally unnecessary._
 
 A: I had two six-hour flights and got bored.
 
+_Q: Is it any good?_
+
+A: Yes.
+
 _Q: How do you know that this is blazingly fast?_
 
 A: I wrote it in Rust.
