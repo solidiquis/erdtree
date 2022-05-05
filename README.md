@@ -1,5 +1,5 @@
 # Erdtree
-A bLazInGlY fAsT, simplified version of the ancient [tree](mama.indstate.edu/users/ice/tree/) command which displays a colorful depth indented listing of files
+A bLazInGlY fAsT, simplified version of the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command which displays a colorful depth indented listing of files
 with their memory sizes adjacent.
 
 <img src="https://github.com/solidiquis/solidiquis/blob/master/assets/Screen%20Shot%202022-05-04%20at%2011.31.21%20PM.png?raw=true">
