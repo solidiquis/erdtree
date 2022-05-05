@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use std::cmp::PartialEq;
-use std::env::Args;
 use std::fs;
 use std::process;
 
@@ -45,7 +44,7 @@ impl CommandLineArgs {
 }
 
 /// Enumerations of valid command line options used for finite state automata.
-enum CommandLineOption {
+pub enum CommandLineOption {
     Directory,
     Depth,
     Patterns,
@@ -66,8 +65,8 @@ impl PartialEq<str> for CommandLineOption {
 impl CommandLineOption {
     /// Parses Args for valid command line options and returns a CommandLineArgs struct
     /// containing provided options. Writes to stderr and exits if malformed cl-args.
-    pub fn parse_args(mut args: Args) -> CommandLineArgs {
-        if let Some(_) = args.find(|i| i == "-h" ) {
+    pub fn parse_args(args: &[String]) -> CommandLineArgs {
+        if let Some(_) = args.iter().find(|i| i == &"-h" ) {
             println!("{}", HELP);
             process::exit(0);
         }
@@ -89,17 +88,20 @@ impl CommandLineOption {
                     Self::validate_arg(&arg);
                     let directory = Self::get_directory_from_arg(&arg);
                     cli_arguments.set_directory(directory.to_string());
+                    current_state = CommandLineOption::None;
                 },
 
                 CommandLineOption::Depth => {
                     Self::validate_arg(&arg);
                     let depth = Self::get_depth_from_arg(&arg);
                     cli_arguments.set_depth(depth);
+                    current_state = CommandLineOption::None;
                 },
 
                 CommandLineOption::Patterns => {
                     Self::validate_arg(&arg);
                     cli_arguments.set_prefixes(arg.clone());
+                    current_state = CommandLineOption::None;
                 }
             }
         }
@@ -154,10 +156,10 @@ impl CommandLineOption {
 
 #[cfg(test)]
 mod test {
-    #[test]
-    fn test_command_line_option() {
-        use super::CommandLineOption;
+    use super::CommandLineOption;
 
+    #[test]
+    fn test_command_line_args() {
         assert!(&CommandLineOption::Directory == "-d");
         assert!(&CommandLineOption::Directory != "-b");
         assert!(&CommandLineOption::Depth == "-l");
