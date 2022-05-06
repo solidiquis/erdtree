@@ -43,10 +43,18 @@ impl TreeNode {
         };
 
         if node.is_dir() {
-            node.construct_branches(generation, ignore_patterns).unwrap();
+            if let Err(e) = node.construct_branches(generation, ignore_patterns) {
+                match e.kind() {
+                    io::ErrorKind::PermissionDenied => (),
+                    _ => panic!("{}", e)
+                }
+            }
         } else {
-            let file_len = fs::metadata(location).unwrap().len();
-            node.len = file_len;
+            node.len = if let FileType::Symlink = node.get_file_type() {
+                0
+            } else {
+                fs::metadata(location).unwrap().len()
+            }
         }
 
         node
