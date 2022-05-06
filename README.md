@@ -19,7 +19,7 @@ OPTIONS:
 
 ## Installation
 
-### Via Rust
+### Cargo
 
 1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
 2. `$ cargo install --git https://github.com/solidiquis/erdtree`
