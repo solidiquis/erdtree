@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
  
-## [0.0.3] - 2021-05-07
+## [1.0.0] - 2021-05-07
 
 ### New
 
@@ -13,7 +13,7 @@ Added option `-s <asc|desc>` to sort files by memory size.
 
 ### Other changes
 
-- Directory now passed as positional argument as opposed to `-d` option.
+- Directory now passed as positional argument as opposed to `-d` option. This is the breaking change that warranted major version bump.
 - Modified help text that gets displayed when passing `-h` option.
 
 ## [0.0.2] - 2021-05-05
