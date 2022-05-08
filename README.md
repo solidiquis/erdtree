@@ -10,14 +10,14 @@ Usage:
     erdtree [directory] [options]
 
 ARGUMENTS:
-directory     Directory to traverse. Defaults to current working directory.
+    directory     Directory to traverse. Defaults to current working directory.
 
 OPTIONS:
--l            Unsigned integer indicating many nested directory levels to display. Defaults to all.
--p            Comma-separated list of prefixes. Directories containing any of
-              these prefixes will not be traversed. Their memory size will also be ignored.
--s [asc|desc] Sort tree by memory-size. 
--h            Displays help prompt.
+    -l            Unsigned integer indicating many nested directory levels to display. Defaults to all.
+    -p            Comma-separated list of prefixes. Directories containing any of
+                  these prefixes will not be traversed. Their memory size will also be ignored.
+    -s [asc|desc] Sort tree by memory-size. 
+    -h            Displays help prompt.
 ```
 
 ## Installation
