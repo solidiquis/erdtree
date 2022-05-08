@@ -7,14 +7,17 @@ with their memory sizes adjacent.
 ## Usage
 ```
 Usage:
-    erdtree [options]
+    erdtree [directory] [options]
+
+ARGUMENTS:
+directory     Directory to traverse. Defaults to current working directory.
 
 OPTIONS:
--d        Directory to traverse. Defaults to current working directory.
--l        Unsigned integer indicating many nested directory levels to display. Defaults to all.
--p        Comma-separated list of prefixes. Directories containing any of
-          these prefixes will not be traversed. Their memory size will also be ignored.
--h        Displays help prompt.
+-l            Unsigned integer indicating many nested directory levels to display. Defaults to all.
+-p            Comma-separated list of prefixes. Directories containing any of
+              these prefixes will not be traversed. Their memory size will also be ignored.
+-s [asc|desc] Sort tree by memory-size. 
+-h            Displays help prompt.
 ```
 
 ## Installation

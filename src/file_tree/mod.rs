@@ -2,7 +2,9 @@
 
 mod error;
 mod tree_node;
+mod sort_type;
 
+use sort_type::SortType;
 use std::path::Path;
 use std::fs;
 use std::io;
@@ -16,17 +18,18 @@ pub struct FileTree<'a> {
     root_location: &'a Path,
     ignore_patterns: Option<Vec<&'a str>>,
     root_node: TreeNode,
+    sort_type: Option<SortType>,
     depth: Option<u64>
 }
 
 impl<'a> Default for FileTree<'a> {
     fn default() -> Self {
-        FileTree::new(".", Some("."), None).unwrap()
+        FileTree::new(".", Some("."), None, None).unwrap()
     }
 }
 
 impl<'a> FileTree<'a> {
-    pub fn new<S>(root_location: &'a S, ignore_patterns: Option<&'a str>, depth: Option<u64>) -> FileTreeResult<'a>
+    pub fn new<S>(root_location: &'a S, ignore_patterns: Option<&'a str>, depth: Option<u64>, sort_type: Option<String>) -> FileTreeResult<'a>
         where S: AsRef<Path> + ?Sized
     {
         let root_node_md = fs::metadata(root_location)?;
@@ -41,18 +44,24 @@ impl<'a> FileTree<'a> {
             None
         };
 
+        let sort_type = Self::ascertain_sort_type(sort_type);
+
         let root_node = TreeNode::new(
             root_location,
             FileType::Dir,
             ".".to_string(),
             &ignore_patterns,
+            sort_type.clone(),
             0
         );
+
+        let sort_type = Some(SortType::Asc);
 
         Ok(Self {
             root_location: root_location.as_ref(),
             ignore_patterns,
             root_node,
+            sort_type,
             depth
         })
     }
@@ -61,8 +70,16 @@ impl<'a> FileTree<'a> {
         &self.root_node
     }
 
+    pub fn get_mut_root_node(&mut self) -> &mut TreeNode {
+        &mut self.root_node
+    }
+
     pub fn len(&self) -> u64 {
         self.root_node.len()
+    }
+
+    pub fn sort_type(&self) -> &Option<SortType> {
+        &self.sort_type
     }
 
     pub fn display(&self) {
@@ -84,7 +101,7 @@ impl<'a> FileTree<'a> {
         if node.get_generation() >= depth { return }
 
         let iter_childen = node.iter_children();
-        
+
         let (last_child, children) = match iter_childen.as_slice().split_last() {
             Some((child, children)) => (Some(child), children.iter()),
             None => (None, iter_childen)
@@ -111,11 +128,26 @@ impl<'a> FileTree<'a> {
         }
     }
 
-    fn sprintf_row(node: &TreeNode, buffer: &mut String, prefix: &str) {
+   fn sprintf_row(node: &TreeNode, buffer: &mut String, prefix: &str) {
         let fmt_row = format!("{}{} ({})\n", prefix, node.sprintf_file_name(), node.sprintf_len());
 
         buffer.push_str(&fmt_row);
     }
+
+   fn ascertain_sort_type(sort_type: Option<String>) -> Option<SortType> {
+       if let Some(s) = sort_type {
+            if s == "asc" {
+                return Some(SortType::Asc)
+            } else if s == "desc" {
+                return Some(SortType::Desc)
+            } else {
+                eprintln!("{} is not a valid sort type.", s);
+                std::process::exit(1);
+            }
+       }
+
+       None
+   }
 }
 
 #[cfg(test)]
@@ -125,7 +157,7 @@ mod test {
         use super::FileTree;
         use super::tree_node::FileType;
 
-        let file_tree = FileTree::new("./assets/", Some("."), None).unwrap();
+        let file_tree = FileTree::new("./assets/", Some("."), None, None).unwrap();
         let root_node = file_tree.get_root_node();
         assert_eq!(root_node.get_generation(), 0);
         assert_eq!(root_node.num_children(), 3);

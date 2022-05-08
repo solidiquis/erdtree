@@ -3,6 +3,7 @@ use std::fs;
 use std::io;
 use std::path::{PathBuf, Path};
 use std::slice::Iter;
+use super::SortType;
 
 pub type TreeNodeResult = Result<TreeNode, io::Error>;
 pub type Children = Vec<TreeNode>;
@@ -13,6 +14,7 @@ pub struct TreeNode {
     file_name: String,
     len: u64,
     generation: u64,
+    sort_type: Option<SortType>,
     children: Children,
 }
 
@@ -29,6 +31,7 @@ impl TreeNode {
         file_type: FileType,
         file_name: String,
         ignore_patterns: &Option<Vec<&str>>,
+        sort_type: Option<SortType>,
         generation: u64,
         ) -> Self
         where S: AsRef<Path> + ?Sized
@@ -39,6 +42,7 @@ impl TreeNode {
             file_name,
             len: 0,
             generation,
+            sort_type,
             children: vec![],
         };
 
@@ -88,8 +92,18 @@ impl TreeNode {
         self.children.push(child);
     }
 
+
     pub fn iter_children(&self) -> Iter<'_, TreeNode> {
         self.children.iter()
+    }
+
+    pub fn sort_children(&mut self) {
+        if let Some(ref s) = self.sort_type {
+            match s {
+                SortType::Asc => self.children.sort_by_key(|ch| ch.len()),
+                SortType::Desc => self.children.sort_by_key(|ch| !ch.len())
+            }
+        }
     }
 
     pub fn num_children(&self) -> u64 {
@@ -151,13 +165,17 @@ impl TreeNode {
             }
 
             let epath = entry.path();
-            let new_node = Self::new(&epath, ftype, fname, &None, generation + 1);
+            let new_node = Self::new(&epath, ftype, fname, &None, self.sort_type, generation + 1);
 
             self.len += new_node.len();
 
             self.add_child(new_node);
         }
 
+        if let Some(ref _s) = self.sort_type {
+            self.sort_children()
+        }
+    
         Ok(())
     }
 }
