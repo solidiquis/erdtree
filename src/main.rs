@@ -4,7 +4,7 @@ mod cli;
 mod file_tree;
 mod utils;
 
-use cli::{CommandLineArgs, CommandLineOption};
+use cli::CommandLineArgs;
 use file_tree::FileTree;
 
 fn main() {
@@ -19,8 +19,9 @@ fn main() {
         let CommandLineArgs {
             directory,
             depth,
-            prefixes
-        } = CommandLineOption::parse_args(args);
+            prefixes,
+            sort_type
+        } = cli::parse_args(args);
 
         let dir = match directory {
             Some(d) => d,
@@ -38,6 +39,6 @@ fn main() {
             Some(pre.as_str())
         };
 
-        FileTree::new(&dir, maybe_pre, depth).unwrap().display();
+        FileTree::new(&dir, maybe_pre, depth, sort_type).unwrap().display();
     }
 }
