@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 [Feature request](https://github.com/solidiquis/erdtree/issues/3)
 
-Added option `-s=<asc|desc>` to sort files by memory size.
+Added option `-s <asc|desc>` to sort files by memory size.
 
 ### Other changes
 
