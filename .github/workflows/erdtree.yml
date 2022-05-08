@@ -1,4 +1,8 @@
-on: [push, pull_request]
+on:
+  release:
+    types: [created]
+  push:
+  pull_request:
 
 name: Erdtree
 
@@ -40,3 +44,20 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
+
+  release:
+    name: release ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-pc-windows-gnu, x86_64-unknown-linux-musl, x86_64-apple-darwin]
+    steps:
+      - uses: actions/checkout@master
+      - name: Compile and release
+        uses: rust-build/rust-build.action@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          RUSTTARGET: ${{ matrix.target }}
+          EXTRA_FILES: "README.md LICENSE"  
