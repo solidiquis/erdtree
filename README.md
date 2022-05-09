@@ -34,10 +34,8 @@ Download the binaries for your appropriate architecture from [the releases secti
 
 ### Brew
 
-**Note**: This method of installation currently does not work on Apple Silicon. Soon...
-
 ```
-$ brew tap solidiquis/erdtree
+$ brew tap solidiquis/tap
 $ brew install erdtree
 ```
 
