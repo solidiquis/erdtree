@@ -30,11 +30,16 @@ OPTIONS:
 
 ### Manual Installation
 
-`todo!()`
+Download the binaries for your appropriate architecture from [the releases section](https://github.com/solidiquis/erdtree/releases). Currently available are binaries for Darwin systems only.
 
 ### Brew
 
-`todo!()`
+**Note**: This method of installation currently does not work on Apple Silicon. Soon...
+
+```
+$ brew tap solidiquis/erdtree
+$ brew install erdtree
+```
 
 ## Disambiguation about units for memory
 
