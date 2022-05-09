@@ -47,7 +47,7 @@ impl TreeNode {
         };
 
         if node.is_dir() {
-            if let Err(e) = node.construct_branches(generation, ignore_patterns) {
+            if let Err(e) = node.construct_branches(ignore_patterns) {
                 match e.kind() {
                     io::ErrorKind::PermissionDenied => (),
                     _ => panic!("{}", e)
@@ -142,7 +142,7 @@ impl TreeNode {
        Ok(FileType::Symlink)
     }
 
-    fn construct_branches(&mut self, generation: u64, ignore_patterns: &Option<Vec<&str>>) -> Result<(), io::Error> {
+    fn construct_branches(&mut self, ignore_patterns: &Option<Vec<&str>>) -> Result<(), io::Error> {
         'entries: for possible_entry in fs::read_dir(self.get_location())? {
             if let Err(_) = possible_entry { continue }
 
@@ -165,7 +165,7 @@ impl TreeNode {
             }
 
             let epath = entry.path();
-            let new_node = Self::new(&epath, ftype, fname, &None, self.sort_type, generation + 1);
+            let new_node = Self::new(&epath, ftype, fname, &None, self.sort_type, self.generation + 1);
 
             self.len += new_node.len();
 
