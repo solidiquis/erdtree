@@ -30,11 +30,14 @@ OPTIONS:
 
 ### Manual Installation
 
-`todo!()`
+Download the binaries for your appropriate architecture from [the releases section](https://github.com/solidiquis/erdtree/releases). Currently available are binaries for Darwin systems only.
 
 ### Brew
 
-`todo!()`
+```
+$ brew tap solidiquis/tap
+$ brew install erdtree
+```
 
 ## Disambiguation about units for memory
 
