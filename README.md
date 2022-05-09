@@ -36,6 +36,11 @@ OPTIONS:
 
 `todo!()`
 
+## Disambiguation about units for memory
+
+As recommended in [IEC 80000-13](https://en.wikipedia.org/wiki/ISO/IEC_80000#cite_note-80000-13:2008-14), this utility will report memory sizes
+using SI units rather than binary units. As such you can expect `1KB = 1000B` and not `1KiB = 1024B`.
+
 ## Questions you might have
 
 _Q: Why did you make this? It's totally unnecessary._

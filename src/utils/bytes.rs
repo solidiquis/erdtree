@@ -62,11 +62,11 @@ impl Sub for UnitPrefix {
 
 /// Arbitrarily determines which byte unit is most presentable from vanilla bytes.
 pub fn pretty_unit(bytes: u64) -> UnitPrefix {
-    if bytes > 1024 * 1_000_000 {
+    if bytes > 1_000_000_000 {
         UnitPrefix::Giga
-    } else if bytes > 1024 * 1000 {
+    } else if bytes > 1_000_000 {
         UnitPrefix::Mega
-    } else if bytes > 1024 {
+    } else if bytes > 1_000 {
         UnitPrefix::Kilo
     } else {
         UnitPrefix::None
@@ -75,39 +75,16 @@ pub fn pretty_unit(bytes: u64) -> UnitPrefix {
 
 /// Utility to convert between byte units.
 pub fn convert(xbytes: u64, from: UnitPrefix, to: UnitPrefix) -> f64 {
-    let mut current_unit = from.clone();
-    let mut num_steps = from - to;
+    let num_steps = from - to;
+
+    if num_steps == 0 { return xbytes as f64 }
     
     let mut result = xbytes as f64;
 
     if num_steps > 0 {
-
-        while num_steps > 0 {
-
-            if let UnitPrefix::None = current_unit {
-                result /= 1024_f64;
-                current_unit = UnitPrefix::Kilo;
-            } else {
-                result /= 1000_f64
-            }
-
-            num_steps -= 1;
-        }
-
+        result /= 1000_f64.powi(num_steps.into())
     } else {
-
-        while num_steps < 0 {
-
-            if let UnitPrefix::Kilo = current_unit {
-                result *= 1024_f64;
-                current_unit = UnitPrefix::None;
-            } else {
-                result *= 1000_f64
-            }
-
-            num_steps += 1;
-        }
-
+        result *= 1000_f64.powi(num_steps.abs().into())
     }
 
     result
@@ -131,7 +108,7 @@ mod test {
         use super::convert;
 
         assert_eq!(
-            convert(1024, UnitPrefix::None, UnitPrefix::Kilo),
+            convert(1000, UnitPrefix::None, UnitPrefix::Kilo),
             1_f64
         );
 
@@ -141,7 +118,7 @@ mod test {
         );
 
         assert_eq!(
-            convert(10240000, UnitPrefix::None, UnitPrefix::Mega),
+            convert(10_000_000, UnitPrefix::None, UnitPrefix::Mega),
             10_f64 
         );
     }
