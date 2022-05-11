@@ -59,3 +59,27 @@ _Q: How do you know that this is blazingly fast?_
 A: I wrote it in Rust.
 
 <img src="https://i.redd.it/t7ns9qtb5gh81.jpg">
+
+## Actual benchmarks
+
+This is not a rigorous way to perform benchmarks but here is how `erdtree` compares with `tree` in traversing a directory that is 3.5GB in size. Please note that `erdtree` is not a 1-to-1 port of `tree` as tree comes with many more sophisticated features that I felt most wouldn't use, but I've gotten enough interest that warranted this rough comparison.
+
+Erdtree:
+```
+$ time erdtree >> /dev/null
+erdtree >> /dev/null  0.35s user 1.55s system 99% cpu 1.918 total
+$ time erdtree >> /dev/null
+erdtree >> /dev/null  0.35s user 0.90s system 99% cpu 1.255 total
+$ time erdtree >> /dev/null
+erdtree >> /dev/null  0.35s user 0.89s system 99% cpu 1.253 total
+```
+
+Tree:
+```
+$ time tree >> /dev/null
+tree >> /dev/null  0.64s user 1.04s system 99% cpu 1.690 total
+$ time tree >> /dev/null
+tree >> /dev/null  0.63s user 1.03s system 99% cpu 1.669 total
+$ time tree >> /dev/null
+tree >> /dev/null  0.63s user 1.05s system 97% cpu 1.719 total
+```
