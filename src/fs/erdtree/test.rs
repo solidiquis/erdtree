@@ -4,7 +4,7 @@ use ignore::WalkBuilder;
 fn dir_sizes() {
     use std::{
         fs::{self, File},
-        io::{self, Write},
+        io::Write,
     };
     use super::tree::Tree;
     use tempdir::TempDir;
