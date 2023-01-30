@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.1.1", features = ["derive"] }
+crossbeam = "0.8.2"
 hybrid-rc = "0.6.0"
 ignore = "0.4.2"

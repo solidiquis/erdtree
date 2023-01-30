@@ -1,100 +1,113 @@
+use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
-    rc::Rc,
-    sync::{Arc, Mutex}
+    collections::HashMap,
+    path::PathBuf,
+    thread,
 };
 use super::{
-    node::{LocalNode, SharedNode},
+    node::Node,
     super::error::Error,
 };
 
 pub struct Tree {
-    root: LocalNode
+    pub root: Node
 }
 
 pub type TreeResult<T> = Result<T, Error>;
+type Branches = HashMap::<PathBuf, Vec<Node>>;
+type TreeComponents = (Node, Branches);
 
 impl Tree {
     pub fn new(walker: WalkParallel) -> TreeResult<Self> {
-        let nodes = Self::traverse(walker)?;
-
-        let root = Self::assemble_tree(nodes)?;
+        let root = Self::traverse(walker)?;
 
         Ok(Self { root })
     }
-    
-    fn assemble_tree(nodes: Vec<LocalNode>) -> TreeResult<LocalNode> {
-        let mut iter_nodes = nodes.into_iter();
 
-        let root_node = iter_nodes.next()
-            .ok_or(Error::TraversalError)
-            .map(|node| Rc::new(node))?;
+    fn traverse(walker: WalkParallel) -> TreeResult<Node> {
+        let (tx, rx) = channel::unbounded::<Node>();
 
-        let mut working_dir = unsafe {
-            let ptr = Rc::into_raw(root_node.clone());
-            Rc::decrement_strong_count(ptr);
-            Rc::from_raw(ptr)
-        };
+        let tree_components = thread::spawn(move || -> TreeResult<TreeComponents> {
+            let mut branches: Branches = HashMap::new();
+            let mut root = None;
 
-        let mut prev_depth = 0;
+            while let Ok(node) = rx.recv() {
+                if node.is_dir() {
+                    let node_path = node.path();
 
-        for node in iter_nodes {
-            let depth_diff = (node.depth as i32) - prev_depth;
-            let current_node = Rc::new(node);
+                    if !branches.contains_key(node_path) {
+                        branches.insert(node_path.to_owned(), vec![]);
+                    }
 
-            if depth_diff != 0 {
-                if depth_diff > 0 {
-                    prev_depth += 1;
-                    Rc::get_mut(&mut working_dir)
-                        .unwrap()
-                        .push_child(current_node.clone());
-                } else {
-                    prev_depth -= 1;
+                    if node.depth == 0 {
+                        root = Some(node);
+                        continue;
+                    }
                 }
 
-                working_dir = current_node;
-            } else {
-                Rc::get_mut(&mut working_dir)
-                    .unwrap()
-                    .push_child(current_node.clone());
+                let parent = node
+                    .parent_path_buf()
+                    .ok_or(Error::ExpectedParent)?;
+
+                let update = branches
+                    .get_mut(&parent)
+                    .map(|mut_ref| mut_ref.push(node));
+
+                if let None = update {
+                    branches.insert(parent, vec![]);
+                }
             }
-        }
 
-        Rc::try_unwrap(root_node)
-            .map_err(|_e| Error::TraversalError)
-    }
+            let root_node = root.ok_or(Error::MissingRoot)?;
 
-    /// Parallel directory traversal. All read system calls related to filesystem I/O starts and
-    /// ends here. `SharedNode`s are contructed during parallel traversal but is converted to
-    /// `LocalNode`s before returning.
-    fn traverse(walker: WalkParallel) -> TreeResult<Vec<LocalNode>> {
-        let nodes = Arc::new(Mutex::new(vec![]));
+            Ok((root_node, branches))
+        });
 
         walker.run(|| Box::new(|entry_res| {
-            let nodes = Arc::clone(&nodes);
+            let tx = Sender::clone(&tx);
 
-            match entry_res.map(|entry| SharedNode::new(entry)) {
-                Ok(node) => {
-                    nodes.lock()
-                        .map_err(|e| Error::from(e))
-                        .unwrap()
-                        .push(node);
-
-                    WalkState::Continue
-                },
-                Err(_e) => WalkState::Skip
-            }
+            entry_res
+                .map(|entry| Node::from(entry)) 
+                .map(|node| tx.send(node).unwrap())
+                .map(|_| WalkState::Continue)
+                .unwrap_or(WalkState::Skip)
         }));
 
-        Arc::try_unwrap(nodes)
-            .map_err(|e| Error::from(e))?
-            .into_inner()
-            .map_err(|e| Error::from(e))
-            .map(|inner| {
-                inner.into_iter()
-                    .map(|node| LocalNode::from(node))
-                    .collect::<Vec<LocalNode>>()
-            })
+        drop(tx);
+
+        let (mut root, mut branches) = tree_components.join().unwrap()?;
+
+        Self::assemble_tree(&mut root, &mut branches);
+
+        Ok(root)
+    }
+
+    #[inline]
+    fn assemble_tree(current_dir: &mut Node, branches: &mut Branches) {
+        let dir_node = branches.remove(current_dir.path())
+            .and_then(|children| {
+                current_dir.set_children(children);
+                Some(current_dir)
+            });
+
+        if let Some(node) = dir_node {
+            let mut dir_size = 0;
+
+            node.children_mut()
+                .map(|nodes| nodes.iter_mut())
+                .map(|node_iter| {
+                    node_iter.for_each(|node| {
+                        if node.is_dir() {
+                            Self::assemble_tree(node, branches);
+                            dir_size += node.file_size.unwrap_or(0);
+                        } else {
+                           dir_size += node.file_size.expect("Non-dir filetypes should have sizes");
+                        }
+                    });
+                });
+
+            if dir_size > 0 { node.set_file_size(dir_size) }
+        }
     }
 }
-
