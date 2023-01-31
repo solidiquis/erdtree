@@ -2,16 +2,17 @@ use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
     collections::HashMap,
+    fmt::{self, Display, Formatter},
     path::PathBuf,
     thread,
 };
 use super::{
     node::Node,
-    super::error::Error,
+    super::error::Error
 };
 
 pub struct Tree {
-    pub root: Node
+    pub root: Node,
 }
 
 pub type TreeResult<T> = Result<T, Error>;
@@ -109,5 +110,42 @@ impl Tree {
 
             if dir_size > 0 { node.set_file_size(dir_size) }
         }
+    }
+}
+
+impl Display for Tree {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut output = String::from("");
+
+        #[inline]
+        fn format_tree(node: &Node, output: &mut String, prefix: Option<String>) {
+            *output += format!("{}{}\n", prefix.unwrap_or("".to_owned()), node).as_str();
+
+            let depth = node.depth;
+
+            node.children()
+                .map(|node_iter| {
+                    let mut peekable = node_iter.peekable();
+
+                    loop {
+                        if let Some(child) = peekable.next() {
+                            let mut prefix = "\u{2502}  ".repeat(depth);
+
+                            if peekable.peek().is_none() {
+                                prefix += "\u{2514}\u{2500} ";
+                            } else {
+                                prefix += "\u{251C}\u{2500} ";
+                            }
+                            format_tree(child, output, Some(prefix));
+                            continue;
+                        }
+                        break;
+                    }
+                });
+        }
+
+        format_tree(&self.root, &mut output, None);
+
+        write!(f, "{output}")
     }
 }

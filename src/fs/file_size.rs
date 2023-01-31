@@ -2,14 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug)]
 pub struct FileSize {
-    bytes: usize,
-    presentation: Presentation,
-}
-
-#[derive(Debug)]
-pub enum Presentation {
-    Base,
-    Human,
+    bytes: u64,
 }
 
 #[derive(Debug)]
@@ -32,16 +25,8 @@ impl Display for Prefix {
 }
 
 impl FileSize {
-    pub fn new(bytes: usize, presentation: Presentation) -> Self {
-        Self { bytes, presentation }
-    }
-
-    pub fn new_base(bytes: usize) -> Self {
-        Self { bytes, presentation: Presentation::Base }
-    }
-
-    pub fn new_human_readable(bytes: usize) -> Self {
-        Self { bytes, presentation: Presentation::Human }
+    pub fn new(bytes: u64) -> Self {
+        Self { bytes }
     }
 }
 
@@ -51,13 +36,13 @@ impl Display for FileSize {
         let log = fbytes.log(10.0);
 
         if log < 3.0 {
-            write!(f, "{:.2}{}", fbytes, Prefix::Base)
+            write!(f, "{:.2} {}", fbytes, Prefix::Base)
         } else if log >= 3.0 && log < 6.0 {
-            write!(f, "{:.2}{}", fbytes / 1_000.0, Prefix::Kilo)
+            write!(f, "{:.2} {}", fbytes / 1_000.0, Prefix::Kilo)
         } else if log >= 6.0 && log < 9.0 {
-            write!(f, "{:.2}{}", fbytes / 1_000_000.0, Prefix::Mega)
+            write!(f, "{:.2} {}", fbytes / 1_000_000.0, Prefix::Mega)
         } else {
-            write!(f, "{:.2}{}", fbytes / 1_000_000_000.0, Prefix::Giga)
+            write!(f, "{:.2} {}", fbytes / 1_000_000_000.0, Prefix::Giga)
         }
     }
 }
@@ -68,16 +53,16 @@ mod test {
     fn test_file_size_display() {
         use super::FileSize;
 
-        let b = FileSize::new_human_readable(100);
-        assert_eq!(format!("{}", b), "100.00B".to_owned());
+        let b = FileSize::new(100);
+        assert_eq!(format!("{}", b), "100.00 B".to_owned());
 
-        let kb = FileSize::new_human_readable(1_100);
-        assert_eq!(format!("{}", kb), "1.10KB".to_owned());
+        let kb = FileSize::new(1_100);
+        assert_eq!(format!("{}", kb), "1.10 KB".to_owned());
 
-        let mb = FileSize::new_human_readable(1_100_000);
-        assert_eq!(format!("{}", mb), "1.10MB".to_owned());
+        let mb = FileSize::new(1_100_000);
+        assert_eq!(format!("{}", mb), "1.10 MB".to_owned());
 
-        let gb = FileSize::new_human_readable(1_120_000_000);
-        assert_eq!(format!("{}", gb), "1.12GB".to_owned());
+        let gb = FileSize::new(1_120_000_000);
+        assert_eq!(format!("{}", gb), "1.12 GB".to_owned());
     }
 }

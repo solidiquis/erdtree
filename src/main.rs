@@ -8,8 +8,10 @@ mod fs;
 
 fn main() -> Result<(), fs::error::Error> {
     let clargs = Clargs::parse();
-    let walker = WalkParallel::from(clargs);
-    let _tree = Tree::new(walker)?;
+    let walker = WalkParallel::from(&clargs);
+    let tree = Tree::new(walker)?;
+
+    println!("{tree}");
 
     Ok(())
 }

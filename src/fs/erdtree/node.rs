@@ -1,9 +1,11 @@
+use crate::fs::file_size::FileSize;
 use ignore::DirEntry;
 use std::{
     convert::From,
     fmt::{self, Display, Formatter},
     fs::FileType,
-    path::{Path, PathBuf}
+    path::{Path, PathBuf},
+    slice::Iter,
 };
 
 #[derive(Debug)]
@@ -27,6 +29,10 @@ impl Node {
     
     pub fn children_mut(&mut self) -> Option<&mut Vec<Node>> {
         self.children.as_mut()
+    }
+
+    pub fn children(&self) -> Option<Iter<Node>> {
+        self.children.as_ref().map(|children| children.iter())
     }
 
     pub fn is_dir(&self) -> bool {
@@ -87,6 +93,11 @@ impl From<DirEntry> for Node {
 
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.path.display())
+        let size = self.file_size
+            .or(Some(0))
+            .map(|size| FileSize::new(size) )
+            .unwrap();
+
+        write!(f, "{} ({})", self.file_name, size)
     }
 }

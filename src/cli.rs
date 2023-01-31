@@ -58,8 +58,8 @@ enum Order {
     None
 }
 
-impl From<Clargs> for WalkParallel {
-    fn from(clargs: Clargs) -> WalkParallel {
+impl From<&Clargs> for WalkParallel {
+    fn from(clargs: &Clargs) -> WalkParallel {
         WalkBuilder::new(clargs.dir())
             .follow_links(false)
             .git_ignore(!clargs.ignore_git_ignore)
