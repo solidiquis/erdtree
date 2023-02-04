@@ -4,6 +4,7 @@ use std::{
     collections::HashMap,
     fmt::{self, Display, Formatter},
     path::PathBuf,
+    slice::Iter,
     thread,
 };
 use super::{
@@ -11,19 +12,36 @@ use super::{
     super::error::Error
 };
 
+/// Used for padding between tree branches.
+pub const SEP: &'static str = "   ";
+
+/// The `│` box drawing character.
+pub const VT: &'static str = "\u{2502}  ";
+
+/// The `└─` box drawing characters.
+pub const UPRT: &'static str = "\u{2514}\u{2500} ";
+
+/// The `├─` box drawing characters.
+pub const VTRT: &'static str = "\u{251C}\u{2500} ";
+
+
 pub struct Tree {
-    pub root: Node,
+    root: Node,
 }
 
 pub type TreeResult<T> = Result<T, Error>;
-type Branches = HashMap::<PathBuf, Vec<Node>>;
-type TreeComponents = (Node, Branches);
+pub type Branches = HashMap::<PathBuf, Vec<Node>>;
+pub type TreeComponents = (Node, Branches);
 
 impl Tree {
     pub fn new(walker: WalkParallel) -> TreeResult<Self> {
         let root = Self::traverse(walker)?;
 
         Ok(Self { root })
+    }
+
+    pub fn root(&self) -> &Node {
+        &self.root
     }
 
     fn traverse(walker: WalkParallel) -> TreeResult<Node> {
@@ -84,7 +102,6 @@ impl Tree {
         Ok(root)
     }
 
-    #[inline]
     fn assemble_tree(current_dir: &mut Node, branches: &mut Branches) {
         let dir_node = branches.remove(current_dir.path())
             .and_then(|children| {
@@ -115,36 +132,49 @@ impl Tree {
 
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let root = self.root();
         let mut output = String::from("");
 
-        #[inline]
-        fn format_tree(node: &Node, output: &mut String, prefix: Option<String>) {
-            *output += format!("{}{}\n", prefix.unwrap_or("".to_owned()), node).as_str();
-
-            let depth = node.depth;
-
-            node.children()
-                .map(|node_iter| {
-                    let mut peekable = node_iter.peekable();
-
-                    loop {
-                        if let Some(child) = peekable.next() {
-                            let mut prefix = "\u{2502}  ".repeat(depth);
-
-                            if peekable.peek().is_none() {
-                                prefix += "\u{2514}\u{2500} ";
-                            } else {
-                                prefix += "\u{251C}\u{2500} ";
-                            }
-                            format_tree(child, output, Some(prefix));
-                            continue;
-                        }
-                        break;
-                    }
-                });
+        fn extend_output(output: &mut String, node: &Node, prefix: &str) {
+            output.push_str(format!("{}{}\n", prefix, node).as_str());
         }
 
-        format_tree(&self.root, &mut output, None);
+        fn traverse(output: &mut String, children: Iter<Node>) {
+            let mut peekable = children.peekable();
+
+            loop {
+                if let Some(child) = peekable.next() {
+                    let last_entry =  peekable.peek().is_none();
+
+                    let mut prefix = VT.repeat(child.depth - 1);
+
+                    if last_entry {
+                        prefix.push_str(UPRT);
+                    } else {
+                        prefix.push_str(VTRT);
+                    }
+                    
+                    if !child.is_dir() {
+                        extend_output(output, child, prefix.as_str());
+                        continue;
+                    }
+
+                    extend_output(output, child, prefix.as_str());
+                    child
+                        .children()
+                        .map(|iter_children| traverse(output, iter_children));
+
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        extend_output(&mut output, root, "");
+        root
+            .children()
+            .map(|iter_children| traverse(&mut output, iter_children));
 
         write!(f, "{output}")
     }
