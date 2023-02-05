@@ -1,13 +1,13 @@
 use std::fmt::{self, Display, Formatter};
 
-/// Responsible for displaying bytes in human-readable format using the largest appropriate binary
+/// Responsible for displaying bytes in human-readable format using the largest appropriate SI
 /// prefix.
 #[derive(Debug)]
 pub struct FileSize {
     bytes: u64,
 }
 
-/// Binary prefixes.
+/// SI prefixes.
 #[derive(Debug)]
 pub enum Prefix {
     Base,
