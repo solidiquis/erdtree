@@ -43,7 +43,7 @@ impl Node {
         let size = self.file_size
             .or(Some(0))
             .map(|size| format!("{}", FileSize::new(size)) )
-            .map(|fsize| Color::Red.to_ansi_term_color().paint(fsize))
+            .map(|fsize| Color::BrightRed.to_ansi_term_color().paint(fsize))
             .unwrap();
 
         lscolors
@@ -121,7 +121,7 @@ impl Display for Node {
         let size = self.file_size
             .or(Some(0))
             .map(|size| format!("{}", FileSize::new(size)) )
-            .map(|fsize| Color::Red.to_ansi_term_color().paint(fsize))
+            .map(|fsize| Color::BrightRed.to_ansi_term_color().paint(fsize))
             .unwrap();
 
         write!(f, "{} ({})", self.file_name, size)
