@@ -25,7 +25,7 @@ pub const UPRT: &'static str = "\u{2514}\u{2500} ";
 /// The `├─` box drawing characters.
 pub const VTRT: &'static str = "\u{251C}\u{2500} ";
 
-
+#[derive(Debug)]
 pub struct Tree {
     max_depth: Option<usize>,
     order: Order,
@@ -38,7 +38,7 @@ pub type TreeComponents = (Node, Branches);
 
 impl Tree {
     pub fn new(walker: WalkParallel, order: Order, max_depth: Option<usize>) -> TreeResult<Self> {
-        let root = Self::traverse(walker)?;
+        let root = Self::traverse(walker, &order)?;
 
         Ok(Self { max_depth, order, root })
     }
@@ -47,7 +47,7 @@ impl Tree {
         &self.root
     }
 
-    fn traverse(walker: WalkParallel) -> TreeResult<Node> {
+    fn traverse(walker: WalkParallel, order: &Order) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
         let tree_components = thread::spawn(move || -> TreeResult<TreeComponents> {
@@ -100,12 +100,12 @@ impl Tree {
 
         let (mut root, mut branches) = tree_components.join().unwrap()?;
 
-        Self::assemble_tree(&mut root, &mut branches);
+        Self::assemble_tree(&mut root, &mut branches, order);
 
         Ok(root)
     }
 
-    fn assemble_tree(current_dir: &mut Node, branches: &mut Branches) {
+    fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, order: &Order) {
         let dir_node = branches.remove(current_dir.path())
             .and_then(|children| {
                 current_dir.set_children(children);
@@ -120,7 +120,7 @@ impl Tree {
                 .map(|node_iter| {
                     node_iter.for_each(|node| {
                         if node.is_dir() {
-                            Self::assemble_tree(node, branches);
+                            Self::assemble_tree(node, branches, order);
                             dir_size += node.file_size.unwrap_or(0);
                         } else {
                            dir_size += node.file_size.expect("Non-dir filetypes should have sizes");
@@ -129,6 +129,13 @@ impl Tree {
                 });
 
             if dir_size > 0 { node.set_file_size(dir_size) }
+
+            order
+                .comparator()
+                .map(|func| {
+                    node.children_mut()
+                        .map(|nodes| nodes.sort_by(func));
+                });
         }
     }
 }

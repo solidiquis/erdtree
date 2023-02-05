@@ -30,20 +30,16 @@ impl Node {
         Self { children, depth, file_name, file_size, file_type, path }
     }
 
-    pub fn set_children(&mut self, children: Vec<Node>) {
-        self.children = Some(children);
-    }
-
-    pub fn set_file_size(&mut self, size: u64) {
-        self.file_size = Some(size);
-    }
-    
     pub fn children_mut(&mut self) -> Option<&mut Vec<Node>> {
         self.children.as_mut()
     }
 
     pub fn children(&self) -> Option<Iter<Node>> {
         self.children.as_ref().map(|children| children.iter())
+    }
+
+    pub fn file_name(&self) -> &str {
+        self.file_name.as_str()
     }
 
     pub fn is_dir(&self) -> bool {
@@ -66,6 +62,14 @@ impl Node {
 
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    pub fn set_children(&mut self, children: Vec<Node>) {
+        self.children = Some(children);
+    }
+
+    pub fn set_file_size(&mut self, size: u64) {
+        self.file_size = Some(size);
     }
 }
 
