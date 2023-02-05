@@ -139,14 +139,14 @@ impl Display for Tree {
             output.push_str(format!("{}{}\n", prefix, node).as_str());
         }
 
-        fn traverse(output: &mut String, children: Iter<Node>) {
+        fn traverse(output: &mut String, children: Iter<Node>, base_prefix: &str) {
             let mut peekable = children.peekable();
 
             loop {
                 if let Some(child) = peekable.next() {
                     let last_entry =  peekable.peek().is_none();
 
-                    let mut prefix = VT.repeat(child.depth - 1);
+                    let mut prefix = base_prefix.to_owned();
 
                     if last_entry {
                         prefix.push_str(UPRT);
@@ -154,19 +154,22 @@ impl Display for Tree {
                         prefix.push_str(VTRT);
                     }
                     
-                    if !child.is_dir() {
-                        extend_output(output, child, prefix.as_str());
-                        continue;
+                    extend_output(output, child, prefix.as_str());
+
+                    let mut new_base = base_prefix.to_owned();
+
+                    if child.is_dir() && last_entry {
+                        new_base.push_str(SEP);
+                    } else {
+                        new_base.push_str(VT);
                     }
 
-                    extend_output(output, child, prefix.as_str());
                     child
                         .children()
-                        .map(|iter_children| traverse(output, iter_children));
+                        .map(|iter_children| traverse(output, iter_children, new_base.as_str()));
 
                     continue;
                 }
-
                 break;
             }
         }
@@ -174,7 +177,7 @@ impl Display for Tree {
         extend_output(&mut output, root, "");
         root
             .children()
-            .map(|iter_children| traverse(&mut output, iter_children));
+            .map(|iter_children| traverse(&mut output, iter_children, ""));
 
         write!(f, "{output}")
     }
