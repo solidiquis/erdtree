@@ -13,3 +13,4 @@ Did a complete rewrite with emphasis on an intuitive interface and performance. 
 - Respects `.gitignore`.
 - Parallel filesystem traversal.
 - Completely new CLI. `$ erdtree -h` for usage info.
+- Uses `LS_COLORS` environment variable for file coloring.
