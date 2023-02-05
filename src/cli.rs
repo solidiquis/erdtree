@@ -1,4 +1,5 @@
-use clap::{Parser, ValueEnum};
+use clap::Parser;
+use crate::fs::erdtree::order::Order;
 use std::{
     convert::From,
     path::{Path, PathBuf},
@@ -19,7 +20,7 @@ pub struct Clargs {
     #[arg(short, long)]
     pub ignore_git_ignore: bool,
     
-    /// Maximum depth to traverse; no limit by default
+    /// Maximum depth to display
     #[arg(short, long, value_name = "NUM")]
     pub max_depth: Option<usize>,
 
@@ -44,18 +45,14 @@ impl Clargs {
             Path::new(".")
         }
     }
-}
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-enum Order {
-    /// Sort entries by file name
-    Filename,
-    
-    /// Sort entries by size
-    Size,
+    pub fn order(&self) -> Order {
+        self.order.clone()
+    }
 
-    /// Devault value. Unspecified order
-    None
+    pub fn max_depth(&self) -> Option<usize> {
+        self.max_depth
+    }
 }
 
 impl From<&Clargs> for WalkParallel {
@@ -64,7 +61,6 @@ impl From<&Clargs> for WalkParallel {
             .follow_links(false)
             .git_ignore(!clargs.ignore_git_ignore)
             .hidden(!clargs.show_hidden)
-            .max_depth(clargs.max_depth)
             .threads(clargs.num_threads)
             .build_parallel()
     }

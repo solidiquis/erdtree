@@ -1,3 +1,4 @@
+use super::order::Order;
 use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
@@ -26,6 +27,8 @@ pub const VTRT: &'static str = "\u{251C}\u{2500} ";
 
 
 pub struct Tree {
+    max_depth: Option<usize>,
+    order: Order,
     root: Node,
 }
 
@@ -34,10 +37,10 @@ pub type Branches = HashMap::<PathBuf, Vec<Node>>;
 pub type TreeComponents = (Node, Branches);
 
 impl Tree {
-    pub fn new(walker: WalkParallel) -> TreeResult<Self> {
+    pub fn new(walker: WalkParallel, order: Order, max_depth: Option<usize>) -> TreeResult<Self> {
         let root = Self::traverse(walker)?;
 
-        Ok(Self { root })
+        Ok(Self { max_depth, order, root })
     }
 
     pub fn root(&self) -> &Node {
@@ -133,13 +136,14 @@ impl Tree {
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let root = self.root();
+        let max_depth = self.max_depth.unwrap_or(std::usize::MAX);
         let mut output = String::from("");
 
         fn extend_output(output: &mut String, node: &Node, prefix: &str) {
             output.push_str(format!("{}{}\n", prefix, node).as_str());
         }
 
-        fn traverse(output: &mut String, children: Iter<Node>, base_prefix: &str) {
+        fn traverse(output: &mut String, children: Iter<Node>, base_prefix: &str, max_depth: usize) {
             let mut peekable = children.peekable();
 
             loop {
@@ -156,6 +160,8 @@ impl Display for Tree {
                     
                     extend_output(output, child, prefix.as_str());
 
+                    if child.depth + 1 > max_depth { continue }
+
                     let mut new_base = base_prefix.to_owned();
 
                     if child.is_dir() && last_entry {
@@ -166,7 +172,7 @@ impl Display for Tree {
 
                     child
                         .children()
-                        .map(|iter_children| traverse(output, iter_children, new_base.as_str()));
+                        .map(|iter_children| traverse(output, iter_children, new_base.as_str(), max_depth));
 
                     continue;
                 }
@@ -177,7 +183,7 @@ impl Display for Tree {
         extend_output(&mut output, root, "");
         root
             .children()
-            .map(|iter_children| traverse(&mut output, iter_children, ""));
+            .map(|iter_children| traverse(&mut output, iter_children, "", max_depth));
 
         write!(f, "{output}")
     }

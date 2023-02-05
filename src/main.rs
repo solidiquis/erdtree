@@ -9,7 +9,7 @@ mod fs;
 fn main() -> Result<(), fs::error::Error> {
     let clargs = Clargs::parse();
     let walker = WalkParallel::from(&clargs);
-    let tree = Tree::new(walker)?;
+    let tree = Tree::new(walker, clargs.order(), clargs.max_depth())?;
 
     println!("{tree}");
 
