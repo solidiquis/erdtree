@@ -1,44 +1,21 @@
-use std::env;
+use clap::Parser;
+use cli::Clargs;
+use fs::erdtree::{self, tree::Tree};
+use ignore::WalkParallel;
 
+/// CLI rules and definitions.
 mod cli;
-mod file_tree;
-mod utils;
 
-use cli::CommandLineArgs;
-use file_tree::FileTree;
+/// Filesystem operations.
+mod fs;
 
-fn main() {
-    let args = env::args();
+fn main() -> Result<(), fs::error::Error> {
+    erdtree::init_ls_colors();
+    let clargs = Clargs::parse();
+    let walker = WalkParallel::from(&clargs);
+    let tree = Tree::new(walker, clargs.order(), clargs.max_depth())?;
 
-    if args.len() <= 1 {
-        FileTree::default().display()
-    } else {
-        let clargs = args.collect::<Vec<String>>();
-        let (_, args) = clargs.split_first().unwrap();
-        
-        let CommandLineArgs {
-            directory,
-            depth,
-            prefixes,
-            sort_type
-        } = cli::parse_args(args);
+    println!("{tree}");
 
-        let dir = match directory {
-            Some(d) => d,
-            None => ".".to_string()
-        };
-
-        let pre = match prefixes {
-            Some(d) => d,
-            None => "".to_string()
-        };
-
-        let maybe_pre = if pre == "".to_string() {
-            None
-        } else {
-            Some(pre.as_str())
-        };
-
-        FileTree::new(&dir, maybe_pre, depth, sort_type).unwrap().display();
-    }
+    Ok(())
 }

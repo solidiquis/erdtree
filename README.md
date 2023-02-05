@@ -1,23 +1,37 @@
 # Erdtree
-A bLazInGlY fAsT, skinnier version of the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command which displays a colorful depth indented listing of files
-with their memory sizes adjacent.
+A modern and vibrant (but not overly) file-tree visualizer and disk usage analyzer that respects `.gitignore` rules.
 
-<img src="https://github.com/solidiquis/solidiquis/blob/master/assets/Screen%20Shot%202022-05-04%20at%2011.31.21%20PM.png?raw=true">
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/rewrite/assets/erdtree_demo.gif" alt="failed to load gif" />
+</p>
+
+**Erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:
+- offers a minimal and user-friendly CLI
+- respects `.gitignore` rules by default
+- displays file sizes in human-readable format by default
+- traverses directories in a parallel manner
+- displays files using ANSI colors by default
+
 
 ## Usage
 ```
-Usage:
-    erdtree [directory] [options]
+$ erdtree -h
+File tree visualizer and disk usage analyzer.
 
-ARGUMENTS:
-    directory     Directory to traverse. Defaults to current working directory.
+Usage: erdtree [OPTIONS] [DIR]
 
-OPTIONS:
-    -l            Unsigned integer indicating many nested directory levels to display. Defaults to all.
-    -p            Comma-separated list of prefixes. Directories containing any of
-                  these prefixes will not be traversed. Their memory size will also be ignored.
-    -s [asc|desc] Sort tree by memory-size. 
-    -h            Displays help prompt.
+Arguments:
+  [DIR]  Root directory to traverse; defaults to current working directory
+
+Options:
+  -i, --ignore-git-ignore          Ignore .gitignore; disabled by default
+  -m, --max-depth <NUM>            Maximum depth to display
+  -n, --num-threads <NUM_THREADS>  Number of threads to use [default: 4]
+  -o, --order <ORDER>              Sort order to display directory content [default: none] [possible values: filename, size, none]
+  -s, --show-hidden                Whether to show hidden files; disabled by default
+  -h, --help                       Print help (see more with '--help')
+  -V, --version                    Print version
+
 ```
 
 ## Installation
@@ -28,58 +42,43 @@ OPTIONS:
 2. `$ cargo install --git https://github.com/solidiquis/erdtree`
 3. The executable should then be located in `$HOME/.cargo/bin/`.
 
-### Manual Installation
+Other means of installation to come.
 
-Download the binaries for your appropriate architecture from [the releases section](https://github.com/solidiquis/erdtree/releases). Currently available are binaries for Darwin systems only.
+## Disambiguations
 
-### Brew
+### Disk Size
 
-```
-$ brew tap solidiquis/tap
-$ brew install erdtree
-```
+As recommended in [IEC 80000-13](https://en.wikipedia.org/wiki/ISO/IEC_80000#cite_note-80000-13:2008-14), this command will report sizes
+using SI units rather than binary units. As such you can expect `1KB = 1000B` and not `1KiB = 1024B`. 
 
-## Disambiguation about units for memory
+Additionally:
+- A directory will have a size equal to the sum of the sizes of all of its entries. The size of the directory itself is negligble and isn't taken into account.
+- Files other than directories and regular files (symbolic links, named pipes, sockets, etc.) appear but their memory sizes are not reported.
+- Symbolic links to directories appear but are not traversed; their sizes are also not reported
 
-As recommended in [IEC 80000-13](https://en.wikipedia.org/wiki/ISO/IEC_80000#cite_note-80000-13:2008-14), this utility will report memory sizes
-using SI units rather than binary units. As such you can expect `1KB = 1000B` and not `1KiB = 1024B`.
+### Files Without Read Permissions
+
+Files that don't have read persmissions will appear but won't have their disk sizes reported. If they are directories they will not be traversed. Additionally, their size will not be included in their parent directory's total.
+
+### File Coloring
+Files are printed in ANSI colors specified according to the `LS_COLORS` environment variable on GNU/Linux systems. In its absence [a default value](https://docs.rs/lscolors/latest/src/lscolors/lib.rs.html#221) is used.
+
+**Note for MacOS**: MacOS uses the `LSCOLORS` environment variable to determine file colors for the `ls` command which is formatted very differently from `LS_COLORS`. MacOS systems will fall back on the aforementioned default value unless the user defines their own `LS_COLORS` environment variable.
 
 ## Questions you might have
 
 _Q: Why did you make this? It's totally unnecessary._
 
-A: I had two six-hour flights and got bored.
+_Q: Why is it called Erdtree._
+
+A: It's a reference to Elden Ring.
 
 _Q: Is it any good?_
 
 A: Yes.
 
-_Q: How do you know that this is blazingly fast?_
+_Q: Is this blazingly fast?_
 
-A: I wrote it in Rust.
+A: Should be. I wrote it in Rust.
 
 <img src="https://i.redd.it/t7ns9qtb5gh81.jpg">
-
-## Actual benchmarks
-
-This is not a rigorous way to perform benchmarks but here is how `erdtree` compares with `tree` in traversing a directory that is 3.5GB in size. Please note that `erdtree` is not a 1-to-1 port of `tree` as tree comes with many more sophisticated features that I felt most wouldn't use, but I've gotten enough interest that warranted this rough comparison.
-
-Erdtree:
-```
-$ time erdtree >> /dev/null
-erdtree >> /dev/null  0.35s user 1.55s system 99% cpu 1.918 total
-$ time erdtree >> /dev/null
-erdtree >> /dev/null  0.35s user 0.90s system 99% cpu 1.255 total
-$ time erdtree >> /dev/null
-erdtree >> /dev/null  0.35s user 0.89s system 99% cpu 1.253 total
-```
-
-Tree:
-```
-$ time tree >> /dev/null
-tree >> /dev/null  0.64s user 1.04s system 99% cpu 1.690 total
-$ time tree >> /dev/null
-tree >> /dev/null  0.63s user 1.03s system 99% cpu 1.669 total
-$ time tree >> /dev/null
-tree >> /dev/null  0.63s user 1.05s system 97% cpu 1.719 total
-```
