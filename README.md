@@ -1,5 +1,5 @@
 # Erdtree
-A modern and vibrant (but not overly) file-tree visualizer and disk usage analyzer.
+A modern and vibrant (but not overly) file-tree visualizer and disk usage analyzer that respects `.gitignore` rules.
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/rewrite/assets/erdtree_demo.gif" alt="failed to load gif" />
@@ -55,6 +55,10 @@ Additionally:
 - A directory will have a size equal to the sum of the sizes of all of its entries. The size of the directory itself is negligble and isn't taken into account.
 - Files other than directories and regular files (symbolic links, named pipes, sockets, etc.) appear but their memory sizes are not reported.
 - Symbolic links to directories appear but are not traversed; their sizes are also not reported
+
+### Files Without Read Permissions
+
+Files that don't have read persmissions will appear but won't have their disk sizes reported. If they are directories they will not be traversed. Additionally, their size will not be included in their parent directory's total.
 
 ### File Coloring
 Files are printed in ANSI colors specified according to the `LS_COLORS` environment variable on GNU/Linux systems. In its absence [a default value](https://docs.rs/lscolors/latest/src/lscolors/lib.rs.html#221) is used.
