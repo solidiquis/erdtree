@@ -30,11 +30,10 @@ impl Order {
         a.file_name().cmp(b.file_name())
     }
 
-    /// Comparator based on `Node` file sizes. Will panic if `Node`s that are directories haven't
-    /// had their sizes set yet.
+    /// Comparator based on `Node` file sizes
     fn size_comparator(a: &Node, b: &Node) -> Ordering {
-        let a_size = a.file_size.expect("Expected file size to be set");
-        let b_size = b.file_size.expect("Expected file size to be set");
+        let a_size = a.file_size.unwrap_or(0);
+        let b_size = b.file_size.unwrap_or(0);
 
         b_size.cmp(&a_size)
     }

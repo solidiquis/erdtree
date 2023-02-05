@@ -41,9 +41,9 @@ impl Node {
 
     pub fn display(&self, lscolors: &LsColors) -> String {
         let size = self.file_size
-            .or(Some(0))
             .map(|size| format!("{}", FileSize::new(size)) )
-            .map(|fsize| Color::BrightRed.to_ansi_term_color().paint(fsize))
+            .map(|fsize| format!("({})", Color::BrightRed.to_ansi_term_color().paint(fsize)))
+            .or_else(|| Some("".to_owned()))
             .unwrap();
 
         lscolors
@@ -51,7 +51,7 @@ impl Node {
             .map(Style::to_ansi_term_style)
             .unwrap_or_default()
             .foreground
-            .map(|fg| format!("{} (\x1b[31m{size}\x1b[0m)", fg.bold().paint(self.file_name())))
+            .map(|fg| format!("{} {size}", fg.bold().paint(self.file_name())))
             .unwrap_or_else(|| format!("{}", self))
     }
 

@@ -14,6 +14,9 @@ use super::{
     super::error::Error
 };
 
+#[cfg(test)]
+mod test;
+
 /// Used for padding between tree branches.
 pub const SEP: &'static str = "   ";
 
@@ -126,12 +129,8 @@ impl Tree {
                 .map(|nodes| nodes.iter_mut())
                 .map(|node_iter| {
                     node_iter.for_each(|node| {
-                        if node.is_dir() {
-                            Self::assemble_tree(node, branches, order);
-                            dir_size += node.file_size.unwrap_or(0);
-                        } else {
-                           dir_size += node.file_size.expect("Non-dir filetypes should have sizes");
-                        }
+                        Self::assemble_tree(node, branches, order);
+                        dir_size += node.file_size.unwrap_or(0);
                     });
                 });
 
