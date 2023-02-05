@@ -16,6 +16,7 @@ pub enum Order {
 }
 
 impl Order {
+    /// Yields function pointer to the appropriate `Node` comparator.
     pub fn comparator(&self) -> Option<fn(a: &Node, b: &Node) -> Ordering> {
         match self {
             Self::Filename => Some(Self::name_comparator),
@@ -24,11 +25,14 @@ impl Order {
         }
     }
 
-    pub fn name_comparator(a: &Node, b: &Node) -> Ordering {
+    /// Comparator based on `Node` file names.
+    fn name_comparator(a: &Node, b: &Node) -> Ordering {
         a.file_name().cmp(b.file_name())
     }
 
-    pub fn size_comparator(a: &Node, b: &Node) -> Ordering {
+    /// Comparator based on `Node` file sizes. Will panic if `Node`s that are directories haven't
+    /// had their sizes set yet.
+    fn size_comparator(a: &Node, b: &Node) -> Ordering {
         let a_size = a.file_size.expect("Expected file size to be set");
         let b_size = b.file_size.expect("Expected file size to be set");
 

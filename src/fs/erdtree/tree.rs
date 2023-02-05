@@ -147,10 +147,12 @@ impl Display for Tree {
         let max_depth = self.max_depth.unwrap_or(std::usize::MAX);
         let mut output = String::from("");
 
+        #[inline]
         fn extend_output(output: &mut String, node: &Node, prefix: &str) {
             output.push_str(format!("{}{}\n", prefix, node).as_str());
         }
 
+        #[inline]
         fn traverse(output: &mut String, children: Iter<Node>, base_prefix: &str, max_depth: usize) {
             let mut peekable = children.peekable();
 
