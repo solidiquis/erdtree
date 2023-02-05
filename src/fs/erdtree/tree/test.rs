@@ -61,7 +61,21 @@ fn test_symlink(tmp_dir: &TempDir) -> io::Result<()> {
 
     symlink(target, link)?;
     let tree = utils::init_tree(&tmp_dir, Order::None);
-    println!("{tree}");
+
+    let symlink_node = tree.root()
+        .children()
+        .map(|mut nodes| nodes.find(|node| node.is_symlink()).unwrap())
+        .unwrap();
+
+    assert!(
+        symlink_node.children().is_none(),
+        "Symlink should not have children"
+    );
+
+    assert!(
+        symlink_node.file_size.is_none(),
+        "Symlink should not have size"
+    );
 
     Ok(())
 }
