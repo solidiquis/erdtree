@@ -1,5 +1,6 @@
 use crate::fs::file_size::FileSize;
 use ignore::DirEntry;
+use lscolors::{Color, LsColors, Style};
 use std::{
     convert::From,
     fmt::{self, Display, Formatter},
@@ -36,6 +37,22 @@ impl Node {
 
     pub fn children(&self) -> Option<Iter<Node>> {
         self.children.as_ref().map(|children| children.iter())
+    }
+
+    pub fn display(&self, lscolors: &LsColors) -> String {
+        let size = self.file_size
+            .or(Some(0))
+            .map(|size| format!("{}", FileSize::new(size)) )
+            .map(|fsize| Color::Red.to_ansi_term_color().paint(fsize))
+            .unwrap();
+
+        lscolors
+            .style_for_path(self.path())
+            .map(Style::to_ansi_term_style)
+            .unwrap_or_default()
+            .foreground
+            .map(|fg| format!("{} (\x1b[31m{size}\x1b[0m)", fg.bold().paint(self.file_name())))
+            .unwrap_or_else(|| format!("{}", self))
     }
 
     pub fn file_name(&self) -> &str {
@@ -103,7 +120,8 @@ impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let size = self.file_size
             .or(Some(0))
-            .map(|size| FileSize::new(size) )
+            .map(|size| format!("{}", FileSize::new(size)) )
+            .map(|fsize| Color::Red.to_ansi_term_color().paint(fsize))
             .unwrap();
 
         write!(f, "{} ({})", self.file_name, size)

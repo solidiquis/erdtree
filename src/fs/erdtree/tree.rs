@@ -1,6 +1,7 @@
 use super::order::Order;
 use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
+use lscolors::LsColors;
 use std::{
     collections::HashMap,
     fmt::{self, Display, Formatter},
@@ -17,16 +18,17 @@ use super::{
 pub const SEP: &'static str = "   ";
 
 /// The `│` box drawing character.
-pub const VT: &'static str = "\u{2502}  ";
+pub const VT: &'static str = "\x1b[35m\u{2502}\x1b[0m  ";
 
 /// The `└─` box drawing characters.
-pub const UPRT: &'static str = "\u{2514}\u{2500} ";
+pub const UPRT: &'static str = "\x1b[35m\u{2514}\u{2500}\x1b[0m ";
 
 /// The `├─` box drawing characters.
-pub const VTRT: &'static str = "\u{251C}\u{2500} ";
+pub const VTRT: &'static str = "\x1b[35m\u{251C}\u{2500}\x1b[0m ";
 
 #[derive(Debug)]
 pub struct Tree {
+    lscolors: LsColors,
     max_depth: Option<usize>,
     #[allow(dead_code)]
     order: Order,
@@ -38,10 +40,14 @@ pub type Branches = HashMap::<PathBuf, Vec<Node>>;
 pub type TreeComponents = (Node, Branches);
 
 impl Tree {
-    pub fn new(walker: WalkParallel, order: Order, max_depth: Option<usize>) -> TreeResult<Self> {
+    pub fn new(walker: WalkParallel, order: Order, max_depth: Option<usize>, lscolors: LsColors) -> TreeResult<Self> {
         let root = Self::traverse(walker, &order)?;
 
-        Ok(Self { max_depth, order, root })
+        Ok(Self { max_depth, order, root, lscolors })
+    }
+
+    pub fn lscolors(&self) -> &LsColors {
+        &self.lscolors
     }
 
     pub fn root(&self) -> &Node {
@@ -144,16 +150,17 @@ impl Tree {
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let root = self.root();
+        let lscolors = self.lscolors();
         let max_depth = self.max_depth.unwrap_or(std::usize::MAX);
         let mut output = String::from("");
 
         #[inline]
-        fn extend_output(output: &mut String, node: &Node, prefix: &str) {
-            output.push_str(format!("{}{}\n", prefix, node).as_str());
+        fn extend_output(output: &mut String, node: &Node, prefix: &str, lscolors: &LsColors) {
+            output.push_str(format!("{}{}\n", prefix, node.display(lscolors)).as_str());
         }
 
         #[inline]
-        fn traverse(output: &mut String, children: Iter<Node>, base_prefix: &str, max_depth: usize) {
+        fn traverse(output: &mut String, children: Iter<Node>, base_prefix: &str, max_depth: usize, lscolors: &LsColors) {
             let mut peekable = children.peekable();
 
             loop {
@@ -168,7 +175,7 @@ impl Display for Tree {
                         prefix.push_str(VTRT);
                     }
                     
-                    extend_output(output, child, prefix.as_str());
+                    extend_output(output, child, prefix.as_str(), lscolors);
 
                     if child.depth + 1 > max_depth { continue }
 
@@ -182,7 +189,7 @@ impl Display for Tree {
 
                     child
                         .children()
-                        .map(|iter_children| traverse(output, iter_children, new_base.as_str(), max_depth));
+                        .map(|iter_children| traverse(output, iter_children, new_base.as_str(), max_depth, lscolors));
 
                     continue;
                 }
@@ -190,10 +197,10 @@ impl Display for Tree {
             }
         }
 
-        extend_output(&mut output, root, "");
+        extend_output(&mut output, root, "", lscolors);
         root
             .children()
-            .map(|iter_children| traverse(&mut output, iter_children, "", max_depth));
+            .map(|iter_children| traverse(&mut output, iter_children, "", max_depth, lscolors));
 
         write!(f, "{output}")
     }
