@@ -1,6 +1,7 @@
+use ansi_term::Style;
 use crate::fs::file_size::FileSize;
 use ignore::DirEntry;
-use lscolors::{Color, LsColors, Style};
+use lscolors::{Color, Style as LS_Style};
 use std::{
     convert::From,
     fmt::{self, Display, Formatter},
@@ -8,6 +9,7 @@ use std::{
     path::{Path, PathBuf},
     slice::Iter,
 };
+use super::get_ls_colors;
 
 #[derive(Debug)]
 pub struct Node {
@@ -17,6 +19,7 @@ pub struct Node {
     file_name: String,
     file_type: Option<FileType>,
     path: PathBuf,
+    style: Style
 }
 
 impl Node {
@@ -27,8 +30,9 @@ impl Node {
         file_name: String,
         file_type: Option<FileType>,
         path: PathBuf,
+        style: Style
     ) -> Self {
-        Self { children, depth, file_name, file_size, file_type, path }
+        Self { children, depth, file_name, file_size, file_type, path, style }
     }
 
     pub fn children_mut(&mut self) -> Option<&mut Vec<Node>> {
@@ -39,22 +43,6 @@ impl Node {
         self.children.as_ref().map(|children| children.iter())
     }
 
-    pub fn display(&self, lscolors: &LsColors) -> String {
-        let size = self.file_size
-            .map(|size| format!("{}", FileSize::new(size)) )
-            .map(|fsize| format!("({})", Color::BrightRed.to_ansi_term_color().paint(fsize)))
-            .or_else(|| Some("".to_owned()))
-            .unwrap();
-
-        lscolors
-            .style_for_path(self.path())
-            .map(Style::to_ansi_term_style)
-            .unwrap_or_default()
-            .foreground
-            .map(|fg| format!("{} {size}", fg.bold().paint(self.file_name())))
-            .unwrap_or_else(|| format!("{}", self))
-    }
-
     pub fn file_name(&self) -> &str {
         self.file_name.as_str()
     }
@@ -63,6 +51,13 @@ impl Node {
         self.file_type
             .as_ref()
             .map(|ft| ft.is_dir())
+            .unwrap_or(false)
+    }
+
+    pub fn is_symlink(&self) -> bool {
+        self.file_type
+            .as_ref()
+            .map(|ft| ft.is_symlink())
             .unwrap_or(false)
     }
 
@@ -88,6 +83,10 @@ impl Node {
     pub fn set_file_size(&mut self, size: u64) {
         self.file_size = Some(size);
     }
+
+    pub fn style(&self) -> &Style {
+        &self.style
+    }
 }
 
 impl From<DirEntry> for Node {
@@ -102,28 +101,40 @@ impl From<DirEntry> for Node {
 
         let file_type = dir_entry.file_type();
 
+        let metadata = dir_entry.metadata().ok();
+
+        let path = dir_entry.into_path().to_owned();
+
+        let style = get_ls_colors()
+            .style_for_path_with_metadata(&path, metadata.as_ref())
+            .map(LS_Style::to_ansi_term_style)
+            .unwrap_or_default();
+
         let mut file_size = None;
 
         if let Some(ref ft) = file_type {
             if ft.is_file() {
-                file_size = dir_entry.metadata().ok().map(|md| md.len())
+                file_size = metadata.map(|md| md.len())
             }
         };
-
-        let path = dir_entry.into_path().to_owned();
         
-        Self::new(depth, file_size, children, file_name, file_type, path)
+        Self::new(depth, file_size, children, file_name, file_type, path, style)
     }
 }
 
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let size = self.file_size
-            .or(Some(0))
             .map(|size| format!("{}", FileSize::new(size)) )
-            .map(|fsize| Color::BrightRed.to_ansi_term_color().paint(fsize))
+            .map(|fsize| format!("({})", Color::BrightRed.to_ansi_term_color().paint(fsize)))
+            .or_else(|| Some("".to_owned()))
             .unwrap();
 
-        write!(f, "{} ({})", self.file_name, size)
+        let output = self.style()
+            .foreground
+            .map(|fg| format!("{} {size}", fg.bold().paint(self.file_name())))
+            .unwrap_or_else(|| format!("{} {size}", self.file_name()));
+
+        write!(f, "{output}")
     }
 }

@@ -1,14 +1,20 @@
+use crate::fs::erdtree::init_ls_colors;
 use std::io;
 use super::super::order::Order;
 use tempdir::TempDir;
 
 #[test]
 fn test() -> io::Result<()> {
+    init_ls_colors();
     let tmp_dir = utils::create_test_dir()?;
 
     test_size(&tmp_dir);
     test_alphabetical_ordering(&tmp_dir);
     test_size_ordering(&tmp_dir);
+
+    if cfg!(unix) {
+        test_symlink(&tmp_dir)?;
+    }
 
     Ok(())
 }
@@ -46,6 +52,20 @@ fn test_alphabetical_ordering(tmp_dir: &TempDir) {
     }
 }
 
+#[cfg(unix)]
+fn test_symlink(tmp_dir: &TempDir) -> io::Result<()> {
+    use std::os::unix::fs::symlink;
+
+    let target = tmp_dir.path().join("nested_a");
+    let link = tmp_dir.path().join("sym_a");
+
+    symlink(target, link)?;
+    let tree = utils::init_tree(&tmp_dir, Order::None);
+    println!("{tree}");
+
+    Ok(())
+}
+
 fn test_size_ordering(tmp_dir: &TempDir) {
     let tree = utils::init_tree(&tmp_dir, Order::Size);
 
@@ -67,14 +87,13 @@ fn test_size_ordering(tmp_dir: &TempDir) {
 pub(super) mod utils {
     use crate::fs::erdtree::{order::Order, tree::Tree};
     use ignore::WalkBuilder;
-    use lscolors::LsColors;
     use std::{
         fs::{self, File},
         io::{self, Write}
     };
     use tempdir::TempDir;
 
-    pub(super) fn create_test_dir() -> Result<TempDir, io::Error> {
+    pub fn create_test_dir() -> Result<TempDir, io::Error> {
         let tmp_dir_name = "erdtree_test";
 
         let tmp_dir = TempDir::new(tmp_dir_name)?;
@@ -103,11 +122,10 @@ pub(super) mod utils {
         Ok(tmp_dir)
     }
 
-    pub(super) fn init_tree(tmp_dir: &TempDir, order: Order) -> Tree {
+    pub fn init_tree(tmp_dir: &TempDir, order: Order) -> Tree {
         let walker = WalkBuilder::new(tmp_dir.path())
             .threads(1)
             .build_parallel();
-        let lscolors = LsColors::from_env().unwrap_or_default();
-        Tree::new(walker, order, None, lscolors).unwrap()
+        Tree::new(walker, order, None).unwrap()
     }
 }
