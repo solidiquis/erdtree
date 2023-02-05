@@ -61,9 +61,14 @@ Additionally:
 Files that don't have read persmissions will appear but won't have their disk sizes reported. If they are directories they will not be traversed. Additionally, their size will not be included in their parent directory's total.
 
 ### File Coloring
+
 Files are printed in ANSI colors specified according to the `LS_COLORS` environment variable on GNU/Linux systems. In its absence [a default value](https://docs.rs/lscolors/latest/src/lscolors/lib.rs.html#221) is used.
 
 **Note for MacOS**: MacOS uses the `LSCOLORS` environment variable to determine file colors for the `ls` command which is formatted very differently from `LS_COLORS`. MacOS systems will fall back on the aforementioned default value unless the user defines their own `LS_COLORS` environment variable.
+
+### `tree` command
+
+This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. The basic idea is the same: Display the file-tree of the specified directory - however there are key fundamental differences under the hood with regards to how file sizes are computed, traversal method, hidden files and `.gitignore` rules, and printing.
 
 ## Questions you might have
 
