@@ -11,6 +11,9 @@ use std::{
 };
 use super::get_ls_colors;
 
+/// A node of [super::tree::Tree] that can be created from a [DirEntry]. Any filesystem I/O and
+/// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
+/// uses ANSI colors determined by the file-type and `LS_COLORS`.
 #[derive(Debug)]
 pub struct Node {
     pub depth: usize,
@@ -23,6 +26,7 @@ pub struct Node {
 }
 
 impl Node {
+    /// Initializes a new [Node].
     pub fn new(
         depth: usize,
         file_size: Option<u64>,
@@ -35,18 +39,22 @@ impl Node {
         Self { children, depth, file_name, file_size, file_type, path, style }
     }
 
+    /// Returns a mutable reference to `children` if any.
     pub fn children_mut(&mut self) -> Option<&mut Vec<Node>> {
         self.children.as_mut()
     }
 
+    /// Returns an iter over a `children` slice if any.
     pub fn children(&self) -> Option<Iter<Node>> {
         self.children.as_ref().map(|children| children.iter())
     }
 
+    /// Returns a reference to `file_name`.
     pub fn file_name(&self) -> &str {
         self.file_name.as_str()
     }
 
+    /// Returns `true` if node is a directory.
     pub fn is_dir(&self) -> bool {
         self.file_type
             .as_ref()
@@ -54,6 +62,7 @@ impl Node {
             .unwrap_or(false)
     }
 
+    /// Returns `true` if node is a symlink.
     pub fn is_symlink(&self) -> bool {
         self.file_type
             .as_ref()
@@ -61,7 +70,8 @@ impl Node {
             .unwrap_or(false)
     }
 
-    /// Hmm... this is kind of expensive.
+    /// Returns the path to the `Node`'s parent, if any. This is a pretty expensive operation used
+    /// during parallel traversal. Perhaps an area for optimization.
     pub fn parent_path_buf(&self) -> Option<PathBuf> {
         let mut path_buf = self.path.clone();
 
@@ -72,18 +82,22 @@ impl Node {
         }
     }
 
+    /// Returns a reference to `path`.
     pub fn path(&self) -> &Path {
         &self.path
     }
 
+    /// Set's `children`.
     pub fn set_children(&mut self, children: Vec<Node>) {
         self.children = Some(children);
     }
 
+    /// Set's `file_size`.
     pub fn set_file_size(&mut self, size: u64) {
         self.file_size = Some(size);
     }
 
+    /// Set's 'style'.
     pub fn style(&self) -> &Style {
         &self.style
     }

@@ -7,11 +7,12 @@ use std::{
 };
 use ignore::{WalkBuilder, WalkParallel};
 
+/// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "Erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
 #[command(version = "1.0")]
-#[command(about = "File tree visualizer with disk usage.", long_about = None)]
+#[command(about = "File tree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Clargs {
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
@@ -38,6 +39,7 @@ pub struct Clargs {
 }
 
 impl Clargs {
+    /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
         if let Some(ref path) = self.dir {
             path.as_path()
@@ -46,10 +48,13 @@ impl Clargs {
         }
     }
 
+    /// The order used for printing.
     pub fn order(&self) -> Order {
         self.order.clone()
     }
 
+    /// The max depth to print. Note that all directories are fully traversed to compute file
+    /// sizes; this just determines how much to print.
     pub fn max_depth(&self) -> Option<usize> {
         self.max_depth
     }

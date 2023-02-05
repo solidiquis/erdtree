@@ -3,6 +3,7 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
+/// Errors that may occur during filesystem traversal.
 #[derive(Debug)]
 pub enum Error {
     ExpectedParent,

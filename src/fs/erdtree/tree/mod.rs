@@ -28,6 +28,7 @@ pub const UPRT: &'static str = "\x1b[35m\u{2514}\u{2500}\x1b[0m ";
 /// The `├─` box drawing characters.
 pub const VTRT: &'static str = "\x1b[35m\u{251C}\u{2500}\x1b[0m ";
 
+/// In-memory representation of the root-directory and its contents which respects `.gitignore`.
 #[derive(Debug)]
 pub struct Tree {
     max_depth: Option<usize>,
@@ -41,19 +42,28 @@ pub type Branches = HashMap::<PathBuf, Vec<Node>>;
 pub type TreeComponents = (Node, Branches);
 
 impl Tree {
+    /// Initializes a [Tree].
     pub fn new(walker: WalkParallel, order: Order, max_depth: Option<usize>) -> TreeResult<Self> {
         let root = Self::traverse(walker, &order)?;
 
         Ok(Self { max_depth, order, root })
     }
 
+    /// Returns a reference to the root [Node].
     pub fn root(&self) -> &Node {
         &self.root
     }
 
+    /// Parallel traversal of the root directory and its contents taking `.gitignore` into
+    /// consideration. Parallel traversal relies on `WalkParallel`. Any filesystem I/O or related
+    /// system calls are expected to occur during parallel traversal; thus post-processing of all
+    /// directory entries should be completely CPU-bound. If filesystem I/O or system calls occur
+    /// outside of the parallel traversal step please report an issue.
     fn traverse(walker: WalkParallel, order: &Order) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
+        // Receives directory entries from the workers used for parallel traversal to construct the
+        // components needed to assmemble a `Tree`.
         let tree_components = thread::spawn(move || -> TreeResult<TreeComponents> {
             let mut branches: Branches = HashMap::new();
             let mut root = None;
@@ -90,6 +100,8 @@ impl Tree {
             Ok((root_node, branches))
         });
 
+        // All filesystem I/O and related system-calls should be relegated to this. Directory
+        // entries that are encountered are sent to the above thread for processing.
         walker.run(|| Box::new(|entry_res| {
             let tx = Sender::clone(&tx);
 
@@ -109,6 +121,8 @@ impl Tree {
         Ok(root)
     }
 
+    /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
+    /// structure. Sorting occurs if specified.
     fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, order: &Order) {
         let dir_node = branches.remove(current_dir.path())
             .and_then(|children| {
