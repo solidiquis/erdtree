@@ -28,6 +28,7 @@ pub const VTRT: &'static str = "\u{251C}\u{2500} ";
 #[derive(Debug)]
 pub struct Tree {
     max_depth: Option<usize>,
+    #[allow(dead_code)]
     order: Order,
     root: Node,
 }
