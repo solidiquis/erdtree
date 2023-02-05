@@ -19,6 +19,17 @@ pub struct Node {
 }
 
 impl Node {
+    pub fn new(
+        depth: usize,
+        file_size: Option<u64>,
+        children: Option<Vec<Node>>,
+        file_name: String,
+        file_type: Option<FileType>,
+        path: PathBuf,
+    ) -> Self {
+        Self { children, depth, file_name, file_size, file_type, path }
+    }
+
     pub fn set_children(&mut self, children: Vec<Node>) {
         self.children = Some(children);
     }
@@ -61,33 +72,26 @@ impl Node {
 impl From<DirEntry> for Node {
     fn from(dir_entry: DirEntry) -> Self {
         let children = None;
+
         let depth = dir_entry.depth();
+
         let file_name = dir_entry.file_name()
             .to_string_lossy()
             .into_owned();
+
         let file_type = dir_entry.file_type();
 
-        let file_size = if let Some(ref ft) = file_type {
+        let mut file_size = None;
+
+        if let Some(ref ft) = file_type {
             if ft.is_file() {
-                dir_entry.metadata().ok().map(|md| md.len())
-            } else {
-                None
+                file_size = dir_entry.metadata().ok().map(|md| md.len())
             }
-        } else {
-            None
         };
 
-        let path = dir_entry.into_path()
-            .to_owned();
+        let path = dir_entry.into_path().to_owned();
         
-        Self {
-            children,
-            depth,
-            file_name,
-            file_size,
-            file_type,
-            path
-        }
+        Self::new(depth, file_size, children, file_name, file_type, path)
     }
 }
 
