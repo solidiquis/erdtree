@@ -92,7 +92,7 @@ _Q: Why did you make this? It's totally unnecessary._
 
 A: Ennui.
 
-_Q: Why is it called Erdtree._
+_Q: Why is it called Erdtree?_
 
 A: It's a reference to Elden Ring.
 
@@ -100,7 +100,7 @@ _Q: Is it any good?_
 
 A: Yes.
 
-_Q: Is this blazingly fast?_
+_Q: Is it blazingly fast?_
 
 A: Should be. I wrote it in Rust.
 
