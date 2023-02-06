@@ -137,7 +137,9 @@ impl Tree {
                 .map(|nodes| nodes.iter_mut())
                 .map(|node_iter| {
                     node_iter.for_each(|node| {
-                        Self::assemble_tree(node, branches, order);
+                        if node.is_dir() {
+                            Self::assemble_tree(node, branches, order);
+                        }
                         dir_size += node.file_size.unwrap_or(0);
                     });
                 });
