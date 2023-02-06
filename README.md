@@ -74,6 +74,8 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 _Q: Why did you make this? It's totally unnecessary._
 
+A: Ennui.
+
 _Q: Why is it called Erdtree._
 
 A: It's a reference to Elden Ring.
