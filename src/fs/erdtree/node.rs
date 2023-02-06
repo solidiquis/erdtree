@@ -1,7 +1,7 @@
 use ansi_term::Style;
 use crate::fs::file_size::FileSize;
 use ignore::DirEntry;
-use lscolors::{Color, Style as LS_Style};
+use lscolors::Style as LS_Style;
 use std::{
     convert::From,
     fmt::{self, Display, Formatter},
@@ -139,8 +139,7 @@ impl From<DirEntry> for Node {
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let size = self.file_size
-            .map(|size| format!("{}", FileSize::new(size)) )
-            .map(|fsize| format!("({})", Color::BrightRed.to_ansi_term_color().paint(fsize)))
+            .map(|size| format!("({})", FileSize::new(size)) )
             .or_else(|| Some("".to_owned()))
             .unwrap();
 
