@@ -68,7 +68,7 @@ Files are printed in ANSI colors specified according to the `LS_COLORS` environm
 
 ### `tree` command
 
-This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. The basic idea is the same: Display the file-tree of the specified directory - however there are key fundamental differences under the hood with regards to how file sizes are computed, traversal method, hidden files and `.gitignore` rules, and printing.
+This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. The basic idea is the same: Display the file-tree of the specified directory. There are, however, key fundamental differences under the hood with regard to how file sizes are computed, traversal method, hidden files and `.gitignore` rules, and printing.
 
 ## Questions you might have
 
