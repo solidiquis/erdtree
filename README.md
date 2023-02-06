@@ -70,6 +70,22 @@ Files are printed in ANSI colors specified according to the `LS_COLORS` environm
 
 This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. The basic idea is the same: Display the file-tree of the specified directory. There are, however, key fundamental differences under the hood with regard to how file sizes are computed, traversal method, hidden files and `.gitignore` rules, and printing.
 
+### Advantages over `exa --tree`
+
+[Exa](https://github.com/ogham/exa) is a powerful modern equivalent of the `ls` command which gives the option to print a tree-view of a specified directory, however the primary differences between `exa --tree` and `erdtree` are:
+- `exa --tree --git-ignore` doesn't respect `.gitignore` rules on a per directory basis whereas `erdtree` does. With `exa` the root's `.gitignore` is considered, but if child directories have their own `.gitignore` they are disregarded and all of their contents will be printed.
+- `erdtree` displays the total size of a directory as the sum of all of its file sizes whereas `exa` [does not support this](https://github.com/ogham/exa/issues/91). This makes sorting directories in the tree-view by size dubious and unclear
+
+#### Exa
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/exa.png" alt="failed to load png" />
+</p>
+
+#### Erdtree
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree.png" alt="failed to load png" />
+</p>
+
 ## Questions you might have
 
 _Q: Why did you make this? It's totally unnecessary._
