@@ -1,18 +1,18 @@
+use super::node::Node;
 use clap::ValueEnum;
 use std::cmp::Ordering;
-use super::node::Node;
 
 /// Order in which to print nodes.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Order {
     /// Sort entries by file name
     Filename,
-    
+
     /// Sort entries by size in descending order
     Size,
 
     /// No sorting
-    None
+    None,
 }
 
 impl Order {
@@ -21,7 +21,7 @@ impl Order {
         match self {
             Self::Filename => Some(Self::name_comparator),
             Self::Size => Some(Self::size_comparator),
-            _ => None
+            _ => None,
         }
     }
 

@@ -1,6 +1,6 @@
+use super::super::order::Order;
 use crate::fs::erdtree::init_ls_colors;
 use std::io;
-use super::super::order::Order;
 use tempdir::TempDir;
 
 #[test]
@@ -20,7 +20,7 @@ fn test() -> io::Result<()> {
 }
 
 fn test_size(tmp_dir: &TempDir) {
-    let tree = utils::init_tree(&tmp_dir, Order::None);
+    let tree = utils::init_tree(tmp_dir, Order::None);
 
     assert!(
         tree.root().children().is_some(),
@@ -35,9 +35,10 @@ fn test_size(tmp_dir: &TempDir) {
 }
 
 fn test_alphabetical_ordering(tmp_dir: &TempDir) {
-    let tree = utils::init_tree(&tmp_dir, Order::Filename);
+    let tree = utils::init_tree(tmp_dir, Order::Filename);
 
-    let file_names = tree.root()
+    let file_names = tree
+        .root()
         .children()
         .map(|children| {
             children
@@ -60,9 +61,10 @@ fn test_symlink(tmp_dir: &TempDir) -> io::Result<()> {
     let link = tmp_dir.path().join("sym_a");
 
     symlink(target, link)?;
-    let tree = utils::init_tree(&tmp_dir, Order::None);
+    let tree = utils::init_tree(tmp_dir, Order::None);
 
-    let symlink_node = tree.root()
+    let symlink_node = tree
+        .root()
         .children()
         .map(|mut nodes| nodes.find(|node| node.is_symlink()).unwrap())
         .unwrap();
@@ -81,9 +83,10 @@ fn test_symlink(tmp_dir: &TempDir) -> io::Result<()> {
 }
 
 fn test_size_ordering(tmp_dir: &TempDir) {
-    let tree = utils::init_tree(&tmp_dir, Order::Size);
+    let tree = utils::init_tree(tmp_dir, Order::Size);
 
-    let file_names = tree.root()
+    let file_names = tree
+        .root()
         .children()
         .map(|children| {
             children
@@ -103,7 +106,7 @@ pub(super) mod utils {
     use ignore::WalkBuilder;
     use std::{
         fs::{self, File},
-        io::{self, Write}
+        io::{self, Write},
     };
     use tempdir::TempDir;
 
@@ -112,21 +115,22 @@ pub(super) mod utils {
 
         let tmp_dir = TempDir::new(tmp_dir_name)?;
 
-        let the_call_of_cthulhu_path = tmp_dir.path()
-            .join("call_of_cthulhu.txt");
+        let the_call_of_cthulhu_path = tmp_dir.path().join("call_of_cthulhu.txt");
         File::create(the_call_of_cthulhu_path)
             .and_then(|mut f| writeln!(f, "That is not dead which can eternal lie; and with strange aeons even death may die."))?;
 
-        let nested_dir_a = tmp_dir.path()
-            .join("nested_a");
+        let nested_dir_a = tmp_dir.path().join("nested_a");
         fs::create_dir(&nested_dir_a)?;
 
         let nemesis_path = nested_dir_a.join("nemesis.txt");
-        File::create(nemesis_path)
-            .and_then(|mut f| writeln!(f, "where they roll in their horror unheeded, without knowledge or lustre or name."))?;
+        File::create(nemesis_path).and_then(|mut f| {
+            writeln!(
+                f,
+                "where they roll in their horror unheeded, without knowledge or lustre or name."
+            )
+        })?;
 
-        let nested_dir_b = tmp_dir.path()
-            .join("nested_b");
+        let nested_dir_b = tmp_dir.path().join("nested_b");
         fs::create_dir(&nested_dir_b)?;
 
         let nyarlathotep_path = nested_dir_b.join("nyarlathotep.txt");
@@ -137,9 +141,7 @@ pub(super) mod utils {
     }
 
     pub fn init_tree(tmp_dir: &TempDir, order: Order) -> Tree {
-        let walker = WalkBuilder::new(tmp_dir.path())
-            .threads(1)
-            .build_parallel();
+        let walker = WalkBuilder::new(tmp_dir.path()).threads(1).build_parallel();
         Tree::new(walker, order, None).unwrap()
     }
 }

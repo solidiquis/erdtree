@@ -23,11 +23,12 @@ pub static LS_COLORS: OnceCell<LsColors> = OnceCell::new();
 /// Initializes `LS_COLORS` by reading in the `LS_COLORS` environment variable. If it isn't set, a
 /// default determined by `lscolors` crate will be used.
 pub fn init_ls_colors() {
-    LS_COLORS.set(LsColors::from_env().unwrap_or_default()).unwrap();
+    LS_COLORS
+        .set(LsColors::from_env().unwrap_or_default())
+        .unwrap();
 }
 
 /// Grabs a reference to `LS_COLORS`. Panics if not initialized.
 pub fn get_ls_colors() -> &'static LsColors {
     LS_COLORS.get().expect("LS_COLORS not initialized")
 }
-
