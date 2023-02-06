@@ -1,5 +1,5 @@
 # Erdtree
-A modern and vibrant (but not overly) file-tree visualizer and disk usage analyzer that respects `.gitignore` rules.
+A modern and vibrant (but not overly) file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules.
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo_erdtree.gif" alt="failed to load gif" />
@@ -7,7 +7,7 @@ A modern and vibrant (but not overly) file-tree visualizer and disk usage analyz
 
 **Erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:
 - offers a minimal and user-friendly CLI
-- respects `.gitignore` rules by default
+- respects hidden files and `.gitignore` rules by default
 - displays file sizes in human-readable format by default
 - traverses directories in a parallel manner
 - displays files using ANSI colors by default
