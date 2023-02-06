@@ -86,6 +86,15 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree.png" alt="failed to load png" />
 </p>
 
+## Rules for Contributing and Feature Requests
+
+Happy to accept contributions but please keep the following in mind:
+- If you're doing some minor refactoring and/or code cleanup feel free to just submit a PR.
+- If you'd like to add a feature and/or make fundamental changes to `erdtree`'s [traverse](https://github.com/solidiquis/erdtree/blob/e7f37d416d6d61b1d62e2200935b4813aaeab461/src/fs/erdtree/tree/mod.rs#L63) algorithm please open up an issue and get my approval first.
+- Feature adds require tests.
+
+Feature requests in the form of issues in general are welcome.
+
 ## Questions you might have
 
 _Q: Why did you make this? It's totally unnecessary._
