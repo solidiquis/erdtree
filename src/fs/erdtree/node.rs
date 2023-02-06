@@ -1,5 +1,6 @@
-use ansi_term::Style;
+use super::get_ls_colors;
 use crate::fs::file_size::FileSize;
+use ansi_term::Style;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
 use std::{
@@ -9,7 +10,6 @@ use std::{
     path::{Path, PathBuf},
     slice::Iter,
 };
-use super::get_ls_colors;
 
 /// A node of [super::tree::Tree] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
@@ -22,7 +22,7 @@ pub struct Node {
     file_name: String,
     file_type: Option<FileType>,
     path: PathBuf,
-    style: Style
+    style: Style,
 }
 
 impl Node {
@@ -34,9 +34,17 @@ impl Node {
         file_name: String,
         file_type: Option<FileType>,
         path: PathBuf,
-        style: Style
+        style: Style,
     ) -> Self {
-        Self { children, depth, file_name, file_size, file_type, path, style }
+        Self {
+            children,
+            depth,
+            file_name,
+            file_size,
+            file_type,
+            path,
+            style,
+        }
     }
 
     /// Returns a mutable reference to `children` if any.
@@ -51,7 +59,7 @@ impl Node {
 
     /// Returns a reference to `file_name`.
     pub fn file_name(&self) -> &str {
-        self.file_name.as_str()
+        &self.file_name
     }
 
     /// Returns `true` if node is a directory.
@@ -109,15 +117,13 @@ impl From<DirEntry> for Node {
 
         let depth = dir_entry.depth();
 
-        let file_name = dir_entry.file_name()
-            .to_string_lossy()
-            .into_owned();
+        let file_name = dir_entry.file_name().to_string_lossy().into_owned();
 
         let file_type = dir_entry.file_type();
 
         let metadata = dir_entry.metadata().ok();
 
-        let path = dir_entry.into_path().to_owned();
+        let path = dir_entry.into_path();
 
         let style = get_ls_colors()
             .style_for_path_with_metadata(&path, metadata.as_ref())
@@ -131,19 +137,23 @@ impl From<DirEntry> for Node {
                 file_size = metadata.map(|md| md.len())
             }
         };
-        
-        Self::new(depth, file_size, children, file_name, file_type, path, style)
+
+        Self::new(
+            depth, file_size, children, file_name, file_type, path, style,
+        )
     }
 }
 
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let size = self.file_size
-            .map(|size| format!("({})", FileSize::new(size)) )
+        let size = self
+            .file_size
+            .map(|size| format!("({})", FileSize::new(size)))
             .or_else(|| Some("".to_owned()))
             .unwrap();
 
-        let output = self.style()
+        let output = self
+            .style()
             .foreground
             .map(|fg| format!("{} {size}", fg.bold().paint(self.file_name())))
             .unwrap_or_else(|| format!("{} {size}", self.file_name()));

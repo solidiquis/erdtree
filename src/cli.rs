@@ -1,11 +1,11 @@
-use clap::Parser;
 use crate::fs::erdtree::order::Order;
+use clap::Parser;
+use ignore::{WalkBuilder, WalkParallel};
 use std::{
     convert::From,
     path::{Path, PathBuf},
-    usize
+    usize,
 };
-use ignore::{WalkBuilder, WalkParallel};
 
 /// Defines the CLI.
 #[derive(Parser, Debug)]
@@ -20,7 +20,7 @@ pub struct Clargs {
     /// Ignore .gitignore; disabled by default
     #[arg(short, long)]
     pub ignore_git_ignore: bool,
-    
+
     /// Maximum depth to display
     #[arg(short, long, value_name = "NUM")]
     pub max_depth: Option<usize>,
@@ -35,7 +35,7 @@ pub struct Clargs {
 
     /// Whether to show hidden files; disabled by default
     #[arg(short, long)]
-    pub show_hidden: bool
+    pub show_hidden: bool,
 }
 
 impl Clargs {
@@ -50,7 +50,7 @@ impl Clargs {
 
     /// The order used for printing.
     pub fn order(&self) -> Order {
-        self.order.clone()
+        self.order
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
