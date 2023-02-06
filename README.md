@@ -74,7 +74,7 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 [Exa](https://github.com/ogham/exa) is a powerful modern equivalent of the `ls` command which gives the option to print a tree-view of a specified directory, however the primary differences between `exa --tree` and `erdtree` are:
 - `exa --tree --git-ignore` doesn't respect `.gitignore` rules on a per directory basis whereas `erdtree` does. With `exa` the root's `.gitignore` is considered, but if child directories have their own `.gitignore` they are disregarded and all of their contents will be printed.
-- `erdtree` displays the total size of a directory as the sum of all of its file sizes whereas `exa` [does not support this](https://github.com/ogham/exa/issues/91). This makes sorting directories in the tree-view by size dubious and unclear
+- `erdtree` displays the total size of a directory as the sum of all of its file sizes whereas `exa` [does not support this](https://github.com/ogham/exa/issues/91). This makes sorting directories in the tree-view by size dubious and unclear. Below are screenshots comparing equivalent usages of `erdtree` and `exa`, using long option names for clarity.
 
 #### Exa
 <p align="center">
