@@ -185,7 +185,7 @@ impl Display for Tree {
                     
                     extend_output(output, child, prefix.as_str());
 
-                    if child.depth + 1 > max_depth { continue }
+                    if !child.is_dir() || child.depth + 1 > max_depth { continue }
 
                     let mut new_base = base_prefix.to_owned();
 
