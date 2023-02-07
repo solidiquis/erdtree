@@ -56,14 +56,14 @@ jobs:
 
     - name: Strip binary
       if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
-      run: strip target/${{ matrix.target }}/release/erdtree
+      run: strip target/${{ matrix.target }}/release/et
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v1-release
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/erdtree
-        asset_name: erdtree-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+        file: target/${{ matrix.target }}/release/et
+        asset_name: et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
         tag: ${{ github.ref }}
   
   x86_64-pc-windows-msvc:
@@ -93,8 +93,8 @@ jobs:
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/erdtree.exe
-          asset_name: erdtree-x86_64-pc-windows-msvc.exe
+          file: target/release/et.exe
+          asset_name: et-x86_64-pc-windows-msvc.exe
           tag: ${{ github.ref }}
     
 
@@ -142,7 +142,7 @@ jobs:
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/erdtree
-          asset_name: erdtree-${{ steps.version.outputs.VERSION }}-aarch64-unknown-linux-gnu
+          file: target/release/et
+          asset_name: et-${{ steps.version.outputs.VERSION }}-aarch64-unknown-linux-gnu
           tag: ${{ github.ref }}
 
