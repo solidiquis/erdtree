@@ -11,7 +11,7 @@ fn run_cmd(args: &[&str]) -> String {
         .arg("--threads")
         .arg("1")
         .arg("--sort")
-        .arg("filename");
+        .arg("name");
 
     for arg in args {
         cmd.arg(arg);
