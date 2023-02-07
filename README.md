@@ -1,11 +1,11 @@
-# Erdtree (et)
+# erdtree (et)
 A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo_erdtree.gif" alt="failed to load gif" />
 </p>
 
-**Erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:
+**erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:
 - offers a minimal and user-friendly CLI
 - respects hidden files and `.gitignore` rules by default
 - displays file sizes in human-readable format by default
@@ -18,7 +18,7 @@ A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and 
 $ et -h
 File tree visualizer and disk usage analyzer.
 
-Usage: erdtree [OPTIONS] [DIR]
+Usage: et [OPTIONS] [DIR]
 
 Arguments:
   [DIR]  Root directory to traverse; defaults to current working directory
@@ -78,12 +78,12 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 - `exa --tree --git-ignore` doesn't respect `.gitignore` rules on a per directory basis whereas `et` does. With `exa` the root's `.gitignore` is considered, but if child directories have their own `.gitignore` they are disregarded and all of their contents will be printed.
 - `et` displays the total size of a directory as the sum of all of its file sizes whereas `exa` [does not support this](https://github.com/ogham/exa/issues/91). This makes sorting directories in the tree-view by size dubious and unclear. Below are screenshots comparing equivalent usages of `et` and `exa`, using long option names for clarity.
 
-#### Exa
+#### exa
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/exa.png" alt="failed to load png" />
 </p>
 
-#### Erdtree
+#### erdtree
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree.png" alt="failed to load png" />
 </p>
@@ -103,7 +103,7 @@ _Q: Why did you make this? It's totally unnecessary._
 
 A: Ennui.
 
-_Q: Why is it called Erdtree?_
+_Q: Why is it called erdtree?_
 
 A: It's a reference to Elden Ring.
 
