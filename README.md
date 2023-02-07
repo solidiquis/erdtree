@@ -44,7 +44,8 @@ Options:
 2. `$ cargo install --git https://github.com/solidiquis/erdtree`
 3. The executable should then be located in `$HOME/.cargo/bin/`.
 
-Other means of installation to come.
+### Releases
+Binaries for common architectures can be downloaded from latest releases.
 
 ## Disambiguations
 
