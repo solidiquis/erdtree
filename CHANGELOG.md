@@ -7,10 +7,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 First release.
 
-## [1.0.0] - 2023-02-05
+## [1.0.0] - 2023-02-07
 
 Did a complete rewrite with emphasis on an intuitive interface and performance. Notable changes:
-- Respects `.gitignore`.
+- Binary renamed to `et` for brevity.
+- Respects `.gitignore` and hidden file rules.
 - Parallel filesystem traversal.
 - Completely new CLI. `$ erdtree -h` for usage info.
 - Uses `LS_COLORS` environment variable for file coloring.

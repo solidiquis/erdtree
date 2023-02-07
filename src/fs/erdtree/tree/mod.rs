@@ -28,7 +28,7 @@ pub const VTRT: &str = "\x1b[35m\u{251C}\u{2500}\x1b[0m ";
 /// In-memory representation of the root-directory and its contents which respects `.gitignore`.
 #[derive(Debug)]
 pub struct Tree {
-    max_depth: Option<usize>,
+    level: Option<usize>,
     #[allow(dead_code)]
     order: Order,
     root: Node,
@@ -40,11 +40,11 @@ pub type TreeComponents = (Node, Branches);
 
 impl Tree {
     /// Initializes a [Tree].
-    pub fn new(walker: WalkParallel, order: Order, max_depth: Option<usize>) -> TreeResult<Self> {
+    pub fn new(walker: WalkParallel, order: Order, level: Option<usize>) -> TreeResult<Self> {
         let root = Self::traverse(walker, &order)?;
 
         Ok(Self {
-            max_depth,
+            level,
             order,
             root,
         })
@@ -156,7 +156,7 @@ impl Tree {
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let root = self.root();
-        let max_depth = self.max_depth.unwrap_or(std::usize::MAX);
+        let level = self.level.unwrap_or(std::usize::MAX);
         let mut output = String::from("");
 
         #[inline]
@@ -169,7 +169,7 @@ impl Display for Tree {
             output: &mut String,
             children: Iter<Node>,
             base_prefix: &str,
-            max_depth: usize,
+            level: usize,
         ) {
             let mut peekable = children.peekable();
 
@@ -187,7 +187,7 @@ impl Display for Tree {
 
                     extend_output(output, child, &prefix);
 
-                    if !child.is_dir() || child.depth + 1 > max_depth {
+                    if !child.is_dir() || child.depth + 1 > level {
                         continue;
                     }
 
@@ -200,7 +200,7 @@ impl Display for Tree {
                     }
 
                     if let Some(iter_children) = child.children() {
-                        traverse(output, iter_children, &new_base, max_depth)
+                        traverse(output, iter_children, &new_base, level)
                     }
 
                     continue;
@@ -211,7 +211,7 @@ impl Display for Tree {
 
         extend_output(&mut output, root, "");
         if let Some(iter_children) = root.children() {
-            traverse(&mut output, iter_children, "", max_depth)
+            traverse(&mut output, iter_children, "", level)
         }
 
         write!(f, "{output}")

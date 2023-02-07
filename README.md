@@ -1,4 +1,4 @@
-# Erdtree
+# Erdtree (et)
 A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
 
 <p align="center">
@@ -15,7 +15,7 @@ A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and 
 
 ## Usage
 ```
-$ erdtree -h
+$ et -h
 File tree visualizer and disk usage analyzer.
 
 Usage: erdtree [OPTIONS] [DIR]
@@ -24,17 +24,16 @@ Arguments:
   [DIR]  Root directory to traverse; defaults to current working directory
 
 Options:
-  -i, --ignore-git-ignore          Ignore .gitignore; disabled by default
-  -m, --max-depth <NUM>            Maximum depth to display
-  -n, --num-threads <NUM_THREADS>  Number of threads to use [default: 4]
-  -o, --order <ORDER>              Sort order to display directory content [default: none] [possible values: filename, size, none]
-  -s, --show-hidden                Whether to show hidden files; disabled by default
-  -g, --glob <GLOB>                Include or exclude files using glob patterns
-      --iglob <GLOB>               Include or exclude files using glob patterns; case insensitive
-      --glob-case-insensitive      Process all glob patterns case insensitively
-  -h, --help                       Print help (see more with '--help')
-  -V, --version                    Print version
-
+  -i, --ignore-git-ignore      Ignore .gitignore; disabled by default
+  -l, --level <NUM>            Maximum depth to display
+  -t, --threads <THREADS>      Number of threads to use [default: 4]
+  -s, --sort <SORT>            Sort-order to display directory content [default: none] [possible values: filename, size, none]
+  -H, --hidden                 Whether to show hidden files; disabled by default
+  -g, --glob <GLOB>            Include or exclude files using glob patterns
+      --iglob <IGLOB>          Include or exclude files using glob patterns; case insensitive
+      --glob-case-insensitive  Process all glob patterns case insensitively
+  -h, --help                   Print help (see more with '--help')
+  -V, --version                Print version
 ```
 
 ## Installation
@@ -75,9 +74,9 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 ### Advantages over `exa --tree`
 
-[Exa](https://github.com/ogham/exa) is a powerful modern equivalent of the `ls` command which gives the option to print a tree-view of a specified directory, however the primary differences between `exa --tree` and `erdtree` are:
-- `exa --tree --git-ignore` doesn't respect `.gitignore` rules on a per directory basis whereas `erdtree` does. With `exa` the root's `.gitignore` is considered, but if child directories have their own `.gitignore` they are disregarded and all of their contents will be printed.
-- `erdtree` displays the total size of a directory as the sum of all of its file sizes whereas `exa` [does not support this](https://github.com/ogham/exa/issues/91). This makes sorting directories in the tree-view by size dubious and unclear. Below are screenshots comparing equivalent usages of `erdtree` and `exa`, using long option names for clarity.
+[Exa](https://github.com/ogham/exa) is a powerful modern equivalent of the `ls` command which gives the option to print a tree-view of a specified directory, however the primary differences between `exa --tree` and `et` are:
+- `exa --tree --git-ignore` doesn't respect `.gitignore` rules on a per directory basis whereas `et` does. With `exa` the root's `.gitignore` is considered, but if child directories have their own `.gitignore` they are disregarded and all of their contents will be printed.
+- `et` displays the total size of a directory as the sum of all of its file sizes whereas `exa` [does not support this](https://github.com/ogham/exa/issues/91). This makes sorting directories in the tree-view by size dubious and unclear. Below are screenshots comparing equivalent usages of `et` and `exa`, using long option names for clarity.
 
 #### Exa
 <p align="center">
@@ -93,7 +92,7 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 Happy to accept contributions but please keep the following in mind:
 - If you're doing some minor refactoring and/or code cleanup feel free to just submit a PR.
-- If you'd like to add a feature and/or make fundamental changes to `erdtree`'s [traverse](https://github.com/solidiquis/erdtree/blob/e7f37d416d6d61b1d62e2200935b4813aaeab461/src/fs/erdtree/tree/mod.rs#L63) algorithm please open up an issue and get my approval first.
+- If you'd like to add a feature and/or make fundamental changes to `et`'s [traverse](https://github.com/solidiquis/erdtree/blob/e7f37d416d6d61b1d62e2200935b4813aaeab461/src/fs/erdtree/tree/mod.rs#L63) algorithm please open up an issue and get my approval first.
 - Feature adds require tests.
 
 Feature requests in the form of issues in general are welcome.
