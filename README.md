@@ -24,17 +24,16 @@ Arguments:
   [DIR]  Root directory to traverse; defaults to current working directory
 
 Options:
-  -i, --ignore-git-ignore          Ignore .gitignore; disabled by default
-  -m, --max-depth <NUM>            Maximum depth to display
-  -n, --num-threads <NUM_THREADS>  Number of threads to use [default: 4]
-  -o, --order <ORDER>              Sort order to display directory content [default: none] [possible values: filename, size, none]
-  -s, --show-hidden                Whether to show hidden files; disabled by default
-  -g, --glob <GLOB>                Include or exclude files using glob patterns
-      --iglob <GLOB>               Include or exclude files using glob patterns; case insensitive
-      --glob-case-insensitive      Process all glob patterns case insensitively
-  -h, --help                       Print help (see more with '--help')
-  -V, --version                    Print version
-
+  -i, --ignore-git-ignore      Ignore .gitignore; disabled by default
+  -l, --level <NUM>            Maximum depth to display
+  -t, --threads <THREADS>      Number of threads to use [default: 4]
+  -s, --sort <SORT>            Sort-order to display directory content [default: none] [possible values: filename, size, none]
+  -H, --hidden                 Whether to show hidden files; disabled by default
+  -g, --glob <GLOB>            Include or exclude files using glob patterns
+      --iglob <IGLOB>          Include or exclude files using glob patterns; case insensitive
+      --glob-case-insensitive  Process all glob patterns case insensitively
+  -h, --help                   Print help (see more with '--help')
+  -V, --version                Print version
 ```
 
 ## Installation
