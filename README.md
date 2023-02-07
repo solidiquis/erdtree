@@ -29,6 +29,9 @@ Options:
   -n, --num-threads <NUM_THREADS>  Number of threads to use [default: 4]
   -o, --order <ORDER>              Sort order to display directory content [default: none] [possible values: filename, size, none]
   -s, --show-hidden                Whether to show hidden files; disabled by default
+  -g, --glob <GLOB>                Include or exclude files using glob patterns
+      --iglob <GLOB>               Include or exclude files using glob patterns; case insensitive
+      --glob-case-insensitive      Process all glob patterns case insensitively
   -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version
 
