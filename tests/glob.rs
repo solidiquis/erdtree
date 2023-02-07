@@ -8,9 +8,9 @@ fn run_cmd(args: &[&str]) -> String {
     cmd.arg("run")
         .arg("--")
         .arg("tests/data")
-        .arg("--num-threads")
+        .arg("--threads")
         .arg("1")
-        .arg("--order")
+        .arg("--sort")
         .arg("filename");
 
     for arg in args {

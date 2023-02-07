@@ -24,7 +24,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     erdtree::init_ls_colors();
     let clargs = Clargs::parse();
     let walker = WalkParallel::try_from(&clargs)?;
-    let tree = Tree::new(walker, clargs.order(), clargs.max_depth())?;
+    let tree = Tree::new(walker, clargs.sort(), clargs.level())?;
 
     println!("{tree}");
 

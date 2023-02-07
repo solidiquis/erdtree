@@ -28,19 +28,19 @@ pub struct Clargs {
 
     /// Maximum depth to display
     #[arg(short, long, value_name = "NUM")]
-    pub max_depth: Option<usize>,
+    pub level: Option<usize>,
 
     /// Number of threads to use
     #[arg(short, long, default_value_t = 4)]
-    pub num_threads: usize,
+    pub threads: usize,
 
-    /// Sort order to display directory content
+    /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = Order::None)]
-    order: Order,
+    sort: Order,
 
     /// Whether to show hidden files; disabled by default
-    #[arg(short, long)]
-    pub show_hidden: bool,
+    #[arg(short ='H', long)]
+    pub hidden: bool,
 
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
@@ -65,15 +65,15 @@ impl Clargs {
         }
     }
 
-    /// The order used for printing.
-    pub fn order(&self) -> Order {
-        self.order
+    /// The sort-order used for printing.
+    pub fn sort(&self) -> Order {
+        self.sort
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
     /// sizes; this just determines how much to print.
-    pub fn max_depth(&self) -> Option<usize> {
-        self.max_depth
+    pub fn level(&self) -> Option<usize> {
+        self.level
     }
 
     /// Ignore file overrides.
@@ -109,8 +109,8 @@ impl TryFrom<&Clargs> for WalkParallel {
             .follow_links(false)
             .overrides(clargs.overrides()?)
             .git_ignore(!clargs.ignore_git_ignore)
-            .hidden(!clargs.show_hidden)
-            .threads(clargs.num_threads)
+            .hidden(!clargs.hidden)
+            .threads(clargs.threads)
             .build_parallel())
     }
 }
