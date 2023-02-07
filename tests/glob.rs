@@ -5,7 +5,13 @@ use strip_ansi_escapes::strip as strip_ansi_escapes;
 
 fn run_cmd(args: &[&str]) -> String {
     let mut cmd = Command::new("cargo");
-    cmd.arg("run").arg("--").arg("tests/data");
+    cmd.arg("run")
+        .arg("--")
+        .arg("tests/data")
+        .arg("--num-threads")
+        .arg("1")
+        .arg("--order")
+        .arg("filename");
 
     for arg in args {
         cmd.arg(arg);
@@ -33,8 +39,8 @@ fn glob() {
         indoc!(
             "
             data (10.00 B)
-            ├─ b.txt (5.00 B)
             ├─ a.txt (5.00 B)
+            ├─ b.txt (5.00 B)
             └─ nested"
         )
     )
@@ -61,8 +67,8 @@ fn glob_case_insensitive() {
         indoc!(
             "
             data (10.00 B)
-            ├─ b.txt (5.00 B)
             ├─ a.txt (5.00 B)
+            ├─ b.txt (5.00 B)
             └─ nested"
         )
     )
@@ -75,8 +81,8 @@ fn iglob() {
         indoc!(
             "
             data (10.00 B)
-            ├─ b.txt (5.00 B)
             ├─ a.txt (5.00 B)
+            ├─ b.txt (5.00 B)
             └─ nested"
         )
     )
