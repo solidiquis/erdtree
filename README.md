@@ -47,6 +47,8 @@ Options:
 ### Releases
 Binaries for common architectures can be downloaded from latest releases.
 
+Other means of installation to come.
+
 ## Disambiguations
 
 ### Disk Size
