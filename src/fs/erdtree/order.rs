@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Order {
     /// Sort entries by file name
-    Filename,
+    Name,
 
     /// Sort entries by size in descending order
     Size,
@@ -19,7 +19,7 @@ impl Order {
     /// Yields function pointer to the appropriate `Node` comparator.
     pub fn comparator(&self) -> Option<fn(a: &Node, b: &Node) -> Ordering> {
         match self {
-            Self::Filename => Some(Self::name_comparator),
+            Self::Name => Some(Self::name_comparator),
             Self::Size => Some(Self::size_comparator),
             _ => None,
         }

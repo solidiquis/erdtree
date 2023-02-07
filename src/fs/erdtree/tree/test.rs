@@ -35,7 +35,7 @@ fn test_size(tmp_dir: &TempDir) {
 }
 
 fn test_alphabetical_ordering(tmp_dir: &TempDir) {
-    let tree = utils::init_tree(tmp_dir, Order::Filename);
+    let tree = utils::init_tree(tmp_dir, Order::Name);
 
     let file_names = tree
         .root()
