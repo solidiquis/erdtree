@@ -16,7 +16,7 @@ A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and 
 ## Usage
 ```
 $ et -h
-File tree visualizer and disk usage analyzer.
+erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.
 
 Usage: et [OPTIONS] [DIR]
 
@@ -27,8 +27,8 @@ Options:
   -i, --ignore-git-ignore      Ignore .gitignore; disabled by default
   -l, --level <NUM>            Maximum depth to display
   -t, --threads <THREADS>      Number of threads to use [default: 4]
-  -s, --sort <SORT>            Sort-order to display directory content [default: none] [possible values: filename, size, none]
-  -H, --hidden                 Whether to show hidden files; disabled by default
+  -s, --sort <SORT>            Sort-order to display directory content [default: none] [possible values: name, size, none]
+  -H, --hidden                 Show hidden files; disabled by default
   -g, --glob <GLOB>            Include or exclude files using glob patterns
       --iglob <IGLOB>          Include or exclude files using glob patterns; case insensitive
       --glob-case-insensitive  Process all glob patterns case insensitively

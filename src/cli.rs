@@ -17,7 +17,7 @@ use std::{
 #[command(name = "Erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
 #[command(version = "1.0")]
-#[command(about = "File tree visualizer and disk usage analyzer.", long_about = None)]
+#[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Clargs {
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
@@ -38,7 +38,7 @@ pub struct Clargs {
     #[arg(short, long, value_enum, default_value_t = Order::None)]
     sort: Order,
 
-    /// Whether to show hidden files; disabled by default
+    /// Show hidden files; disabled by default
     #[arg(short ='H', long)]
     pub hidden: bool,
 
