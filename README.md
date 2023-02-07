@@ -88,7 +88,7 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 #### erdtree
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree.png" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et.png" alt="failed to load png" />
 </p>
 
 ## Rules for Contributing and Feature Requests
