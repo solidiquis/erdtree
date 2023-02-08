@@ -60,6 +60,7 @@ Additionally:
 - A directory will have a size equal to the sum of the sizes of all of its entries. The size of the directory itself is negligble and isn't taken into account.
 - Files other than directories and regular files (symbolic links, named pipes, sockets, etc.) appear but their memory sizes are not reported.
 - Symbolic links to directories appear but are not traversed; their sizes are also not reported
+- Hidden files, files excluded by `.gitignore`, and files excluded via globbing will be ommitted from the total memory size of their parent directories.
 
 ### Files Without Read Permissions
 
