@@ -9,6 +9,23 @@ A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and 
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_demo.gif?raw=true" alt="failed to load gif" />
 </p>
 
+## Table of Contents
+
+* [Description](#description)
+* [Usage](#usage)
+* [Installation](#installation)
+* [Disambiguations](#disambiguations)
+  - [Disk Size](#disk-size)
+  - [File Without Read Permissions](#files-without-read-permissions)
+  - [File Coloring](#file-coloring)
+  - [tree command](#tree-command)
+  - [Advantages over exa --tree](#advantages-over-exa---tree)
+* [Rules for Contributing and Feature Requests](#rules-for-contributing-and-feature-requests)
+* [Special Thanks](#special-thanks)
+* [Questions you might have](#questions-you-might-have)
+
+## Description
+
 **erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:
 - offers a minimal and user-friendly CLI
 - respects hidden files and `.gitignore` rules by default
