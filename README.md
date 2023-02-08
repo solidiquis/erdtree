@@ -6,7 +6,7 @@
 A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_demo.gif" alt="failed to load gif" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_demo.gif?raw=true" alt="failed to load gif" />
 </p>
 
 **erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:
@@ -88,12 +88,12 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 #### exa
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/exa.png" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/exa.png?raw=true" alt="failed to load png" />
 </p>
 
 #### erdtree
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et.png" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et.png?raw=true" alt="failed to load png" />
 </p>
 
 ## Rules for Contributing and Feature Requests
