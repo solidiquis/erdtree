@@ -2,7 +2,7 @@
 A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo_erdtree.gif" alt="failed to load gif" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_demo.gif" alt="failed to load gif" />
 </p>
 
 **erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:

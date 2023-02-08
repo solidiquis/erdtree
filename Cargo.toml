@@ -4,13 +4,15 @@ version = "1.0.0"
 edition = "2021"
 authors = ["Benjamin Nguyen <benjamin.van.nguyen@gmail.com>"]
 description = """
-erdtree is vibrant multi-threaded filetree visualizer and disk usage analyzer
+erdtree (et) is vibrant multi-threaded filetree visualizer and disk usage analyzer
 that respects .gitignore and hidden file rules by default.
 """
 documentation = "https://github.com/solidiquis/erdtree"
 homepage = "https://github.com/solidiquis/erdtree"
 repository = "https://github.com/solidiquis/erdtree"
 keywords = ["tree", "commandline", "command-line", "du"]
+exclude = ["assets/*"]
+readme = "README.md"
 license = "MIT"
 rust-version = "1.65"
 
