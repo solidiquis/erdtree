@@ -1,7 +1,7 @@
 # erdtree (et)
 
 [![Build status](https://github.com/solidiquis/erdtree/actions/workflows/ci.yml/badge.svg)](https://github.com/solidiquis/erdtree/actions)
-![Current release](https://img.shields.io/github/v/release/solidiquis/erdtree)
+[![Crates.io](https://img.shields.io/crates/v/erdtree.svg)](https://crates.io/crates/erdtree)
 
 A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
 
