@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
 
-name: Erdtree
+name: ci
 
 jobs:
   check:
