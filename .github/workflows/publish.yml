@@ -35,6 +35,10 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             use-cross: false
+          
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            use-cross: false
 
     steps:
     - name: Checkout repository
@@ -53,6 +57,17 @@ jobs:
         profile: minimal
         override: true
         target: ${{ matrix.target }}
+    
+    - name: rust cache restore
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
 
 
     - name: Build
@@ -61,47 +76,23 @@ jobs:
         use-cross: ${{ matrix.use-cross }}
         command: build
         args: --target ${{ matrix.target }} --release --locked
-
-    - name: Strip binary
-      if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
-      run: strip target/${{ matrix.target }}/release/et
-
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/et
-        asset_name: et-${{GITHUB_REF#*/tags/}}-${{ matrix.target }}
-        tag: ${{ github.ref }}
-  
-  x86_64-pc-windows-msvc:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-      
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: false
-          target: x86_64-pc-windows-msvc
-      
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.use-cross }}
-          command: build
-          args: --release --locked
-
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v1-release
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/et.exe
-          asset_name: et-x86_64-pc-windows-msvc.exe
-          tag: ${{ github.ref }}
     
+    - name: Upload files (only for Mac/Linux)
+      if: matrix.target != 'x86_64-pc-windows-msvc'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOADTOOL_ISPRERELEASE: true
+      run: |
+        curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
+        mv target/${{ matrix.target }}/release/et et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+    
+    - name: Upload files (only for Windows)
+      if: matrix.target == 'x86_64-pc-windows-msvc'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOADTOOL_ISPRERELEASE: true
+      run: |
+        curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
+        mv target/${{ matrix.target }}/release/et.exe et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.exe
+        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.exe
