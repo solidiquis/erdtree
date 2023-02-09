@@ -75,10 +75,6 @@ jobs:
         command: build
         args: --target ${{ matrix.target }} --release --locked
     
-    - name: Set the version
-      id: version
-      run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-    
     - name: Upload files (only for Mac/Linux)
       if: matrix.target != 'x86_64-pc-windows-msvc'
       env:
