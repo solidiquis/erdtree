@@ -2,8 +2,6 @@ name: Test App With Cache
 
 on:
   workflow_dispatch: {}
-env:
-  TAG_NAME: "v1.0.1"
 
 jobs:
   publish:
@@ -66,7 +64,7 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          src-tauri/target/
+          target/
         key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
 
 
@@ -76,24 +74,31 @@ jobs:
         use-cross: ${{ matrix.use-cross }}
         command: build
         args: --target ${{ matrix.target }} --release --locked
-
-    - name: Upload binaries to release (only for Mac/Linux)
-      if: matrix.os != 'windows-latest'
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/et
-        asset_name: et-${TAG_NAME}-${{ matrix.target }}
-        tag: ${TAG_NAME}
     
-    - name: Upload binaries to release (only for Windows)
-      if: matrix.os == 'windows-latest'
-      uses: svenstaro/upload-release-action@v1-release
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/et.exe
-        asset_name: et-${TAG_NAME}-${{ matrix.target }}.exe
-        tag: ${TAG_NAME}
+    - name: Set the version
+      id: version
+      run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+    
+    - name: Upload files (only for Mac/Linux)
+      if: matrix.target != 'x86_64-pc-windows-msvc'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOADTOOL_ISPRERELEASE: true
+      run: |
+        curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
+        mv target/${{ matrix.target }}/release/et et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+    
+    - name: Upload files (only for Windows)
+      if: matrix.target == 'x86_64-pc-windows-msvc'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        UPLOADTOOL_ISPRERELEASE: true
+      run: |
+        curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
+        mv target/${{ matrix.target }}/release/et.exe et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.exe
+        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.exe
+    
     
     - name: rust cache store
       uses: actions/cache/save@v3
@@ -103,37 +108,5 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          src-tauri/target/
+          target/
         key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-  
-  # x86_64-pc-windows-msvc:
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v2
-  #       with:
-  #         fetch-depth: 1
-      
-  #     - name: Install Rust
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: stable
-  #         profile: minimal
-  #         override: false
-  #         target: x86_64-pc-windows-msvc
-      
-  #     - name: Build
-  #       uses: actions-rs/cargo@v1
-  #       with:
-  #         use-cross: ${{ matrix.use-cross }}
-  #         command: build
-  #         args: --release --locked
-
-  #     - name: Upload binaries to release
-  #       uses: svenstaro/upload-release-action@v1-release
-  #       with:
-  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
-  #         file: target/release/et.exe
-  #         asset_name: et-x86_64-pc-windows-msvc.exe
-  #         tag: ${{ github.ref }}
-    
