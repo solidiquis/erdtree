@@ -19,6 +19,14 @@ jobs:
           - os: ubuntu-20.04
             target: x86_64-unknown-linux-musl
             use-cross: false
+          
+          - os: ubuntu-20.04
+            target: aarch64-unknown-linux-gnu
+            use-cross: true
+
+          - os: ubuntu-20.04
+            target: aarch64-unknown-linux-musl
+            use-cross: true
 
           - os: macos-latest
             target: x86_64-apple-darwin
@@ -63,7 +71,7 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: target/${{ matrix.target }}/release/et
-        asset_name: et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+        asset_name: et-${{GITHUB_REF#*/tags/}}-${{ matrix.target }}
         tag: ${{ github.ref }}
   
   x86_64-pc-windows-msvc:
@@ -97,52 +105,3 @@ jobs:
           asset_name: et-x86_64-pc-windows-msvc.exe
           tag: ${{ github.ref }}
     
-
-
-  aarch64-unknown-linux-gnu-:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-
-      - name: Set the version
-        id: version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-      
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: aarch64-unknown-linux-gnu
-
-      - uses: uraimo/run-on-arch-action@v2.3.0
-        name: build native modules using another arch
-        with:
-          arch: aarch64
-          distro: ubuntu20.04
-          githubToken: ${{ github.token }}
-          dockerRunArgs: |
-            --volume "${PWD}:/build"
-            --volume "/home/runner:/home/runner"
-          install: |
-            apt-get update && apt-get install -y gnupg2 && apt-get install curl gcc g++ make -y
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-            source "$HOME/.cargo/env"
-          run: |
-            uname -a
-            chmod -R 777 /build
-            source "$HOME/.cargo/env"
-            cargo build --release --locked
-
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v1-release
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/et
-          asset_name: et-${{ steps.version.outputs.VERSION }}-aarch64-unknown-linux-gnu
-          tag: ${{ github.ref }}
-
