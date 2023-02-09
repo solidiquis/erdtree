@@ -61,7 +61,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           src-tauri/target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-${{ runner.target }}-${{ hashFiles('**/Cargo.lock') }}
 
 
     - name: Build
@@ -92,7 +92,7 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           src-tauri/target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-${{ runner.target }}-${{ hashFiles('**/Cargo.lock') }}
   
   x86_64-pc-windows-msvc:
     runs-on: windows-latest
