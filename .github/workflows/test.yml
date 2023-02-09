@@ -76,8 +76,8 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: target/${{ matrix.target }}/release/et
-        asset_name: et-${{ github.ref }}-${{ matrix.target }}
-        tag: ${{ github.ref }}
+        asset_name: et-test-${{ matrix.target }}
+        tag: test
     
     - name: rust cache store
       uses: actions/cache/save@v3
