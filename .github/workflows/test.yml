@@ -80,7 +80,7 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: target/${{ matrix.target }}/release/et
-        asset_name: et-${{ GITHUB_REF#*/tags/ }}-${{ matrix.target }}
+        asset_name: et-${{ github.ref }}-${{ matrix.target }}
         tag: ${{ github.ref }}
     
     - name: rust cache store
