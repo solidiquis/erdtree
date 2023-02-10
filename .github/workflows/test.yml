@@ -1,9 +1,7 @@
-name: Publish
+name: Test App With Cache
 
 on:
-  push:
-    tags:
-      - '*'
+  workflow_dispatch: {}
 
 jobs:
   publish:
@@ -84,8 +82,8 @@ jobs:
         UPLOADTOOL_ISPRERELEASE: true
       run: |
         curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
-        mv target/${{ matrix.target }}/release/et et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
-        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+        mv target/${{ matrix.target }}/release/et et-${{ matrix.target }}
+        bash upload.sh et-${{ matrix.target }}
     
     - name: Upload files (only for Windows)
       if: matrix.target == 'x86_64-pc-windows-msvc'
@@ -94,5 +92,17 @@ jobs:
         UPLOADTOOL_ISPRERELEASE: true
       run: |
         curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
-        mv target/${{ matrix.target }}/release/et.exe et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.exe
-        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.exe
+        mv target/${{ matrix.target }}/release/et.exe et-${{ matrix.target }}.exe
+        bash upload.sh et-${{ matrix.target }}.exe
+    
+    
+    - name: rust cache store
+      uses: actions/cache/save@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
