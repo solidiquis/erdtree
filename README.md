@@ -125,7 +125,7 @@ Feature requests in the form of issues in general are welcome.
 ## Special thanks
 
 - to Reddit user `/u/johnm` for suggesting that different SI prefixes be colored differently for better visual feedback.
-- to Reddit user `/u/lucca_huguet` for suggesting that the compiled `erdtree` binary be shorted to `et`.
+- to Reddit user `/u/lucca_huguet` (can be found as [luccahuguet](https://github.com/luccahuguet) on Github) for suggesting that the compiled `erdtree` binary be shorted to `et`.
 - to all contributors :]
 
 ## Questions you might have
