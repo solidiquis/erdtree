@@ -64,7 +64,7 @@ impl Tree {
         let (tx, rx) = channel::unbounded::<Node>();
 
         // Receives directory entries from the workers used for parallel traversal to construct the
-        // components needed to assmemble a `Tree`.
+        // components needed to assemble a `Tree`.
         let tree_components = thread::spawn(move || -> TreeResult<TreeComponents> {
             let mut branches: Branches = HashMap::new();
             let mut root = None;

@@ -8,6 +8,7 @@ use std::{
     convert::From,
     error::Error as StdError,
     fmt::{self, Display, Formatter},
+    fs,
     path::{Path, PathBuf},
     usize,
 };
@@ -105,7 +106,12 @@ impl TryFrom<&Clargs> for WalkParallel {
     type Error = Error;
 
     fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
-        Ok(WalkBuilder::new(clargs.dir())
+        let root = clargs.dir();
+
+        fs::metadata(root)
+            .map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+
+        Ok(WalkBuilder::new(root)
             .follow_links(false)
             .overrides(clargs.overrides()?)
             .git_ignore(!clargs.ignore_git_ignore)
@@ -119,12 +125,14 @@ impl TryFrom<&Clargs> for WalkParallel {
 #[derive(Debug)]
 pub enum Error {
     InvalidGlobPatterns(ignore::Error),
+    DirNotFound(String)
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Error::InvalidGlobPatterns(e) => write!(f, "Invalid glob patterns: {e}"),
+            Error::DirNotFound(e) => write!(f, "{e}"),
         }
     }
 }

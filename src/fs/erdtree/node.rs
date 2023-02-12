@@ -95,17 +95,17 @@ impl Node {
         &self.path
     }
 
-    /// Set's `children`.
+    /// Sets `children`.
     pub fn set_children(&mut self, children: Vec<Node>) {
         self.children = Some(children);
     }
 
-    /// Set's `file_size`.
+    /// Sets `file_size`.
     pub fn set_file_size(&mut self, size: u64) {
         self.file_size = Some(size);
     }
 
-    /// Set's 'style'.
+    /// Sets 'style'.
     pub fn style(&self) -> &Style {
         &self.style
     }
