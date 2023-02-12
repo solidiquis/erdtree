@@ -23,26 +23,6 @@ pub struct Clargs {
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Ignore .gitignore; disabled by default
-    #[arg(short, long)]
-    pub ignore_git_ignore: bool,
-
-    /// Maximum depth to display
-    #[arg(short, long, value_name = "NUM")]
-    pub level: Option<usize>,
-
-    /// Number of threads to use
-    #[arg(short, long, default_value_t = 4)]
-    pub threads: usize,
-
-    /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = Order::None)]
-    sort: Order,
-
-    /// Show hidden files; disabled by default
-    #[arg(short ='H', long)]
-    pub hidden: bool,
-
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
     glob: Vec<String>,
@@ -54,6 +34,26 @@ pub struct Clargs {
     /// Process all glob patterns case insensitively
     #[arg(long)]
     glob_case_insensitive: bool,
+
+    /// Show hidden files; disabled by default
+    #[arg(short ='H', long)]
+    pub hidden: bool,
+
+    /// Ignore .gitignore; disabled by default
+    #[arg(short, long)]
+    pub ignore_git_ignore: bool,
+
+    /// Maximum depth to display
+    #[arg(short, long, value_name = "NUM")]
+    pub level: Option<usize>,
+
+    /// Sort-order to display directory content
+    #[arg(short, long, value_enum, default_value_t = Order::None)]
+    sort: Order,
+
+    /// Number of threads to use
+    #[arg(short, long, default_value_t = 4)]
+    pub threads: usize,
 }
 
 impl Clargs {
