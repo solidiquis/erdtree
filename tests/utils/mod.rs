@@ -4,10 +4,7 @@ use strip_ansi_escapes::strip as strip_ansi_escapes;
 
 pub fn run_cmd(args: &[&str]) -> String {
     let mut cmd = Command::new("cargo");
-    cmd.arg("run")
-        .arg("--")
-        .arg("--threads")
-        .arg("1");
+    cmd.arg("run").arg("--").arg("--threads").arg("1");
 
     for arg in args {
         cmd.arg(arg);
@@ -28,4 +25,3 @@ pub fn run_cmd(args: &[&str]) -> String {
         .trim()
         .to_string()
 }
-

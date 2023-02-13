@@ -15,7 +15,9 @@ mod test {
 
         symlink(target, &link)?;
 
-        let link_canonical = link.canonicalize().map(|c| c.to_string_lossy().into_owned())?;
+        let link_canonical = link
+            .canonicalize()
+            .map(|c| c.to_string_lossy().into_owned())?;
 
         assert_eq!(
             super::utils::run_cmd(&["--sort", "name", "--follow-links", &link_canonical]),

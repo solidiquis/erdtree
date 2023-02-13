@@ -36,7 +36,14 @@ fn glob_negative() {
 #[test]
 fn glob_case_insensitive() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--glob", "*.TXT", "--glob-case-insensitive", "tests/data"]),
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--glob",
+            "*.TXT",
+            "--glob-case-insensitive",
+            "tests/data"
+        ]),
         indoc!(
             "
             data (652.00 B)

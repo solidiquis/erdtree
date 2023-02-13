@@ -36,7 +36,7 @@ pub struct Clargs {
     glob_case_insensitive: bool,
 
     /// Show hidden files; disabled by default
-    #[arg(short ='H', long)]
+    #[arg(short = 'H', long)]
     pub hidden: bool,
 
     /// Ignore .gitignore; disabled by default
@@ -112,8 +112,7 @@ impl TryFrom<&Clargs> for WalkParallel {
     fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
         let root = clargs.dir();
 
-        fs::metadata(root)
-            .map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+        fs::metadata(root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
         Ok(WalkBuilder::new(root)
             .follow_links(clargs.follow_links)
@@ -129,7 +128,7 @@ impl TryFrom<&Clargs> for WalkParallel {
 #[derive(Debug)]
 pub enum Error {
     InvalidGlobPatterns(ignore::Error),
-    DirNotFound(String)
+    DirNotFound(String),
 }
 
 impl Display for Error {

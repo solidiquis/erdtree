@@ -31,11 +31,7 @@ impl Tree {
     pub fn new(walker: WalkParallel, order: Order, level: Option<usize>) -> TreeResult<Self> {
         let root = Self::traverse(walker, &order)?;
 
-        Ok(Self {
-            level,
-            order,
-            root,
-        })
+        Ok(Self { level, order, root })
     }
 
     /// Returns a reference to the root [Node].
@@ -159,7 +155,7 @@ impl Display for Tree {
             children: Iter<Node>,
             base_prefix: &str,
             level: usize,
-            theme: &ui::ThemesMap
+            theme: &ui::ThemesMap,
         ) {
             let mut peekable = children.peekable();
 
@@ -184,7 +180,9 @@ impl Display for Tree {
                     if let Some(iter_children) = child.children() {
                         let mut new_base = base_prefix.to_owned();
 
-                        let new_theme = child.symlink.then(|| ui::get_link_theme()).unwrap_or(theme);
+                        let new_theme = child.symlink
+                            .then(|| ui::get_link_theme())
+                            .unwrap_or(theme);
 
                         if last_entry {
                             new_base.push_str(ui::SEP);

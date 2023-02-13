@@ -27,11 +27,11 @@ pub static LS_COLORS: OnceCell<LsColors> = OnceCell::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
 /// printing of [super::Tree]'s branches.
-pub static THEME: OnceCell<ThemesMap>  = OnceCell::new();
+pub static THEME: OnceCell<ThemesMap> = OnceCell::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
 /// printing of [super::Tree]'s branches for descdendents of symlinks.
-pub static LINK_THEME: OnceCell<ThemesMap>  = OnceCell::new();
+pub static LINK_THEME: OnceCell<ThemesMap> = OnceCell::new();
 
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
