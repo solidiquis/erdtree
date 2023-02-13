@@ -6,7 +6,6 @@ pub fn run_cmd(args: &[&str]) -> String {
     let mut cmd = Command::new("cargo");
     cmd.arg("run")
         .arg("--")
-        .arg("tests/data")
         .arg("--threads")
         .arg("1");
 
@@ -29,3 +28,4 @@ pub fn run_cmd(args: &[&str]) -> String {
         .trim()
         .to_string()
 }
+

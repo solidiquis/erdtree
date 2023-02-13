@@ -51,6 +51,10 @@ pub struct Clargs {
     #[arg(short, long, value_enum, default_value_t = Order::None)]
     sort: Order,
 
+    /// Traverse symlink directories and consider their disk usage; disabled by default
+    #[arg(short = 'S', long)]
+    follow_links: bool,
+
     /// Number of threads to use
     #[arg(short, long, default_value_t = 4)]
     pub threads: usize,
@@ -112,7 +116,7 @@ impl TryFrom<&Clargs> for WalkParallel {
             .map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
         Ok(WalkBuilder::new(root)
-            .follow_links(false)
+            .follow_links(clargs.follow_links)
             .overrides(clargs.overrides()?)
             .git_ignore(!clargs.ignore_git_ignore)
             .hidden(!clargs.hidden)

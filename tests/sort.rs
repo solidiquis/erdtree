@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn sort_name() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name"]),
+        utils::run_cmd(&["--sort", "name", "tests/data"]),
         indoc!(
             "
             data (487.00 B)
@@ -22,7 +22,7 @@ fn sort_name() {
 #[test]
 fn sort_size() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "size"]),
+        utils::run_cmd(&["--sort", "size", "tests/data"]),
         indoc!(
             "
             data (487.00 B)

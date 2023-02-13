@@ -6,7 +6,7 @@ use lscolors::Style as LS_Style;
 use std::{
     convert::From,
     fmt::{self, Display, Formatter},
-    fs::FileType,
+    fs::{self, FileType},
     path::{Path, PathBuf},
     slice::Iter,
 };
@@ -18,6 +18,7 @@ use std::{
 pub struct Node {
     pub depth: usize,
     pub file_size: Option<u64>,
+    pub symlink: bool,
     children: Option<Vec<Node>>,
     file_name: String,
     file_type: Option<FileType>,
@@ -30,6 +31,7 @@ impl Node {
     pub fn new(
         depth: usize,
         file_size: Option<u64>,
+        symlink: bool,
         children: Option<Vec<Node>>,
         file_name: String,
         file_type: Option<FileType>,
@@ -39,6 +41,7 @@ impl Node {
         Self {
             children,
             depth,
+            symlink,
             file_name,
             file_size,
             file_type,
@@ -67,14 +70,6 @@ impl Node {
         self.file_type
             .as_ref()
             .map(|ft| ft.is_dir())
-            .unwrap_or(false)
-    }
-
-    /// Returns `true` if node is a symlink.
-    pub fn is_symlink(&self) -> bool {
-        self.file_type
-            .as_ref()
-            .map(|ft| ft.is_symlink())
             .unwrap_or(false)
     }
 
@@ -131,15 +126,23 @@ impl From<DirEntry> for Node {
             .unwrap_or_default();
 
         let mut file_size = None;
+        let mut symlink = false;
 
         if let Some(ref ft) = file_type {
             if ft.is_file() {
-                file_size = metadata.map(|md| md.len())
+                if let Some(md) = metadata {
+                    file_size = Some(md.len());
+                    symlink = md.is_symlink();
+                }
+            } else if ft.is_dir() {
+                symlink = fs::symlink_metadata(&path)
+                    .map(|md| md.is_symlink())
+                    .unwrap_or(false);
             }
         };
 
         Self::new(
-            depth, file_size, children, file_name, file_type, path, style,
+            depth, file_size, symlink, children, file_name, file_type, path, style,
         )
     }
 }

@@ -11,6 +11,9 @@ mod cli;
 /// Filesystem operations.
 mod fs;
 
+/// Common utilities.
+mod utils;
+
 fn main() -> ExitCode {
     if let Err(e) = run() {
         eprintln!("{e}");
@@ -21,7 +24,7 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    erdtree::init_ls_colors();
+    erdtree::tree::ui::init();
     let clargs = Clargs::parse();
     let walker = WalkParallel::try_from(&clargs)?;
     let tree = Tree::new(walker, clargs.sort(), clargs.level())?;

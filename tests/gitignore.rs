@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn gitignore() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--ignore-git-ignore"]),
+        utils::run_cmd(&["--sort", "name", "--ignore-git-ignore", "tests/data"]),
         indoc!(
             "
             data (795.00 B)
@@ -23,7 +23,7 @@ fn gitignore() {
 #[test]
 fn hidden() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--hidden"]),
+        utils::run_cmd(&["--sort", "name", "--hidden", "tests/data"]),
         indoc!(
             "
             data (585.00 B)

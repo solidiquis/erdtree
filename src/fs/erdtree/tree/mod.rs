@@ -10,20 +10,8 @@ use std::{
     thread,
 };
 
-#[cfg(test)]
-mod test;
-
-/// Used for padding between tree branches.
-pub const SEP: &str = "   ";
-
-/// The `│` box drawing character.
-pub const VT: &str = "\x1b[35m\u{2502}\x1b[0m  ";
-
-/// The `└─` box drawing characters.
-pub const UPRT: &str = "\x1b[35m\u{2514}\u{2500}\x1b[0m ";
-
-/// The `├─` box drawing characters.
-pub const VTRT: &str = "\x1b[35m\u{251C}\u{2500}\x1b[0m ";
+/// [ui::LS_COLORS] initialization and ui theme for [Tree].
+pub mod ui;
 
 /// In-memory representation of the root-directory and its contents which respects `.gitignore`.
 #[derive(Debug)]
@@ -157,6 +145,7 @@ impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let root = self.root();
         let level = self.level.unwrap_or(std::usize::MAX);
+        let theme = ui::get_theme();
         let mut output = String::from("");
 
         #[inline]
@@ -170,6 +159,7 @@ impl Display for Tree {
             children: Iter<Node>,
             base_prefix: &str,
             level: usize,
+            theme: &ui::ThemesMap
         ) {
             let mut peekable = children.peekable();
 
@@ -180,9 +170,9 @@ impl Display for Tree {
                     let mut prefix = base_prefix.to_owned();
 
                     if last_entry {
-                        prefix.push_str(UPRT);
+                        prefix.push_str(theme.get("uprt").unwrap());
                     } else {
-                        prefix.push_str(VTRT);
+                        prefix.push_str(theme.get("vtrt").unwrap());
                     }
 
                     extend_output(output, child, &prefix);
@@ -191,16 +181,18 @@ impl Display for Tree {
                         continue;
                     }
 
-                    let mut new_base = base_prefix.to_owned();
-
-                    if child.is_dir() && last_entry {
-                        new_base.push_str(SEP);
-                    } else {
-                        new_base.push_str(VT);
-                    }
-
                     if let Some(iter_children) = child.children() {
-                        traverse(output, iter_children, &new_base, level)
+                        let mut new_base = base_prefix.to_owned();
+
+                        let new_theme = child.symlink.then(|| ui::get_link_theme()).unwrap_or(theme);
+
+                        if last_entry {
+                            new_base.push_str(ui::SEP);
+                        } else {
+                            new_base.push_str(theme.get("vt").unwrap());
+                        }
+
+                        traverse(output, iter_children, &new_base, level, new_theme);
                     }
 
                     continue;
@@ -211,7 +203,7 @@ impl Display for Tree {
 
         extend_output(&mut output, root, "");
         if let Some(iter_children) = root.children() {
-            traverse(&mut output, iter_children, "", level)
+            traverse(&mut output, iter_children, "", level, theme)
         }
 
         write!(f, "{output}")
