@@ -45,14 +45,15 @@ Arguments:
   [DIR]  Root directory to traverse; defaults to current working directory
 
 Options:
-  -i, --ignore-git-ignore      Ignore .gitignore; disabled by default
-  -l, --level <NUM>            Maximum depth to display
-  -t, --threads <THREADS>      Number of threads to use [default: 4]
-  -s, --sort <SORT>            Sort-order to display directory content [default: none] [possible values: name, size, none]
-  -H, --hidden                 Show hidden files; disabled by default
   -g, --glob <GLOB>            Include or exclude files using glob patterns
       --iglob <IGLOB>          Include or exclude files using glob patterns; case insensitive
       --glob-case-insensitive  Process all glob patterns case insensitively
+  -H, --hidden                 Show hidden files; disabled by default
+  -i, --ignore-git-ignore      Ignore .gitignore; disabled by default
+  -l, --level <NUM>            Maximum depth to display
+  -s, --sort <SORT>            Sort-order to display directory content [default: none] [possible values: name, size, none]
+  -S, --follow-links           Traverse symlink directories and consider their disk usage; disabled by default
+  -t, --threads <THREADS>      Number of threads to use [default: 4]
   -h, --help                   Print help (see more with '--help')
   -V, --version                Print version
 ```
