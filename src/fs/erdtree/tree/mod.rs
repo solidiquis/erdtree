@@ -107,33 +107,31 @@ impl Tree {
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
     /// structure. Sorting occurs if specified.
     fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, order: &Order) {
-        let dir_node = branches.remove(current_dir.path()).map(|children| {
-            current_dir.set_children(children);
-            current_dir
+        let current_node = branches.remove(current_dir.path())
+            .map(|children| {
+                current_dir.set_children(children);
+                current_dir
+            })
+            .unwrap();
+
+        let mut dir_size = 0;
+
+        current_node.children_mut().map(|nodes| {
+            nodes.iter_mut().for_each(|node| {
+                if node.is_dir() {
+                    Self::assemble_tree(node, branches, order);
+                }
+                dir_size += node.file_size.unwrap_or(0);
+            })
         });
 
-        if let Some(node) = dir_node {
-            let mut dir_size = 0;
-
-            if let Some(node_iter) = node.children_mut().map(|nodes| nodes.iter_mut()) {
-                node_iter.for_each(|node| {
-                    if node.is_dir() {
-                        Self::assemble_tree(node, branches, order);
-                    }
-                    dir_size += node.file_size.unwrap_or(0);
-                });
-            }
-
-            if dir_size > 0 {
-                node.set_file_size(dir_size)
-            }
-
-            if let Some(func) = order.comparator() {
-                if let Some(nodes) = node.children_mut() {
-                    nodes.sort_by(func)
-                }
-            }
+        if dir_size > 0 {
+            current_node.set_file_size(dir_size)
         }
+
+        order.comparator().map(|func| {
+            current_node.children_mut().map(|nodes| nodes.sort_by(func))
+        });
     }
 }
 
