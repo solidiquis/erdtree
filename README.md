@@ -3,7 +3,7 @@
 [![Build status](https://github.com/solidiquis/erdtree/actions/workflows/ci.yml/badge.svg)](https://github.com/solidiquis/erdtree/actions)
 [![Crates.io](https://img.shields.io/crates/v/erdtree.svg)](https://crates.io/crates/erdtree)
 
-A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
+A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)) had a baby.
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_demo.gif?raw=true" alt="failed to load gif" />
@@ -18,7 +18,8 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   - [Disk Size](#disk-size)
   - [File Without Read Permissions](#files-without-read-permissions)
   - [File Coloring](#file-coloring)
-  - [tree command](#tree-command)
+  - [tree Command](#tree-command)
+  - [Symlink to Directories](#symlink-to-directories)
   - [Advantages over exa --tree](#advantages-over-exa---tree)
 * [Rules for Contributing and Feature Requests](#rules-for-contributing-and-feature-requests)
 * [Special Thanks](#special-thanks)
@@ -93,7 +94,7 @@ Files are printed in ANSI colors specified according to the `LS_COLORS` environm
 
 **Note for MacOS**: MacOS uses the `LSCOLORS` environment variable to determine file colors for the `ls` command which is formatted very differently from `LS_COLORS`. MacOS systems will fall back on the aforementioned default value unless the user defines their own `LS_COLORS` environment variable.
 
-### `tree` command
+### `tree` Command
 
 This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. The basic idea is the same: Display the file-tree of the specified directory. There are, however, key fundamental differences under the hood with regard to how file sizes are computed, traversal method, hidden files and `.gitignore` rules, and printing.
 
