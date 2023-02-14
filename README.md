@@ -19,7 +19,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   - [File Without Read Permissions](#files-without-read-permissions)
   - [File Coloring](#file-coloring)
   - [tree Command](#tree-command)
-  - [Symlinks to Directories](#symlink-to-directories)
+  - [Symlinks to Directories](#symlinks-to-directories)
   - [Advantages over exa --tree](#advantages-over-exa---tree)
 * [Rules for Contributing and Feature Requests](#rules-for-contributing-and-feature-requests)
 * [Special Thanks](#special-thanks)
