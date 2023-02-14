@@ -8,6 +8,7 @@ use std::{
     convert::From,
     error::Error as StdError,
     fmt::{self, Display, Formatter},
+    fs,
     path::{Path, PathBuf},
     usize,
 };
@@ -22,26 +23,6 @@ pub struct Clargs {
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Ignore .gitignore; disabled by default
-    #[arg(short, long)]
-    pub ignore_git_ignore: bool,
-
-    /// Maximum depth to display
-    #[arg(short, long, value_name = "NUM")]
-    pub level: Option<usize>,
-
-    /// Number of threads to use
-    #[arg(short, long, default_value_t = 4)]
-    pub threads: usize,
-
-    /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = Order::None)]
-    sort: Order,
-
-    /// Show hidden files; disabled by default
-    #[arg(short ='H', long)]
-    pub hidden: bool,
-
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
     glob: Vec<String>,
@@ -53,6 +34,30 @@ pub struct Clargs {
     /// Process all glob patterns case insensitively
     #[arg(long)]
     glob_case_insensitive: bool,
+
+    /// Show hidden files; disabled by default
+    #[arg(short = 'H', long)]
+    pub hidden: bool,
+
+    /// Ignore .gitignore; disabled by default
+    #[arg(short, long)]
+    pub ignore_git_ignore: bool,
+
+    /// Maximum depth to display
+    #[arg(short, long, value_name = "NUM")]
+    pub level: Option<usize>,
+
+    /// Sort-order to display directory content
+    #[arg(short, long, value_enum, default_value_t = Order::None)]
+    sort: Order,
+
+    /// Traverse symlink directories and consider their disk usage; disabled by default
+    #[arg(short = 'S', long)]
+    follow_links: bool,
+
+    /// Number of threads to use
+    #[arg(short, long, default_value_t = 4)]
+    pub threads: usize,
 }
 
 impl Clargs {
@@ -105,8 +110,12 @@ impl TryFrom<&Clargs> for WalkParallel {
     type Error = Error;
 
     fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
-        Ok(WalkBuilder::new(clargs.dir())
-            .follow_links(false)
+        let root = clargs.dir();
+
+        fs::metadata(root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+
+        Ok(WalkBuilder::new(root)
+            .follow_links(clargs.follow_links)
             .overrides(clargs.overrides()?)
             .git_ignore(!clargs.ignore_git_ignore)
             .hidden(!clargs.hidden)
@@ -119,12 +128,14 @@ impl TryFrom<&Clargs> for WalkParallel {
 #[derive(Debug)]
 pub enum Error {
     InvalidGlobPatterns(ignore::Error),
+    DirNotFound(String),
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Error::InvalidGlobPatterns(e) => write!(f, "Invalid glob patterns: {e}"),
+            Error::DirNotFound(e) => write!(f, "{e}"),
         }
     }
 }

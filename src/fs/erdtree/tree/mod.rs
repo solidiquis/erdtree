@@ -10,20 +10,8 @@ use std::{
     thread,
 };
 
-#[cfg(test)]
-mod test;
-
-/// Used for padding between tree branches.
-pub const SEP: &str = "   ";
-
-/// The `│` box drawing character.
-pub const VT: &str = "\x1b[35m\u{2502}\x1b[0m  ";
-
-/// The `└─` box drawing characters.
-pub const UPRT: &str = "\x1b[35m\u{2514}\u{2500}\x1b[0m ";
-
-/// The `├─` box drawing characters.
-pub const VTRT: &str = "\x1b[35m\u{251C}\u{2500}\x1b[0m ";
+/// [ui::LS_COLORS] initialization and ui theme for [Tree].
+pub mod ui;
 
 /// In-memory representation of the root-directory and its contents which respects `.gitignore`.
 #[derive(Debug)]
@@ -43,11 +31,7 @@ impl Tree {
     pub fn new(walker: WalkParallel, order: Order, level: Option<usize>) -> TreeResult<Self> {
         let root = Self::traverse(walker, &order)?;
 
-        Ok(Self {
-            level,
-            order,
-            root,
-        })
+        Ok(Self { level, order, root })
     }
 
     /// Returns a reference to the root [Node].
@@ -64,7 +48,7 @@ impl Tree {
         let (tx, rx) = channel::unbounded::<Node>();
 
         // Receives directory entries from the workers used for parallel traversal to construct the
-        // components needed to assmemble a `Tree`.
+        // components needed to assemble a `Tree`.
         let tree_components = thread::spawn(move || -> TreeResult<TreeComponents> {
             let mut branches: Branches = HashMap::new();
             let mut root = None;
@@ -123,33 +107,31 @@ impl Tree {
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
     /// structure. Sorting occurs if specified.
     fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, order: &Order) {
-        let dir_node = branches.remove(current_dir.path()).map(|children| {
-            current_dir.set_children(children);
-            current_dir
+        let current_node = branches.remove(current_dir.path())
+            .map(|children| {
+                current_dir.set_children(children);
+                current_dir
+            })
+            .unwrap();
+
+        let mut dir_size = 0;
+
+        current_node.children_mut().map(|nodes| {
+            nodes.iter_mut().for_each(|node| {
+                if node.is_dir() {
+                    Self::assemble_tree(node, branches, order);
+                }
+                dir_size += node.file_size.unwrap_or(0);
+            })
         });
 
-        if let Some(node) = dir_node {
-            let mut dir_size = 0;
-
-            if let Some(node_iter) = node.children_mut().map(|nodes| nodes.iter_mut()) {
-                node_iter.for_each(|node| {
-                    if node.is_dir() {
-                        Self::assemble_tree(node, branches, order);
-                    }
-                    dir_size += node.file_size.unwrap_or(0);
-                });
-            }
-
-            if dir_size > 0 {
-                node.set_file_size(dir_size)
-            }
-
-            if let Some(func) = order.comparator() {
-                if let Some(nodes) = node.children_mut() {
-                    nodes.sort_by(func)
-                }
-            }
+        if dir_size > 0 {
+            current_node.set_file_size(dir_size)
         }
+
+        order.comparator().map(|func| {
+            current_node.children_mut().map(|nodes| nodes.sort_by(func))
+        });
     }
 }
 
@@ -157,6 +139,7 @@ impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let root = self.root();
         let level = self.level.unwrap_or(std::usize::MAX);
+        let theme = ui::get_theme();
         let mut output = String::from("");
 
         #[inline]
@@ -170,6 +153,7 @@ impl Display for Tree {
             children: Iter<Node>,
             base_prefix: &str,
             level: usize,
+            theme: &ui::ThemesMap,
         ) {
             let mut peekable = children.peekable();
 
@@ -180,9 +164,9 @@ impl Display for Tree {
                     let mut prefix = base_prefix.to_owned();
 
                     if last_entry {
-                        prefix.push_str(UPRT);
+                        prefix.push_str(theme.get("uprt").unwrap());
                     } else {
-                        prefix.push_str(VTRT);
+                        prefix.push_str(theme.get("vtrt").unwrap());
                     }
 
                     extend_output(output, child, &prefix);
@@ -191,16 +175,20 @@ impl Display for Tree {
                         continue;
                     }
 
-                    let mut new_base = base_prefix.to_owned();
-
-                    if child.is_dir() && last_entry {
-                        new_base.push_str(SEP);
-                    } else {
-                        new_base.push_str(VT);
-                    }
-
                     if let Some(iter_children) = child.children() {
-                        traverse(output, iter_children, &new_base, level)
+                        let mut new_base = base_prefix.to_owned();
+
+                        let new_theme = child.symlink
+                            .then(|| ui::get_link_theme())
+                            .unwrap_or(theme);
+
+                        if last_entry {
+                            new_base.push_str(ui::SEP);
+                        } else {
+                            new_base.push_str(theme.get("vt").unwrap());
+                        }
+
+                        traverse(output, iter_children, &new_base, level, new_theme);
                     }
 
                     continue;
@@ -211,7 +199,7 @@ impl Display for Tree {
 
         extend_output(&mut output, root, "");
         if let Some(iter_children) = root.children() {
-            traverse(&mut output, iter_children, "", level)
+            traverse(&mut output, iter_children, "", level, theme)
         }
 
         write!(f, "{output}")
