@@ -3,7 +3,7 @@
 [![Build status](https://github.com/solidiquis/erdtree/actions/workflows/ci.yml/badge.svg)](https://github.com/solidiquis/erdtree/actions)
 [![Crates.io](https://img.shields.io/crates/v/erdtree.svg)](https://crates.io/crates/erdtree)
 
-A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
+A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if `tree` and `du` had a baby.
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_demo.gif?raw=true" alt="failed to load gif" />
@@ -32,7 +32,6 @@ A modern, vibrant (but not overly), and multi-threaded file-tree visualizer and 
 - displays file sizes in human-readable format by default
 - traverses directories in a parallel manner (4 threads by default)
 - displays files using ANSI colors by default
-
 
 ## Usage
 ```
@@ -80,8 +79,8 @@ using SI units rather than binary units. As such you can expect `1KB = 1000B` an
 
 Additionally:
 - A directory will have a size equal to the sum of the sizes of all of its entries. The size of the directory itself is negligble and isn't taken into account.
-- Files other than directories and regular files (symbolic links, named pipes, sockets, etc.) appear but their memory sizes are not reported.
-- Symbolic links to directories appear but are not traversed; their sizes are also not reported
+- Files other than directories and regular files (symbolic links, named pipes, sockets, etc.) appear but their memory sizes are not reported as they are negligible.
+- Symbolic links to directories appear but are not traversed nor are their sizes reported by default.
 - Hidden files, files excluded by `.gitignore`, and files excluded via globbing will be ommitted from the total memory size of their parent directories.
 
 ### Files Without Read Permissions
@@ -97,6 +96,14 @@ Files are printed in ANSI colors specified according to the `LS_COLORS` environm
 ### `tree` command
 
 This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. The basic idea is the same: Display the file-tree of the specified directory. There are, however, key fundamental differences under the hood with regard to how file sizes are computed, traversal method, hidden files and `.gitignore` rules, and printing.
+
+### Symlinks to Directories
+
+Symlinks to directories are not traversed nor are their disk usages reported by default. `-S, --follow-links` enables symlink traversal and reports their disk usages and when printed descendents of the symlink target will have branches of a different color.
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlink.png?raw=true" alt="failed to load png" />
+</p>
 
 ### Advantages over `exa --tree`
 
