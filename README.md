@@ -86,7 +86,7 @@ Additionally:
 
 ### Files Without Read Permissions
 
-Files that don't have read persmissions will appear but won't have their disk sizes reported. If they are directories they will not be traversed. Additionally, their size will not be included in their parent directory's total.
+Files that don't have read permissions will appear but won't have their disk sizes reported. If they are directories they will not be traversed. Additionally, their size will not be included in their parent directory's total.
 
 ### File Coloring
 
