@@ -20,6 +20,7 @@ Did a complete rewrite with emphasis on an intuitive interface and performance. 
 
 ### What changed
 - `-S, --follow-links` added to give option to traverse symlinks to directories. If enabled the disk usage of the target directory is considered; additionally, descendents of symlink target directory have different color branches.
+- CLI options in help text alphabetized with the exception of `-h, --help` and `-V, --version`.
 - Minor refactors for clarity and organization.
 - More comprehensive test coverage.
 
