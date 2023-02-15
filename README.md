@@ -63,7 +63,7 @@ Options:
 ### Cargo
 
 1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
-2. `$ cargo install --tag v1.1 --git https://github.com/solidiquis/erdtree`
+2. `$ cargo install --tag v1.1.0 --git https://github.com/solidiquis/erdtree`
 3. The executable should then be located in `$HOME/.cargo/bin/`.
 
 ### Releases
