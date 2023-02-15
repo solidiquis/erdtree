@@ -1,4 +1,4 @@
-use lscolors::Color;
+use ansi_term::Color;
 use std::fmt::{self, Display, Formatter};
 
 /// Responsible for displaying bytes in human-readable format using the largest appropriate SI
@@ -41,27 +41,13 @@ impl Display for FileSize {
         let log = fbytes.log(10.0);
 
         let output = if log < 3.0 {
-            Color::BrightCyan
-                .to_ansi_term_color()
-                .paint(format!("{:.2} {}", fbytes, Prefix::Base))
+            Color::Cyan.paint(format!("{:.2} {}", fbytes, Prefix::Base))
         } else if (3.0..6.0).contains(&log) {
-            Color::BrightYellow.to_ansi_term_color().paint(format!(
-                "{:.2} {}",
-                fbytes / 1_000.0,
-                Prefix::Kilo
-            ))
+            Color::Yellow.paint(format!("{:.2} {}", fbytes / 1_000.0, Prefix::Kilo))
         } else if (6.0..9.0).contains(&log) {
-            Color::BrightGreen.to_ansi_term_color().paint(format!(
-                "{:.2} {}",
-                fbytes / 1_000_000.0,
-                Prefix::Mega
-            ))
+            Color::Green.paint(format!("{:.2} {}", fbytes / 1_000_000.0, Prefix::Mega))
         } else {
-            Color::BrightRed.to_ansi_term_color().paint(format!(
-                "{:.2} {}",
-                fbytes / 1_000_000_000.0,
-                Prefix::Giga
-            ))
+            Color::Red.paint(format!("{:.2} {}", fbytes / 1_000_000_000.0, Prefix::Giga))
         };
 
         write!(f, "{output}")
@@ -73,39 +59,24 @@ mod test {
     #[test]
     fn test_file_size_display() {
         use super::FileSize;
-        use lscolors::Color;
+        use ansi_term::Color;
 
         let b = FileSize::new(100);
-        assert_eq!(
-            format!("{b}"),
-            format!(
-                "{}",
-                Color::BrightCyan.to_ansi_term_color().paint("100.00 B")
-            )
-        );
+        assert_eq!(format!("{b}"), format!("{}", Color::Cyan.paint("100.00 B")));
 
         let kb = FileSize::new(1_100);
         assert_eq!(
             format!("{kb}"),
-            format!(
-                "{}",
-                Color::BrightYellow.to_ansi_term_color().paint("1.10 KB")
-            )
+            format!("{}", Color::Yellow.paint("1.10 KB"))
         );
 
         let mb = FileSize::new(1_100_000);
         assert_eq!(
             format!("{mb}"),
-            format!(
-                "{}",
-                Color::BrightGreen.to_ansi_term_color().paint("1.10 MB")
-            )
+            format!("{}", Color::Green.paint("1.10 MB"))
         );
 
         let gb = FileSize::new(1_120_000_000);
-        assert_eq!(
-            format!("{gb}"),
-            format!("{}", Color::BrightRed.to_ansi_term_color().paint("1.12 GB"))
-        );
+        assert_eq!(format!("{gb}"), format!("{}", Color::Red.paint("1.12 GB")));
     }
 }

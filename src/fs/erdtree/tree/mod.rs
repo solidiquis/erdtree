@@ -13,7 +13,8 @@ use std::{
 /// [ui::LS_COLORS] initialization and ui theme for [Tree].
 pub mod ui;
 
-/// In-memory representation of the root-directory and its contents which respects `.gitignore`.
+/// In-memory representation of the root-directory and its contents which respects `.gitignore` and
+/// hidden file rules depending on [WalkParallel] config.
 #[derive(Debug)]
 pub struct Tree {
     level: Option<usize>,
@@ -107,7 +108,8 @@ impl Tree {
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
     /// structure. Sorting occurs if specified.
     fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, order: &Order) {
-        let current_node = branches.remove(current_dir.path())
+        let current_node = branches
+            .remove(current_dir.path())
             .map(|children| {
                 current_dir.set_children(children);
                 current_dir
@@ -129,9 +131,9 @@ impl Tree {
             current_node.set_file_size(dir_size)
         }
 
-        order.comparator().map(|func| {
-            current_node.children_mut().map(|nodes| nodes.sort_by(func))
-        });
+        order
+            .comparator()
+            .map(|func| current_node.children_mut().map(|nodes| nodes.sort_by(func)));
     }
 }
 
@@ -178,9 +180,8 @@ impl Display for Tree {
                     if let Some(iter_children) = child.children() {
                         let mut new_base = base_prefix.to_owned();
 
-                        let new_theme = child.symlink
-                            .then(|| ui::get_link_theme())
-                            .unwrap_or(theme);
+                        let new_theme =
+                            child.symlink.then(|| ui::get_link_theme()).unwrap_or(theme);
 
                         if last_entry {
                             new_base.push_str(ui::SEP);
