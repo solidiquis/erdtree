@@ -15,3 +15,13 @@ Did a complete rewrite with emphasis on an intuitive interface and performance. 
 - Parallel filesystem traversal.
 - Completely new CLI. `$ erdtree -h` for usage info.
 - Uses `LS_COLORS` environment variable for file coloring.
+
+## [1.1.0] - 2023-02-14
+
+### What changed
+- `-S, --follow-links` added to give option to traverse symlinks to directories. If enabled the disk usages of the target directory is considered.
+- More test coverage.
+
+### Contributors
+- [jprochazk](https://github.com/jprochazk): [Filtering functionality via glob options](https://github.com/solidiquis/erdtree/pull/12)
+- [tintin](https://github.com/Tlntin): [Cross-compilation and CI](https://github.com/solidiquis/erdtree/pull/18)
