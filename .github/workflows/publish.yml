@@ -85,7 +85,7 @@ jobs:
       run: |
         curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
         mv target/${{ matrix.target }}/release/et et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
-        tar -cavf et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.tar.gz README.md LICENSE
+        tar -cavf et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.tar.gz et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }} README.md LICENSE
         bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
     
     - name: Upload files (only for Windows)
