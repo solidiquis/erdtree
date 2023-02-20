@@ -84,8 +84,9 @@ jobs:
         UPLOADTOOL_ISPRERELEASE: true
       run: |
         curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
-        mv target/${{ matrix.target }}/release/et et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
-        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}
+        mv target/${{ matrix.target }}/release/et et
+        tar -cavf et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.tar.gz et CHANGELOG.md README.md LICENSE
+        bash upload.sh et-${{ steps.version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
     
     - name: Upload files (only for Windows)
       if: matrix.target == 'x86_64-pc-windows-msvc'
