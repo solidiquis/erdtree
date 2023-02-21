@@ -66,6 +66,14 @@ Options:
 2. `$ cargo install --tag v1.1.0 --git https://github.com/solidiquis/erdtree`
 3. The executable should then be located in `$HOME/.cargo/bin/`.
 
+### Homebrew
+
+While I try and figure out how to get this on homebrew-core, here's how to install from my custom tap:
+
+```
+$ brew tap solidiquis/tap && brew install erdtree
+```
+
 ### Releases
 Binaries for common architectures can be downloaded from latest releases.
 
