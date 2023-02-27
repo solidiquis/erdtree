@@ -1,5 +1,4 @@
-use crate::fs::erdtree::order::Order;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use ignore::{
     overrides::{Override, OverrideBuilder},
     WalkBuilder, WalkParallel,
@@ -39,6 +38,10 @@ pub struct Clargs {
     #[arg(short = 'H', long)]
     pub hidden: bool,
 
+    /// Display file icons; disabled by default
+    #[arg(long)]
+    pub icons: bool,
+
     /// Ignore .gitignore; disabled by default
     #[arg(short, long)]
     pub ignore_git_ignore: bool,
@@ -58,6 +61,19 @@ pub struct Clargs {
     /// Number of threads to use
     #[arg(short, long, default_value_t = 4)]
     pub threads: usize,
+}
+
+/// Order in which to print nodes.
+#[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum Order {
+    /// Sort entries by file name
+    Name,
+
+    /// Sort entries by size in descending order
+    Size,
+
+    /// No sorting
+    None,
 }
 
 impl Clargs {
@@ -112,7 +128,8 @@ impl TryFrom<&Clargs> for WalkParallel {
     fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
         let root = clargs.dir();
 
-        fs::metadata(root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+        fs::metadata(root)
+            .map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
         Ok(WalkBuilder::new(root)
             .follow_links(clargs.follow_links)

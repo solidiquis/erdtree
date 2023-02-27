@@ -1,17 +1,15 @@
+use crate::cli;
 use super::node::Node;
-use clap::ValueEnum;
-use std::cmp::Ordering;
+use std::{
+    convert::From,
+    cmp::Ordering,
+};
 
 /// Order in which to print nodes.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Order {
-    /// Sort entries by file name
     Name,
-
-    /// Sort entries by size in descending order
     Size,
-
-    /// No sorting
     None,
 }
 
@@ -36,5 +34,15 @@ impl Order {
         let b_size = b.file_size.unwrap_or(0);
 
         b_size.cmp(&a_size)
+    }
+}
+
+impl From<cli::Order> for Order {
+    fn from(ord: cli::Order) -> Self {
+        match ord {
+            cli::Order::Name => Order::Name,
+            cli::Order::Size => Order::Size,
+            cli::Order::None => Order::None
+        }
     }
 }
