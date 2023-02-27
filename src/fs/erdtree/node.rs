@@ -126,16 +126,18 @@ impl Node {
     fn get_icon(&self) -> Option<String> {
         if !self.show_icon { return None }
 
-        if let Some(icon) = self.path().extension().map(icon_from_ext) {
-            return icon.map(str::to_owned);
+        let s = |i| Some(self.stylize(i));
+
+        if let Some(icon) = self.path().extension().map(icon_from_ext).flatten() {
+            return s(icon)
         }
 
-        if let Some(icon) = self.file_type().map(icon_from_file_type) {
-            return icon.map(|i| self.stylize(i));
+        if let Some(icon) = self.file_type().map(icon_from_file_type).flatten() {
+            return s(icon);
         }
 
         if let Some(icon) = icon_from_file_name(self.file_name()) {
-            return Some(self.stylize(icon));
+            return s(icon);
         }
 
         Some(icons::get_default_icon().to_owned())

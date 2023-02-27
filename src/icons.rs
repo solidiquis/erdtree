@@ -44,7 +44,7 @@ static FILE_NAME_ICON_MAP: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
         "config"             => "\u{e5fc}", // 
         "docker-compose.yml" => "\u{f308}", // 
         "Dockerfile"         => "\u{f308}", // 
-        "ds_store"           => "\u{f179}", // 
+        ".DS_Store"          => "\u{f179}", // 
         "gitignore_global"   => "\u{f1d3}", // 
         "go.mod"             => "\u{e626}", // 
         "go.sum"             => "\u{e626}", // 
@@ -297,7 +297,7 @@ pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
 }
 
 pub fn icon_from_file_name(name: &str) -> Option<&str> {
-   FILE_NAME_ICON_MAP.get(name).map(|i| *i)
+    FILE_NAME_ICON_MAP.get(name).map(|i| *i)
 }
 
 /// Returns the default fallback icon.
