@@ -1,5 +1,5 @@
 use super::get_ls_colors;
-use crate::fs::file_size::FileSize;
+use crate::{fs::file_size::FileSize, icons};
 use ansi_term::Style;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
@@ -22,6 +22,7 @@ pub struct Node {
     children: Option<Vec<Node>>,
     file_name: String,
     file_type: Option<FileType>,
+    icon: Option<String>,
     path: PathBuf,
     style: Style,
 }
@@ -35,6 +36,7 @@ impl Node {
         children: Option<Vec<Node>>,
         file_name: String,
         file_type: Option<FileType>,
+        icon: Option<String>,
         path: PathBuf,
         style: Style,
     ) -> Self {
@@ -45,6 +47,7 @@ impl Node {
             file_name,
             file_size,
             file_type,
+            icon,
             path,
             style,
         }
@@ -120,6 +123,8 @@ impl From<DirEntry> for Node {
 
         let path = dir_entry.into_path();
 
+        let mut icon = None;
+
         let style = get_ls_colors()
             .style_for_path_with_metadata(&path, metadata.as_ref())
             .map(LS_Style::to_ansi_term_style)
@@ -130,6 +135,8 @@ impl From<DirEntry> for Node {
 
         if let Some(ref ft) = file_type {
             if ft.is_file() {
+                icon = Some(icons::icon(&path));
+
                 if let Some(md) = metadata {
                     file_size = Some(md.len());
                     symlink = md.is_symlink();
@@ -142,7 +149,15 @@ impl From<DirEntry> for Node {
         };
 
         Self::new(
-            depth, file_size, symlink, children, file_name, file_type, path, style,
+            depth,
+            file_size,
+            symlink,
+            children,
+            file_name,
+            file_type,
+            icon,
+            path,
+            style
         )
     }
 }
@@ -155,11 +170,15 @@ impl Display for Node {
             .or_else(|| Some("".to_owned()))
             .unwrap();
 
+        let default_icon = "".to_owned();
+
+        let icon = self.icon.as_ref().unwrap_or(&default_icon);
+
         let output = self
             .style()
             .foreground
-            .map(|fg| format!("{} {size}", fg.bold().paint(self.file_name())))
-            .unwrap_or_else(|| format!("{} {size}", self.file_name()));
+            .map(|fg| format!("{} {} {size}", icon, fg.bold().paint(self.file_name())))
+            .unwrap_or_else(|| format!("{} {} {size}", icon, self.file_name()));
 
         write!(f, "{output}")
     }

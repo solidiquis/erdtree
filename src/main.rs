@@ -11,6 +11,9 @@ mod cli;
 /// Filesystem operations.
 mod fs;
 
+/// Dev icons.
+mod icons;
+
 /// Common utilities.
 mod utils;
 
@@ -24,6 +27,7 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
+    icons::init_icons();
     erdtree::tree::ui::init();
     let clargs = Clargs::parse();
     let walker = WalkParallel::try_from(&clargs)?;
