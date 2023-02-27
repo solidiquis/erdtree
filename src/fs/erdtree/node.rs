@@ -11,19 +11,22 @@ use std::{
     slice::Iter,
 };
 
-/// A node of [super::tree::Tree] that can be created from a [DirEntry]. Any filesystem I/O and
+/// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
 /// uses ANSI colors determined by the file-type and `LS_COLORS`.
+///
+/// [`Tree`]: super::tree::Tree
 #[derive(Debug)]
 pub struct Node {
     pub depth: usize,
     pub file_size: Option<u64>,
     pub symlink: bool,
+
     children: Option<Vec<Node>>,
     file_name: String,
     file_type: Option<FileType>,
-    icon: Option<String>,
     path: PathBuf,
+    show_icon: bool,
     style: Style,
 }
 
@@ -36,8 +39,8 @@ impl Node {
         children: Option<Vec<Node>>,
         file_name: String,
         file_type: Option<FileType>,
-        icon: Option<String>,
         path: PathBuf,
+        show_icon: bool,
         style: Style,
     ) -> Self {
         Self {
@@ -47,8 +50,8 @@ impl Node {
             file_name,
             file_size,
             file_type,
-            icon,
             path,
+            show_icon,
             style,
         }
     }
@@ -76,7 +79,7 @@ impl Node {
             .unwrap_or(false)
     }
 
-    /// Returns the path to the `Node`'s parent, if any. This is a pretty expensive operation used
+    /// Returns the path to the [Node]'s parent, if any. This is a pretty expensive operation used
     /// during parallel traversal. Perhaps an area for optimization.
     pub fn parent_path_buf(&self) -> Option<PathBuf> {
         let mut path_buf = self.path.clone();
@@ -107,10 +110,28 @@ impl Node {
     pub fn style(&self) -> &Style {
         &self.style
     }
+
+    /// Gets stylized icon for node if enabled.
+    pub fn get_icon(&self) -> Option<&str> {
+        self.show_icon.then(|| icons::icon(self.path()))
+    }
 }
 
-impl From<DirEntry> for Node {
-    fn from(dir_entry: DirEntry) -> Self {
+pub struct NodePrecursor {
+    dir_entry: DirEntry,
+    show_icon: bool,
+}
+
+impl NodePrecursor {
+    pub fn new(dir_entry: DirEntry, show_icon: bool) -> Self {
+        Self { dir_entry, show_icon }
+    }
+}
+
+impl From<NodePrecursor> for Node {
+    fn from(precursor: NodePrecursor) -> Self {
+        let NodePrecursor { dir_entry, show_icon } = precursor;
+
         let children = None;
 
         let depth = dir_entry.depth();
@@ -123,8 +144,6 @@ impl From<DirEntry> for Node {
 
         let path = dir_entry.into_path();
 
-        let mut icon = None;
-
         let style = get_ls_colors()
             .style_for_path_with_metadata(&path, metadata.as_ref())
             .map(LS_Style::to_ansi_term_style)
@@ -135,8 +154,6 @@ impl From<DirEntry> for Node {
 
         if let Some(ref ft) = file_type {
             if ft.is_file() {
-                icon = Some(icons::icon(&path));
-
                 if let Some(md) = metadata {
                     file_size = Some(md.len());
                     symlink = md.is_symlink();
@@ -155,8 +172,8 @@ impl From<DirEntry> for Node {
             children,
             file_name,
             file_type,
-            icon,
             path,
+            show_icon,
             style
         )
     }
@@ -164,21 +181,32 @@ impl From<DirEntry> for Node {
 
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let size = self
-            .file_size
+        let file_name = self.file_name();
+
+        let size = self.file_size
             .map(|size| format!("({})", FileSize::new(size)))
             .or_else(|| Some("".to_owned()))
             .unwrap();
 
-        let default_icon = "".to_owned();
+        let icon = self.show_icon
+            .then(|| self.get_icon())
+            .flatten()
+            .unwrap_or("");
 
-        let icon = self.icon.as_ref().unwrap_or(&default_icon);
-
-        let output = self
-            .style()
+        let styled_name = self.style()
             .foreground
-            .map(|fg| format!("{} {} {size}", icon, fg.bold().paint(self.file_name())))
-            .unwrap_or_else(|| format!("{} {} {size}", icon, self.file_name()));
+            .map_or_else(
+                ||   file_name.to_string(),
+                |fg| fg.bold().paint(file_name).to_string()
+            );
+
+        let output = format!(
+            "{:<icon_padding$}{:<name_padding$}{size}",
+             icon,
+             styled_name,
+             icon_padding = icon.len() - 1,
+             name_padding = styled_name.len() + 1
+         );
 
         write!(f, "{output}")
     }

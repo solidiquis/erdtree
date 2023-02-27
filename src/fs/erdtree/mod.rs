@@ -1,4 +1,6 @@
-/// Contains components of the `Tree` data structure that derive from [ignore::DirEntry].
+/// Contains components of the [`Tree`] data structure that derive from [`DirEntry`].
+/// [`Tree`]: tree::Tree
+/// [`DirEntry`]: ignore::DirEntry
 pub mod node;
 
 /// Ordering operations for printing.

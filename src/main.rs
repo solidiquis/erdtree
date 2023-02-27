@@ -3,7 +3,6 @@ use std::process::ExitCode;
 use clap::Parser;
 use cli::Clargs;
 use fs::erdtree::{self, tree::Tree};
-use ignore::WalkParallel;
 
 /// CLI rules and definitions.
 mod cli;
@@ -26,12 +25,10 @@ fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn run() -> Result<(), Box<dyn std::error::Error>> {
-    icons::init_icons();
+fn run() -> Result<(), fs::error::Error> {
     erdtree::tree::ui::init();
     let clargs = Clargs::parse();
-    let walker = WalkParallel::try_from(&clargs)?;
-    let tree = Tree::new(walker, clargs.sort(), clargs.level())?;
+    let tree = Tree::try_from(clargs)?;
 
     println!("{tree}");
 

@@ -1,9 +1,14 @@
+use crate::cli::Clargs;
 use super::order::Order;
-use super::{super::error::Error, node::Node};
+use super::{
+    super::error::Error,
+    node::{Node, NodePrecursor}
+};
 use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
     collections::HashMap,
+    convert::TryFrom,
     fmt::{self, Display, Formatter},
     path::PathBuf,
     slice::Iter,
@@ -17,6 +22,7 @@ pub mod ui;
 /// hidden file rules depending on [WalkParallel] config.
 #[derive(Debug)]
 pub struct Tree {
+    icons: bool,
     level: Option<usize>,
     #[allow(dead_code)]
     order: Order,
@@ -29,10 +35,10 @@ pub type TreeComponents = (Node, Branches);
 
 impl Tree {
     /// Initializes a [Tree].
-    pub fn new(walker: WalkParallel, order: Order, level: Option<usize>) -> TreeResult<Self> {
-        let root = Self::traverse(walker, &order)?;
+    pub fn new(walker: WalkParallel, order: Order, level: Option<usize>, icons: bool) -> TreeResult<Self> {
+        let root = Self::traverse(walker, &order, icons)?;
 
-        Ok(Self { level, order, root })
+        Ok(Self { level, order, root, icons })
     }
 
     /// Returns a reference to the root [Node].
@@ -45,7 +51,7 @@ impl Tree {
     /// system calls are expected to occur during parallel traversal; thus post-processing of all
     /// directory entries should be completely CPU-bound. If filesystem I/O or system calls occur
     /// outside of the parallel traversal step please report an issue.
-    fn traverse(walker: WalkParallel, order: &Order) -> TreeResult<Node> {
+    fn traverse(walker: WalkParallel, order: &Order, icons: bool) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
         // Receives directory entries from the workers used for parallel traversal to construct the
@@ -89,6 +95,7 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
+                    .map(|entry| NodePrecursor::new(entry, icons))
                     .map(Node::from)
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
@@ -134,6 +141,17 @@ impl Tree {
         order
             .comparator()
             .map(|func| current_node.children_mut().map(|nodes| nodes.sort_by(func)));
+    }
+}
+
+impl TryFrom<Clargs> for Tree {
+    type Error = Error;
+
+    fn try_from(clargs: Clargs) -> Result<Self, Self::Error> {
+        let walker = WalkParallel::try_from(&clargs)?;
+        let order = Order::from(clargs.sort());
+        let tree = Tree::new(walker, order, clargs.level(), clargs.icon)?;
+        Ok(tree)
     }
 }
 
@@ -199,6 +217,7 @@ impl Display for Tree {
         }
 
         extend_output(&mut output, root, "");
+
         if let Some(iter_children) = root.children() {
             traverse(&mut output, iter_children, "", level, theme)
         }
