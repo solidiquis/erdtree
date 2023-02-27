@@ -40,7 +40,7 @@ pub struct Clargs {
 
     /// Display file icons; disabled by default
     #[arg(long)]
-    pub icon: bool,
+    pub icons: bool,
 
     /// Ignore .gitignore; disabled by default
     #[arg(short, long)]

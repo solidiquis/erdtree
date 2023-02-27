@@ -4,8 +4,16 @@ use once_cell::sync::Lazy;
 use std::{
     collections::HashMap,
     ffi::{OsStr, OsString},
+    fs::FileType,
     path::Path,
 };
+
+static FILE_TYPE_ICON_MAP: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
+    hash!(
+        "dir"     => "\u{f413}", // 
+        "symlink" => "\u{f482}"  // 
+    )
+});
 
 static EXT_ICON_MAP: Lazy<HashMap<OsString, String>> = Lazy::new(|| {
     hash!(
@@ -213,21 +221,22 @@ static EXT_ICON_MAP: Lazy<HashMap<OsString, String>> = Lazy::new(|| {
 
 static DEFAULT_ICON: Lazy<String> = Lazy::new(|| col(66, "\u{f15b}"));
 
-pub fn icon(path: &Path) -> &str {
-    path.extension()
-        .map(icon_from_ext)
-        .unwrap_or_else(get_default_icon)
+pub fn icon_from_ext(ext: &OsStr) -> Option<&str> {
+    EXT_ICON_MAP.get(ext).map(String::as_str)
 }
 
-fn get_default_icon<'a>() -> &'a str {
+pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
+    if ft.is_dir() {
+        return FILE_TYPE_ICON_MAP.get("dir").map(|i| *i);
+    } else if ft.is_symlink() {
+        return FILE_TYPE_ICON_MAP.get("symlink").map(|i| *i);
+    }
+
+    None
+}
+
+pub fn get_default_icon<'a>() -> &'a str {
     DEFAULT_ICON.as_str()
-}
-
-/// Reference: https://github.com/nvim-tree/nvim-web-devicons/blob/master/lua/nvim-web-devicons.lua
-fn icon_from_ext(ext: &OsStr) -> &str {
-    EXT_ICON_MAP.get(ext)
-        .map(String::as_str)
-        .unwrap_or_else(get_default_icon)
 }
 
 fn col(num: u8, code: &str) -> String {

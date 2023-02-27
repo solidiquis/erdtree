@@ -1,5 +1,8 @@
 use super::get_ls_colors;
-use crate::{fs::file_size::FileSize, icons};
+use crate::{
+    fs::file_size::FileSize,
+    icons::{self, icon_from_ext, icon_from_file_type}
+};
 use ansi_term::Style;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
@@ -13,9 +16,10 @@ use std::{
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
-/// uses ANSI colors determined by the file-type and `LS_COLORS`.
+/// uses ANSI colors determined by the file-type and [`LS_COLORS`].
 ///
 /// [`Tree`]: super::tree::Tree
+/// [`LS_COLORS`]: super::tree::ui::LS_COLORS
 #[derive(Debug)]
 pub struct Node {
     pub depth: usize,
@@ -73,10 +77,14 @@ impl Node {
 
     /// Returns `true` if node is a directory.
     pub fn is_dir(&self) -> bool {
-        self.file_type
-            .as_ref()
+        self.file_type()
             .map(|ft| ft.is_dir())
             .unwrap_or(false)
+    }
+
+    /// Returns reference to underlying [FileType].
+    pub fn file_type(&self) -> Option<&FileType> {
+        self.file_type.as_ref()
     }
 
     /// Returns the path to the [Node]'s parent, if any. This is a pretty expensive operation used
@@ -111,9 +119,32 @@ impl Node {
         &self.style
     }
 
-    /// Gets stylized icon for node if enabled.
-    pub fn get_icon(&self) -> Option<&str> {
-        self.show_icon.then(|| icons::icon(self.path()))
+    /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
+    /// [`LS_COLORS`] foreground configuration of the associated file name.
+    ///
+    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS 
+    fn get_icon(&self) -> Option<String> {
+        if !self.show_icon { return None }
+
+        if let Some(icon) = self.path().extension().map(icon_from_ext) {
+            return icon.map(str::to_owned);
+        }
+
+        if let Some(icon) = self.file_type().map(icon_from_file_type) {
+            return icon.map(|i| self.stylize(i));
+        }
+
+        Some(icons::get_default_icon().to_owned())
+    }
+
+    /// Stylizes input, `entity` based on [`LS_COLORS`]
+    ///
+    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS 
+    fn stylize(&self, entity: &str) -> String {
+        self.style().foreground.map_or_else(
+            ||   entity.to_string(),
+            |fg| fg.bold().paint(entity).to_string()
+        )
     }
 }
 
@@ -191,20 +222,15 @@ impl Display for Node {
         let icon = self.show_icon
             .then(|| self.get_icon())
             .flatten()
-            .unwrap_or("");
+            .unwrap_or("".to_owned());
 
-        let styled_name = self.style()
-            .foreground
-            .map_or_else(
-                ||   file_name.to_string(),
-                |fg| fg.bold().paint(file_name).to_string()
-            );
+        let styled_name = self.stylize(file_name);
 
         let output = format!(
             "{:<icon_padding$}{:<name_padding$}{size}",
              icon,
              styled_name,
-             icon_padding = icon.len() - 1,
+             icon_padding = (icon.len() > 1).then(|| icon.len() - 1).unwrap_or(0),
              name_padding = styled_name.len() + 1
          );
 

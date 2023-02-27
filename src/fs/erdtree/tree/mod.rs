@@ -22,6 +22,7 @@ pub mod ui;
 /// hidden file rules depending on [WalkParallel] config.
 #[derive(Debug)]
 pub struct Tree {
+    #[allow(dead_code)]
     icons: bool,
     level: Option<usize>,
     #[allow(dead_code)]
@@ -150,7 +151,7 @@ impl TryFrom<Clargs> for Tree {
     fn try_from(clargs: Clargs) -> Result<Self, Self::Error> {
         let walker = WalkParallel::try_from(&clargs)?;
         let order = Order::from(clargs.sort());
-        let tree = Tree::new(walker, order, clargs.level(), clargs.icon)?;
+        let tree = Tree::new(walker, order, clargs.level(), clargs.icons)?;
         Ok(tree)
     }
 }
