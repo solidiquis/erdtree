@@ -38,8 +38,12 @@ pub struct Clargs {
     #[arg(short = 'H', long)]
     pub hidden: bool,
 
-    /// Display file icons; disabled by default
+    /// Disable traversal of .git directory when traversing hidden files; disabled by default
     #[arg(long)]
+    ignore_git: bool,
+
+    /// Display file icons; disabled by default
+    #[arg(short = 'I', long)]
     pub icons: bool,
 
     /// Ignore .gitignore; disabled by default
@@ -99,11 +103,16 @@ impl Clargs {
 
     /// Ignore file overrides.
     pub fn overrides(&self) -> Result<Override, ignore::Error> {
-        if self.glob.is_empty() && self.iglob.is_empty() {
-            return Ok(Override::empty());
+        let mut builder = OverrideBuilder::new(self.dir());
+
+        if self.ignore_git {
+            builder.add("!.git/**/*")?;
         }
 
-        let mut builder = OverrideBuilder::new(self.dir());
+        if self.glob.is_empty() && self.iglob.is_empty() {
+            return builder.build();
+        }
+
         if self.glob_case_insensitive {
             builder.case_insensitive(true).unwrap();
         }
