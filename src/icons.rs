@@ -4,10 +4,14 @@ use once_cell::sync::Lazy;
 use std::{
     collections::HashMap,
     ffi::{OsStr, OsString},
-    fs::FileType,
-    path::Path,
+    fs::FileType
 };
 
+/// Lazily evaluated static hash-map of special file-types and their corresponding styled icons.
+/// These icons will take on the color properties of their associated file which is based on
+/// `LS_COLORS`.
+///
+/// Dev icons sourced from [`exa`](https://github.com/ogham/exa/blob/master/src/output/icons.rs)
 static FILE_TYPE_ICON_MAP: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
     hash!(
         "dir"     => "\u{f413}", // 
@@ -15,6 +19,60 @@ static FILE_TYPE_ICON_MAP: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
     )
 });
 
+/// Lazily evaluated static hash-map of special named and their corresponding icons. These icons
+/// will take on the color properties of their associated file which is based on `LS_COLORS`.
+///
+/// Dev icons sourced from [`exa`](https://github.com/ogham/exa/blob/master/src/output/icons.rs)
+static FILE_NAME_ICON_MAP: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
+    hash!(
+        ".Trash"             => "\u{f1f8}", // 
+        ".atom"              => "\u{e764}", // 
+        ".bashprofile"       => "\u{e615}", // 
+        ".bashrc"            => "\u{f489}", // 
+        ".git"               => "\u{f1d3}", // 
+        ".gitattributes"     => "\u{f1d3}", // 
+        ".gitconfig"         => "\u{f1d3}", // 
+        ".github"            => "\u{f408}", // 
+        ".gitignore"         => "\u{f1d3}", // 
+        ".gitmodules"        => "\u{f1d3}", // 
+        ".rvm"               => "\u{e21e}", // 
+        ".vimrc"             => "\u{e62b}", // 
+        ".vscode"            => "\u{e70c}", // 
+        ".zshrc"             => "\u{f489}", // 
+        "Cargo.lock"         => "\u{e7a8}", // 
+        "bin"                => "\u{e5fc}", // 
+        "config"             => "\u{e5fc}", // 
+        "docker-compose.yml" => "\u{f308}", // 
+        "Dockerfile"         => "\u{f308}", // 
+        "ds_store"           => "\u{f179}", // 
+        "gitignore_global"   => "\u{f1d3}", // 
+        "go.mod"             => "\u{e626}", // 
+        "go.sum"             => "\u{e626}", // 
+        "gradle"             => "\u{e256}", // 
+        "gruntfile.coffee"   => "\u{e611}", // 
+        "gruntfile.js"       => "\u{e611}", // 
+        "gruntfile.ls"       => "\u{e611}", // 
+        "gulpfile.coffee"    => "\u{e610}", // 
+        "gulpfile.js"        => "\u{e610}", // 
+        "gulpfile.ls"        => "\u{e610}", // 
+        "hidden"             => "\u{f023}", // 
+        "include"            => "\u{e5fc}", // 
+        "lib"                => "\u{f121}", // 
+        "localized"          => "\u{f179}", // 
+        "Makefile"           => "\u{f489}", // 
+        "node_modules"       => "\u{e718}", // 
+        "npmignore"          => "\u{e71e}", // 
+        "PKGBUILD"           => "\u{f303}", // 
+        "rubydoc"            => "\u{e73b}", // 
+        "yarn.lock"          => "\u{e718}"  // 
+    )
+});
+
+/// Lazily evaluated static hash-map of various file extensions and their corresponding styled
+/// icons. These icons will take on their corresponding file's color properties based on
+/// `LS_COLORS`.
+///
+/// Dev icons and their color palettes sourced from [`nvim-web-devicons`](https://github.com/nvim-tree/nvim-web-devicons/blob/master/lua/nvim-web-devicons.lua).
 static EXT_ICON_MAP: Lazy<HashMap<OsString, String>> = Lazy::new(|| {
     hash!(
         OsString::from("ai")            => col(185, "\u{e7b4}"),   // 
@@ -219,12 +277,15 @@ static EXT_ICON_MAP: Lazy<HashMap<OsString, String>> = Lazy::new(|| {
     )
 });
 
+/// Default fallback icon.
 static DEFAULT_ICON: Lazy<String> = Lazy::new(|| col(66, "\u{f15b}"));
 
+/// Attempts to return an icon given a file extension.
 pub fn icon_from_ext(ext: &OsStr) -> Option<&str> {
     EXT_ICON_MAP.get(ext).map(String::as_str)
 }
 
+/// Attempts to return an icon based on file type.
 pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
     if ft.is_dir() {
         return FILE_TYPE_ICON_MAP.get("dir").map(|i| *i);
@@ -235,6 +296,11 @@ pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
     None
 }
 
+pub fn icon_from_file_name(name: &str) -> Option<&str> {
+   FILE_NAME_ICON_MAP.get(name).map(|i| *i)
+}
+
+/// Returns the default fallback icon.
 pub fn get_default_icon<'a>() -> &'a str {
     DEFAULT_ICON.as_str()
 }

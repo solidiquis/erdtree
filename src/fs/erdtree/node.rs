@@ -1,7 +1,7 @@
 use super::get_ls_colors;
 use crate::{
     fs::file_size::FileSize,
-    icons::{self, icon_from_ext, icon_from_file_type}
+    icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type}
 };
 use ansi_term::Style;
 use ignore::DirEntry;
@@ -132,6 +132,10 @@ impl Node {
 
         if let Some(icon) = self.file_type().map(icon_from_file_type) {
             return icon.map(|i| self.stylize(i));
+        }
+
+        if let Some(icon) = icon_from_file_name(self.file_name()) {
+            return Some(self.stylize(icon));
         }
 
         Some(icons::get_default_icon().to_owned())

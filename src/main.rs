@@ -10,7 +10,7 @@ mod cli;
 /// Filesystem operations.
 mod fs;
 
-/// Dev icons. Reference: https://github.com/nvim-tree/nvim-web-devicons/blob/master/lua/nvim-web-devicons.lua
+/// Dev icons.
 mod icons;
 
 /// Common utilities.
