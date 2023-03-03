@@ -8,6 +8,7 @@ use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
     fs,
+    io,
     path::{Path, PathBuf},
     usize,
 };
@@ -135,9 +136,9 @@ impl TryFrom<&Clargs> for WalkParallel {
     type Error = Error;
 
     fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
-        let root = clargs.dir();
+        let root = fs::canonicalize(clargs.dir())?;
 
-        fs::metadata(root)
+        fs::metadata(&root)
             .map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
         Ok(WalkBuilder::new(root)
@@ -155,6 +156,7 @@ impl TryFrom<&Clargs> for WalkParallel {
 pub enum Error {
     InvalidGlobPatterns(ignore::Error),
     DirNotFound(String),
+    PathCanonicalizationError(io::Error),
 }
 
 impl Display for Error {
@@ -162,6 +164,7 @@ impl Display for Error {
         match self {
             Error::InvalidGlobPatterns(e) => write!(f, "Invalid glob patterns: {e}"),
             Error::DirNotFound(e) => write!(f, "{e}"),
+            Error::PathCanonicalizationError(e) => write!(f, "{e}"),
         }
     }
 }
@@ -171,5 +174,11 @@ impl StdError for Error {}
 impl From<ignore::Error> for Error {
     fn from(value: ignore::Error) -> Self {
         Self::InvalidGlobPatterns(value)
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(value: io::Error) -> Self {
+        Self::PathCanonicalizationError(value)
     }
 }
