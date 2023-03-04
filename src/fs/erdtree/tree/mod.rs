@@ -200,7 +200,7 @@ impl Display for Tree {
                         let mut new_base = base_prefix.to_owned();
 
                         let new_theme =
-                            child.symlink.then(|| ui::get_link_theme()).unwrap_or(theme);
+                            child.is_symlink().then(|| ui::get_link_theme()).unwrap_or(theme);
 
                         if last_entry {
                             new_base.push_str(ui::SEP);

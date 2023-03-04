@@ -1,4 +1,5 @@
 use super::get_ls_colors;
+use ansi_term::Color;
 use crate::{
     fs::file_size::FileSize,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type}
@@ -9,6 +10,7 @@ use lscolors::Style as LS_Style;
 use std::{
     convert::From,
     fmt::{self, Display, Formatter},
+    ffi::{OsStr, OsString},
     fs::{self, FileType},
     path::{Path, PathBuf},
     slice::Iter,
@@ -24,14 +26,13 @@ use std::{
 pub struct Node {
     pub depth: usize,
     pub file_size: Option<u64>,
-    pub symlink: bool,
-
     children: Option<Vec<Node>>,
-    file_name: String,
+    file_name: OsString,
     file_type: Option<FileType>,
     path: PathBuf,
     show_icon: bool,
     style: Style,
+    symlink_target: Option<PathBuf>,
 }
 
 impl Node {
@@ -39,24 +40,24 @@ impl Node {
     pub fn new(
         depth: usize,
         file_size: Option<u64>,
-        symlink: bool,
         children: Option<Vec<Node>>,
-        file_name: String,
+        file_name: OsString,
         file_type: Option<FileType>,
         path: PathBuf,
         show_icon: bool,
         style: Style,
+        symlink_target: Option<PathBuf>,
     ) -> Self {
         Self {
             children,
             depth,
-            symlink,
             file_name,
             file_size,
             file_type,
             path,
             show_icon,
             style,
+            symlink_target,
         }
     }
 
@@ -70,8 +71,9 @@ impl Node {
         self.children.as_ref().map(|children| children.iter())
     }
 
-    /// Returns a reference to `file_name`.
-    pub fn file_name(&self) -> &str {
+    /// Returns a reference to `file_name`. If file is a symlink then `file_name` is the name of
+    /// the symlink not the target.
+    pub fn file_name(&self) -> &OsStr {
         &self.file_name
     }
 
@@ -80,6 +82,21 @@ impl Node {
         self.file_type()
             .map(|ft| ft.is_dir())
             .unwrap_or(false)
+    }
+
+    /// Is the Node a symlink.
+    pub fn is_symlink(&self) -> bool {
+        self.symlink_target.is_some()
+    }
+
+    /// Path to symlink target.
+    pub fn symlink_target_path(&self) -> Option<&Path> {
+        self.symlink_target.as_ref().map(PathBuf::as_path)
+    }
+
+    /// Returns the file name of the symlink target if [Node] represents a symlink.
+    pub fn symlink_target_file_name(&self) -> Option<&OsStr> {
+        self.symlink_target_path().map(|path| path.file_name()).flatten()
     }
 
     /// Returns reference to underlying [FileType].
@@ -126,18 +143,20 @@ impl Node {
     fn get_icon(&self) -> Option<String> {
         if !self.show_icon { return None }
 
-        let s = |i| Some(self.stylize(i));
+        let path = self.symlink_target_path().unwrap_or_else(|| self.path());
 
-        if let Some(icon) = self.path().extension().map(icon_from_ext).flatten() {
-            return s(icon)
+        if let Some(icon) = path.extension().map(icon_from_ext).flatten() {
+            return self.stylize(icon)
         }
 
         if let Some(icon) = self.file_type().map(icon_from_file_type).flatten() {
-            return s(icon);
+            return self.stylize(icon);
         }
 
-        if let Some(icon) = icon_from_file_name(self.file_name()) {
-            return s(icon);
+        let file_name = self.symlink_target_file_name().unwrap_or_else(|| self.file_name());
+
+        if let Some(icon) = icon_from_file_name(file_name) {
+            return self.stylize(icon);
         }
 
         Some(icons::get_default_icon().to_owned())
@@ -146,11 +165,20 @@ impl Node {
     /// Stylizes input, `entity` based on [`LS_COLORS`]
     ///
     /// [`LS_COLORS`]: super::tree::ui::LS_COLORS 
-    fn stylize(&self, entity: &str) -> String {
-        self.style().foreground.map_or_else(
-            ||   entity.to_string(),
-            |fg| fg.bold().paint(entity).to_string()
-        )
+    fn stylize(&self, entity: &str) -> Option<String> {
+        self.style()
+            .foreground
+            .map(|fg| fg.bold().paint(entity).to_string())
+            .or_else(|| Some(entity.to_string()))
+    }
+
+    fn stylize_link_name(&self) -> Option<String> {
+        self.symlink_target_file_name()
+            .map(|name| {
+                let file_name = self.file_name().to_str().map(|s| self.stylize(s)).flatten().unwrap();
+                let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_str().unwrap()));
+                format!("{} {}", file_name, target_name)
+            })
     }
 }
 
@@ -173,53 +201,52 @@ impl From<NodePrecursor> for Node {
 
         let depth = dir_entry.depth();
 
-        let file_name = dir_entry.file_name().to_string_lossy().into_owned();
-
         let file_type = dir_entry.file_type();
 
         let metadata = dir_entry.metadata().ok();
 
-        let path = dir_entry.into_path();
+        let path = dir_entry.path();
+
+        let symlink_target = dir_entry
+            .path_is_symlink()
+            .then(|| fs::read_link(path))
+            .transpose()
+            .ok()
+            .flatten();
+
+        let file_name = path.file_name().map(|os_str| os_str.to_owned()).unwrap();
 
         let style = get_ls_colors()
-            .style_for_path_with_metadata(&path, metadata.as_ref())
+            .style_for_path_with_metadata(path, metadata.as_ref())
             .map(LS_Style::to_ansi_term_style)
             .unwrap_or_default();
 
         let mut file_size = None;
-        let mut symlink = false;
 
         if let Some(ref ft) = file_type {
             if ft.is_file() {
                 if let Some(md) = metadata {
                     file_size = Some(md.len());
-                    symlink = md.is_symlink();
                 }
-            } else if ft.is_dir() {
-                symlink = fs::symlink_metadata(&path)
-                    .map(|md| md.is_symlink())
-                    .unwrap_or(false);
             }
         };
 
         Self::new(
             depth,
             file_size,
-            symlink,
             children,
             file_name,
             file_type,
-            path,
+            path.into(),
             show_icon,
-            style
+            style,
+            symlink_target,
         )
     }
 }
 
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let file_name = self.file_name();
-
         let size = self.file_size
             .map(|size| format!("({})", FileSize::new(size)))
             .or_else(|| Some("".to_owned()))
@@ -230,7 +257,13 @@ impl Display for Node {
             .flatten()
             .unwrap_or("".to_owned());
 
-        let styled_name = self.stylize(file_name);
+        let styled_name = self.stylize_link_name().unwrap_or_else(|| {
+            self.file_name()
+                .to_str()
+                .map(|name| self.stylize(name))
+                .flatten()
+                .unwrap()
+        });
 
         let output = format!(
             "{:<icon_padding$}{:<name_padding$}{size}",

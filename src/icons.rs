@@ -23,48 +23,52 @@ static FILE_TYPE_ICON_MAP: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
 /// will take on the color properties of their associated file which is based on `LS_COLORS`.
 ///
 /// Dev icons sourced from [`exa`](https://github.com/ogham/exa/blob/master/src/output/icons.rs)
-static FILE_NAME_ICON_MAP: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
+static FILE_NAME_ICON_MAP: Lazy<HashMap<OsString, &str>> = Lazy::new(|| {
     hash!(
-        ".Trash"             => "\u{f1f8}", // 
-        ".atom"              => "\u{e764}", // 
-        ".bashprofile"       => "\u{e615}", // 
-        ".bashrc"            => "\u{f489}", // 
-        ".git"               => "\u{f1d3}", // 
-        ".gitattributes"     => "\u{f1d3}", // 
-        ".gitconfig"         => "\u{f1d3}", // 
-        ".github"            => "\u{f408}", // 
-        ".gitignore"         => "\u{f1d3}", // 
-        ".gitmodules"        => "\u{f1d3}", // 
-        ".rvm"               => "\u{e21e}", // 
-        ".vimrc"             => "\u{e62b}", // 
-        ".vscode"            => "\u{e70c}", // 
-        ".zshrc"             => "\u{f489}", // 
-        "Cargo.lock"         => "\u{e7a8}", // 
-        "bin"                => "\u{e5fc}", // 
-        "config"             => "\u{e5fc}", // 
-        "docker-compose.yml" => "\u{f308}", // 
-        "Dockerfile"         => "\u{f308}", // 
-        ".DS_Store"          => "\u{f179}", // 
-        "gitignore_global"   => "\u{f1d3}", // 
-        "go.mod"             => "\u{e626}", // 
-        "go.sum"             => "\u{e626}", // 
-        "gradle"             => "\u{e256}", // 
-        "gruntfile.coffee"   => "\u{e611}", // 
-        "gruntfile.js"       => "\u{e611}", // 
-        "gruntfile.ls"       => "\u{e611}", // 
-        "gulpfile.coffee"    => "\u{e610}", // 
-        "gulpfile.js"        => "\u{e610}", // 
-        "gulpfile.ls"        => "\u{e610}", // 
-        "hidden"             => "\u{f023}", // 
-        "include"            => "\u{e5fc}", // 
-        "lib"                => "\u{f121}", // 
-        "localized"          => "\u{f179}", // 
-        "Makefile"           => "\u{f489}", // 
-        "node_modules"       => "\u{e718}", // 
-        "npmignore"          => "\u{e71e}", // 
-        "PKGBUILD"           => "\u{f303}", // 
-        "rubydoc"            => "\u{e73b}", // 
-        "yarn.lock"          => "\u{e718}"  // 
+        OsString::from(".Trash")             => "\u{f1f8}", // 
+        OsString::from(".atom")              => "\u{e764}", // 
+        OsString::from(".bashprofile")       => "\u{e615}", // 
+        OsString::from(".bashrc")            => "\u{f489}", // 
+        OsString::from(".git")               => "\u{f1d3}", // 
+        OsString::from(".gitattributes")     => "\u{f1d3}", // 
+        OsString::from(".gitconfig")         => "\u{f1d3}", // 
+        OsString::from(".github")            => "\u{f408}", // 
+        OsString::from(".gitignore")         => "\u{f1d3}", // 
+        OsString::from(".gitmodules")        => "\u{f1d3}", // 
+        OsString::from(".rvm")               => "\u{e21e}", // 
+        OsString::from(".vimrc")             => "\u{e62b}", // 
+        OsString::from(".vscode")            => "\u{e70c}", // 
+        OsString::from(".zshrc")             => "\u{f489}", // 
+        OsString::from("Cargo.lock")         => "\u{e7a8}", // 
+        OsString::from("bin")                => "\u{e5fc}", // 
+        OsString::from("config")             => "\u{e5fc}", // 
+        OsString::from("docker-compose.yml") => "\u{f308}", // 
+        OsString::from("Dockerfile")         => "\u{f308}", // 
+        OsString::from(".DS_Store")          => "\u{f179}", // 
+        OsString::from("gitignore_global")   => "\u{f1d3}", // 
+        OsString::from("go.mod")             => "\u{e626}", // 
+        OsString::from("go.sum")             => "\u{e626}", // 
+        OsString::from("gradle")             => "\u{e256}", // 
+        OsString::from("gruntfile.coffee")   => "\u{e611}", // 
+        OsString::from("gruntfile.js")       => "\u{e611}", // 
+        OsString::from("gruntfile.ls")       => "\u{e611}", // 
+        OsString::from("gulpfile.coffee")    => "\u{e610}", // 
+        OsString::from("gulpfile.js")        => "\u{e610}", // 
+        OsString::from("gulpfile.ls")        => "\u{e610}", // 
+        OsString::from("hidden")             => "\u{f023}", // 
+        OsString::from("include")            => "\u{e5fc}", // 
+        OsString::from("lib")                => "\u{f121}", // 
+        OsString::from("license")            => "\u{e60a}",   // 
+        OsString::from("LICENSE")            => "\u{e60a}",   // 
+        OsString::from("licence")            => "\u{e60a}",   // 
+        OsString::from("LICENCE")            => "\u{e60a}",   // 
+        OsString::from("localized")          => "\u{f179}", // 
+        OsString::from("Makefile")           => "\u{f489}", // 
+        OsString::from("node_modules")       => "\u{e718}", // 
+        OsString::from("npmignore")          => "\u{e71e}", // 
+        OsString::from("PKGBUILD")           => "\u{f303}", // 
+        OsString::from("rubydoc")            => "\u{e73b}", // 
+        OsString::from("yarn.lock")          => "\u{e718}"  // 
     )
 });
 
@@ -169,6 +173,7 @@ static EXT_ICON_MAP: Lazy<HashMap<OsString, String>> = Lazy::new(|| {
         OsString::from("less")          => col(60, "\u{e614}"),    // 
         OsString::from("lhs")           => col(140, "\u{e61f}"),   // 
         OsString::from("license")       => col(185, "\u{e60a}"),   // 
+        OsString::from("licence")       => col(185, "\u{e60a}"),   // 
         OsString::from("lock")          => col(250, "\u{f13e}"),   // 
         OsString::from("log")           => col(255, "\u{f831}"),   // 
         OsString::from("lua")           => col(74, "\u{e620}"),    // 
@@ -296,7 +301,7 @@ pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
     None
 }
 
-pub fn icon_from_file_name(name: &str) -> Option<&str> {
+pub fn icon_from_file_name(name: &OsStr) -> Option<&str> {
     FILE_NAME_ICON_MAP.get(name).map(|i| *i)
 }
 
