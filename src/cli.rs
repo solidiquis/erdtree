@@ -17,7 +17,7 @@ use std::{
 #[derive(Parser, Debug)]
 #[command(name = "Erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "1.1")]
+#[command(version = "1.2")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Clargs {
     /// Root directory to traverse; defaults to current working directory

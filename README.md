@@ -6,7 +6,7 @@
 A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules - basically if [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)) had a baby.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_demo.gif?raw=true" alt="failed to load gif" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo.png?raw=true" alt="failed to load picture" />
 </p>
 
 ## Table of Contents
@@ -21,6 +21,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   - [tree Command](#tree-command)
   - [Symlinks to Directories](#symlinks-to-directories)
   - [Advantages over exa --tree](#advantages-over-exa---tree)
+  - [Icons not rendering properly](#icons-not-rendering-properly)
 * [Rules for Contributing and Feature Requests](#rules-for-contributing-and-feature-requests)
 * [Special Thanks](#special-thanks)
 * [Questions you might have](#questions-you-might-have)
@@ -33,6 +34,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 - displays file sizes in human-readable format by default
 - traverses directories in a parallel manner (4 threads by default)
 - displays files using ANSI colors by default
+- supports icons!
 
 ## Usage
 ```
@@ -49,6 +51,8 @@ Options:
       --iglob <IGLOB>          Include or exclude files using glob patterns; case insensitive
       --glob-case-insensitive  Process all glob patterns case insensitively
   -H, --hidden                 Show hidden files; disabled by default
+      --ignore-git             Disable traversal of .git directory when traversing hidden files; disabled by default
+  -I, --icons                  Display file icons; disabled by default
   -i, --ignore-git-ignore      Ignore .gitignore; disabled by default
   -l, --level <NUM>            Maximum depth to display
   -s, --sort <SORT>            Sort-order to display directory content [default: none] [possible values: name, size, none]
@@ -60,11 +64,10 @@ Options:
 
 ## Installation
 
-### Cargo
+### crate.io
 
 1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
-2. `$ cargo install --tag v1.1.0 --git https://github.com/solidiquis/erdtree`
-3. The executable should then be located in `$HOME/.cargo/bin/`.
+2. `$ cargo install erdtree`
 
 ### Homebrew
 
@@ -81,34 +84,33 @@ Other means of installation to come.
 
 ## Disambiguations
 
-### Disk Size
+### Disk usage
 
 As recommended in [IEC 80000-13](https://en.wikipedia.org/wiki/ISO/IEC_80000#cite_note-80000-13:2008-14), this command will report sizes
 using SI units rather than binary units. As such you can expect `1KB = 1000B` and not `1KiB = 1024B`. 
 
 Additionally:
 - A directory will have a size equal to the sum of the sizes of all of its entries. The size of the directory itself is negligble and isn't taken into account.
-- Files other than directories and regular files (symbolic links, named pipes, sockets, etc.) appear but their memory sizes are not reported as they are negligible.
-- Symbolic links to directories appear but are not traversed nor are their sizes reported by default.
 - Hidden files, files excluded by `.gitignore`, and files excluded via globbing will be ommitted from the total memory size of their parent directories.
+- Special files such a named pipes, sockets, etc. have negligble sizes so their disk usage isn't reported.
 
-### Files Without Read Permissions
+### Files without read permissions
 
 Files that don't have read permissions will appear but won't have their disk sizes reported. If they are directories they will not be traversed. Additionally, their size will not be included in their parent directory's total.
 
-### File Coloring
+### File coloring
 
 Files are printed in ANSI colors specified according to the `LS_COLORS` environment variable on GNU/Linux systems. In its absence [a default value](https://docs.rs/lscolors/latest/src/lscolors/lib.rs.html#221) is used.
 
 **Note for MacOS**: MacOS uses the `LSCOLORS` environment variable to determine file colors for the `ls` command which is formatted very differently from `LS_COLORS`. MacOS systems will fall back on the aforementioned default value unless the user defines their own `LS_COLORS` environment variable.
 
-### `tree` Command
+### `tree` command
 
-This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. The basic idea is the same: Display the file-tree of the specified directory. There are, however, key fundamental differences under the hood with regard to how file sizes are computed, traversal method, hidden files and `.gitignore` rules, and printing.
+This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port.
 
-### Symlinks to Directories
+### Symlinks
 
-Symlinks to directories are not traversed nor are their disk usages reported by default. `-S, --follow-links` enables symlink traversal and reports their disk usages and when printed descendents of the symlink target will have branches of a different color.
+Symlinks are not followed by default. `-S, --follow-links` enables symlink following and reports their disk usages. Descendents of directories that are targets of a symlink will also have branches of a different color.
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlink.png?raw=true" alt="failed to load png" />
@@ -130,12 +132,22 @@ Symlinks to directories are not traversed nor are their disk usages reported by 
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et.png?raw=true" alt="failed to load png" />
 </p>
 
+### Icons not rendering properly
+
+If your icon look something like this:
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icons.png?raw=true" alt="failed to load png" />
+</p>
+
+this means that your terminal emulator's font doesn't contain the relevant glyphs that `erdtree` expects in order to properly render icons. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
+
 ## Rules for Contributing and Feature Requests
 
 Happy to accept contributions but please keep the following in mind:
 - If you're doing some minor refactoring and/or code cleanup feel free to just submit a PR.
-- If you'd like to add a feature and/or make fundamental changes to `et`'s [traverse](https://github.com/solidiquis/erdtree/blob/e7f37d416d6d61b1d62e2200935b4813aaeab461/src/fs/erdtree/tree/mod.rs#L63) algorithm please open up an issue and get my approval first.
-- Feature adds require tests.
+- If you'd like to add a feature please open up an issue and receive approval first.
+- Feature adds generally require tests.
 
 Feature requests in the form of issues in general are welcome.
 
