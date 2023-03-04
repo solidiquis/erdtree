@@ -9,6 +9,7 @@ use lscolors::Style as LS_Style;
 use std::{
     convert::From,
     fmt::{self, Display, Formatter},
+    ffi::OsStr,
     fs::{self, FileType},
     path::{Path, PathBuf},
     slice::Iter,
@@ -27,7 +28,6 @@ pub struct Node {
     pub symlink: bool,
 
     children: Option<Vec<Node>>,
-    file_name: String,
     file_type: Option<FileType>,
     path: PathBuf,
     show_icon: bool,
@@ -41,7 +41,6 @@ impl Node {
         file_size: Option<u64>,
         symlink: bool,
         children: Option<Vec<Node>>,
-        file_name: String,
         file_type: Option<FileType>,
         path: PathBuf,
         show_icon: bool,
@@ -51,7 +50,6 @@ impl Node {
             children,
             depth,
             symlink,
-            file_name,
             file_size,
             file_type,
             path,
@@ -71,8 +69,8 @@ impl Node {
     }
 
     /// Returns a reference to `file_name`.
-    pub fn file_name(&self) -> &str {
-        &self.file_name
+    pub fn file_name(&self) -> &OsStr {
+        self.path().file_name().unwrap()
     }
 
     /// Returns `true` if node is a directory.
@@ -173,8 +171,6 @@ impl From<NodePrecursor> for Node {
 
         let depth = dir_entry.depth();
 
-        let file_name = dir_entry.file_name().to_string_lossy().into_owned();
-
         let file_type = dir_entry.file_type();
 
         let metadata = dir_entry.metadata().ok();
@@ -207,7 +203,6 @@ impl From<NodePrecursor> for Node {
             file_size,
             symlink,
             children,
-            file_name,
             file_type,
             path,
             show_icon,
@@ -218,8 +213,6 @@ impl From<NodePrecursor> for Node {
 
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let file_name = self.file_name();
-
         let size = self.file_size
             .map(|size| format!("({})", FileSize::new(size)))
             .or_else(|| Some("".to_owned()))
@@ -230,7 +223,10 @@ impl Display for Node {
             .flatten()
             .unwrap_or("".to_owned());
 
-        let styled_name = self.stylize(file_name);
+        let styled_name = self.file_name()
+            .to_str()
+            .map(|name| self.stylize(name))
+            .unwrap();
 
         let output = format!(
             "{:<icon_padding$}{:<name_padding$}{size}",
