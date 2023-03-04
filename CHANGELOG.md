@@ -27,3 +27,10 @@ Did a complete rewrite with emphasis on an intuitive interface and performance. 
 ### Contributors
 - [jprochazk](https://github.com/jprochazk): [Filtering functionality via glob options](https://github.com/solidiquis/erdtree/pull/12)
 - [tintin](https://github.com/Tlntin): [Cross-compilation and CI](https://github.com/solidiquis/erdtree/pull/18)
+
+## [1.2.0] - 2023-03-04
+
+### What changed
+- [Icon support](https://github.com/solidiquis/erdtree/pull/24)
+- [--ignore-git](https://github.com/solidiquis/erdtree/pull/25)
+- [Better UI for symlinks](https://github.com/solidiquis/erdtree/pull/26)
