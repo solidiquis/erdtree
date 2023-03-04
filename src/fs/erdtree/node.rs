@@ -257,20 +257,31 @@ impl Display for Node {
             .flatten()
             .unwrap_or("".to_owned());
 
-        let styled_name = self.stylize_link_name().unwrap_or_else(|| {
-            self.file_name()
-                .to_str()
-                .map(|name| self.stylize(name))
-                .flatten()
-                .unwrap()
-        });
+        let icon_padding = (icon.len() > 1).then(|| icon.len() - 1).unwrap_or(0);
+
+        let (styled_name, name_padding) = self.stylize_link_name()
+            .map(|name| {
+                let padding = name.len() - 1;
+                (name, padding)
+            })
+            .or_else(|| {
+                let name = self.file_name()
+                    .to_str()
+                    .map(|name| self.stylize(name))
+                    .flatten()
+                    .unwrap();
+                let padding = name.len() + 1;
+
+                Some((name, padding))
+            })
+            .unwrap();
 
         let output = format!(
             "{:<icon_padding$}{:<name_padding$}{size}",
              icon,
              styled_name,
-             icon_padding = (icon.len() > 1).then(|| icon.len() - 1).unwrap_or(0),
-             name_padding = styled_name.len() + 1
+             icon_padding = icon_padding,
+             name_padding = name_padding
          );
 
         write!(f, "{output}")
