@@ -301,6 +301,7 @@ pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
     None
 }
 
+/// Attempts to get the icon associated with the special file kind.
 pub fn icon_from_file_name(name: &OsStr) -> Option<&str> {
     FILE_NAME_ICON_MAP.get(name).map(|i| *i)
 }
@@ -310,6 +311,7 @@ pub fn get_default_icon<'a>() -> &'a str {
     DEFAULT_ICON.as_str()
 }
 
+/// Convenience method to paint fixed colors.
 fn col(num: u8, code: &str) -> String {
     Color::Fixed(num).paint(code).to_string()
 }

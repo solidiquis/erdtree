@@ -172,6 +172,7 @@ impl Node {
             .or_else(|| Some(entity.to_string()))
     }
 
+    /// Stylizes symlink name for display.
     fn stylize_link_name(&self) -> Option<String> {
         self.symlink_target_file_name()
             .map(|name| {
@@ -182,12 +183,14 @@ impl Node {
     }
 }
 
+/// Used to be converted directly into a [Node].
 pub struct NodePrecursor {
     dir_entry: DirEntry,
     show_icon: bool,
 }
 
 impl NodePrecursor {
+    /// Yields a [NodePrecursor] which is used for convenient conversion into a [Node].
     pub fn new(dir_entry: DirEntry, show_icon: bool) -> Self {
         Self { dir_entry, show_icon }
     }
