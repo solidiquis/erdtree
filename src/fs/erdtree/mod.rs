@@ -1,3 +1,6 @@
+/// Operations that decide how to present info about disk usage.
+pub mod disk_usage;
+
 /// Contains components of the [`Tree`] data structure that derive from [`DirEntry`].
 ///
 /// [`Tree`]: tree::Tree

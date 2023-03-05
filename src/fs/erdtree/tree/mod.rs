@@ -1,7 +1,8 @@
-use super::order::Order;
 use super::{
+    disk_usage::DiskUsage,
     super::error::Error,
     node::{Node, NodePrecursor},
+    order::Order
 };
 use crate::cli::Clargs;
 use crossbeam::channel::{self, Sender};
@@ -23,6 +24,8 @@ pub mod ui;
 #[derive(Debug)]
 pub struct Tree {
     #[allow(dead_code)]
+    disk_usage: DiskUsage,
+    #[allow(dead_code)]
     icons: bool,
     level: Option<usize>,
     #[allow(dead_code)]
@@ -41,10 +44,12 @@ impl Tree {
         order: Order,
         level: Option<usize>,
         icons: bool,
+        disk_usage: DiskUsage
     ) -> TreeResult<Self> {
-        let root = Self::traverse(walker, &order, icons)?;
+        let root = Self::traverse(walker, &order, icons, &disk_usage)?;
 
         Ok(Self {
+            disk_usage,
             level,
             order,
             root,
@@ -62,7 +67,7 @@ impl Tree {
     /// system calls are expected to occur during parallel traversal; thus post-processing of all
     /// directory entries should be completely CPU-bound. If filesystem I/O or system calls occur
     /// outside of the parallel traversal step please report an issue.
-    fn traverse(walker: WalkParallel, order: &Order, icons: bool) -> TreeResult<Node> {
+    fn traverse(walker: WalkParallel, order: &Order, icons: bool, disk_usage: &DiskUsage) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
         // Receives directory entries from the workers used for parallel traversal to construct the
@@ -106,7 +111,7 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
-                    .map(|entry| NodePrecursor::new(entry, icons))
+                    .map(|entry| NodePrecursor::new(disk_usage, entry, icons))
                     .map(Node::from)
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
@@ -161,7 +166,8 @@ impl TryFrom<Clargs> for Tree {
     fn try_from(clargs: Clargs) -> Result<Self, Self::Error> {
         let walker = WalkParallel::try_from(&clargs)?;
         let order = Order::from((clargs.sort(), clargs.dirs_first()));
-        let tree = Tree::new(walker, order, clargs.level(), clargs.icons)?;
+        let du = DiskUsage::from(clargs.disk_usage());
+        let tree = Tree::new(walker, order, clargs.level(), clargs.icons, du)?;
         Ok(tree)
     }
 }

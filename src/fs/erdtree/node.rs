@@ -1,10 +1,14 @@
-use super::get_ls_colors;
+use super::{
+    disk_usage::DiskUsage,
+    get_ls_colors
+};
 use crate::{
     fs::file_size::FileSize,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
 };
 use ansi_term::Color;
 use ansi_term::Style;
+use filesize::PathExt;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
 use std::{
@@ -197,24 +201,27 @@ impl Node {
 }
 
 /// Used to be converted directly into a [Node].
-pub struct NodePrecursor {
+pub struct NodePrecursor<'a> {
+    disk_usage: &'a DiskUsage,
     dir_entry: DirEntry,
     show_icon: bool,
 }
 
-impl NodePrecursor {
+impl<'a> NodePrecursor<'a> {
     /// Yields a [NodePrecursor] which is used for convenient conversion into a [Node].
-    pub fn new(dir_entry: DirEntry, show_icon: bool) -> Self {
+    pub fn new(disk_usage: &'a DiskUsage, dir_entry: DirEntry, show_icon: bool) -> Self {
         Self {
+            disk_usage,
             dir_entry,
             show_icon,
         }
     }
 }
 
-impl From<NodePrecursor> for Node {
+impl From<NodePrecursor<'_>> for Node {
     fn from(precursor: NodePrecursor) -> Self {
         let NodePrecursor {
+            disk_usage,
             dir_entry,
             show_icon,
         } = precursor;
@@ -224,8 +231,6 @@ impl From<NodePrecursor> for Node {
         let depth = dir_entry.depth();
 
         let file_type = dir_entry.file_type();
-
-        let metadata = dir_entry.metadata().ok();
 
         let path = dir_entry.path();
 
@@ -241,6 +246,8 @@ impl From<NodePrecursor> for Node {
             |os_str| os_str.to_owned(),
         );
 
+        let metadata = dir_entry.metadata().ok();
+
         let style = get_ls_colors()
             .style_for_path_with_metadata(path, metadata.as_ref())
             .map(LS_Style::to_ansi_term_style)
@@ -250,8 +257,11 @@ impl From<NodePrecursor> for Node {
 
         if let Some(ref ft) = file_type {
             if ft.is_file() {
-                if let Some(md) = metadata {
-                    file_size = Some(md.len());
+                if let Some(ref md) = metadata {
+                    file_size = match disk_usage {
+                        DiskUsage::Logical => Some(md.len()),
+                        DiskUsage::Physical => path.size_on_disk_fast(md).ok(),
+                    }
                 }
             }
         };
