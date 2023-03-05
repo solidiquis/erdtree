@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use clap::Parser;
+use clap::{CommandFactory, FromArgMatches};
 use cli::Clargs;
 use fs::erdtree::{self, tree::Tree};
 
@@ -25,9 +25,10 @@ fn main() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-fn run() -> Result<(), fs::error::Error> {
+fn run() -> Result<(), Box<dyn std::error::Error>> {
     erdtree::tree::ui::init();
-    let clargs = Clargs::parse();
+    let matches = Clargs::command().args_override_self(true).get_matches();
+    let clargs = Clargs::from_arg_matches(&matches)?;
     let tree = Tree::try_from(clargs)?;
 
     println!("{tree}");
