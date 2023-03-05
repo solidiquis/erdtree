@@ -15,13 +15,13 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 * [Usage](#usage)
 * [Installation](#installation)
 * [Disambiguations](#disambiguations)
-  - [Disk Size](#disk-size)
-  - [File Without Read Permissions](#files-without-read-permissions)
-  - [File Coloring](#file-coloring)
-  - [tree Command](#tree-command)
-  - [Symlinks to Directories](#symlinks-to-directories)
+  - [Disk usage](#disk-usage)
+  - [File without read permissions](#files-without-read-permissions)
+  - [File coloring](#file-coloring)
+  - [tree command](#tree-command)
+  - [Symlinks](#symlinks)
   - [Advantages over exa --tree](#advantages-over-exa---tree)
-  - [Icons not rendering properly](#icons-not-rendering-properly)
+  - [Icons](#icons)
 * [Rules for Contributing and Feature Requests](#rules-for-contributing-and-feature-requests)
 * [Special Thanks](#special-thanks)
 * [Questions you might have](#questions-you-might-have)
@@ -34,7 +34,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 - displays file sizes in human-readable format by default
 - traverses directories in a parallel manner (4 threads by default)
 - displays files using ANSI colors by default
-- supports icons!
+- supports icons! (checkout the [Icons](#icons) section before using)
 
 ## Usage
 ```
@@ -132,15 +132,17 @@ Symlinks are not followed by default. `-S, --follow-links` enables symlink follo
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et.png?raw=true" alt="failed to load png" />
 </p>
 
-### Icons not rendering properly
+### Icons
 
-If your icon look something like this:
+For icons to render properly it is required that the font you have hooked up to your terminal emulator contain the glyphs that `erdtree` expects in order to properly render icons which is why `-I, --icons` is an opt-in feature.
+
+If your icons look something like this:
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icons.png?raw=true" alt="failed to load png" />
 </p>
 
-this means that your terminal emulator's font doesn't contain the relevant glyphs that `erdtree` expects in order to properly render icons. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
+this means that the font you are using doesn't include the relevant glyphs. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
 
 ## Rules for Contributing and Feature Requests
 
