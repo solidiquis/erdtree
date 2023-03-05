@@ -97,7 +97,8 @@ pub enum DiskUsage {
     /// How many bytes does a file contain
     Logical,
 
-    /// How much actual space on disk, taking into account sparse files and compression.
+    /// How much actual space on disk based on blocks allocated, taking into account sparse files
+    /// and compression.
     Physical,
 }
 
