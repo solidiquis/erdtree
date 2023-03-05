@@ -1,8 +1,8 @@
 use super::{
-    disk_usage::DiskUsage,
     super::error::Error,
+    disk_usage::DiskUsage,
     node::{Node, NodePrecursor},
-    order::Order
+    order::Order,
 };
 use crate::cli::Clargs;
 use crossbeam::channel::{self, Sender};
@@ -44,7 +44,7 @@ impl Tree {
         order: Order,
         level: Option<usize>,
         icons: bool,
-        disk_usage: DiskUsage
+        disk_usage: DiskUsage,
     ) -> TreeResult<Self> {
         let root = Self::traverse(walker, &order, icons, &disk_usage)?;
 
@@ -67,7 +67,12 @@ impl Tree {
     /// system calls are expected to occur during parallel traversal; thus post-processing of all
     /// directory entries should be completely CPU-bound. If filesystem I/O or system calls occur
     /// outside of the parallel traversal step please report an issue.
-    fn traverse(walker: WalkParallel, order: &Order, icons: bool, disk_usage: &DiskUsage) -> TreeResult<Node> {
+    fn traverse(
+        walker: WalkParallel,
+        order: &Order,
+        icons: bool,
+        disk_usage: &DiskUsage,
+    ) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
         // Receives directory entries from the workers used for parallel traversal to construct the

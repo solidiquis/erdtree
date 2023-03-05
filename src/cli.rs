@@ -105,10 +105,9 @@ pub enum DiskUsage {
 impl Clargs {
     /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
-        self.dir.as_ref().map_or_else(
-            || Path::new("."),
-            |pb| pb.as_path()
-        )
+        self.dir
+            .as_ref()
+            .map_or_else(|| Path::new("."), |pb| pb.as_path())
     }
 
     /// The sort-order used for printing.

@@ -23,7 +23,7 @@ impl Order {
         if self.dir_first {
             return Some(Box::new(|a, b| {
                 Self::dir_comparator(a, b, self.sort.comparator())
-            }))
+            }));
         }
 
         self.sort.comparator()
@@ -37,7 +37,7 @@ impl Order {
         match (a.is_dir(), b.is_dir()) {
             (true, false) => Ordering::Less,
             (false, true) => Ordering::Greater,
-            _ => fallback.map_or_else(|| Ordering::Equal, |sort| sort(a, b))
+            _ => fallback.map_or_else(|| Ordering::Equal, |sort| sort(a, b)),
         }
     }
 }

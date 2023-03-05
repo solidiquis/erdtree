@@ -1,7 +1,4 @@
-use super::{
-    disk_usage::DiskUsage,
-    get_ls_colors
-};
+use super::{disk_usage::DiskUsage, get_ls_colors};
 use crate::{
     fs::file_size::FileSize,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
