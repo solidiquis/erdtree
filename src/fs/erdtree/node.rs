@@ -1,17 +1,17 @@
 use super::get_ls_colors;
-use ansi_term::Color;
 use crate::{
     fs::file_size::FileSize,
-    icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type}
+    icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
 };
+use ansi_term::Color;
 use ansi_term::Style;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
 use std::{
     borrow::Cow,
     convert::From,
-    fmt::{self, Display, Formatter},
     ffi::{OsStr, OsString},
+    fmt::{self, Display, Formatter},
     fs::{self, FileType},
     path::{Path, PathBuf},
     slice::Iter,
@@ -81,17 +81,14 @@ impl Node {
     /// Converts `OsStr` to `String`; if fails does a lossy conversion replacing non-Unicode
     /// sequences with Unicode replacement scalar value.
     pub fn file_name_lossy(&self) -> Cow<'_, str> {
-        self.file_name().to_str().map_or_else(
-            || self.file_name().to_string_lossy(),
-            |s| Cow::from(s)
-        )
+        self.file_name()
+            .to_str()
+            .map_or_else(|| self.file_name().to_string_lossy(), |s| Cow::from(s))
     }
 
     /// Returns `true` if node is a directory.
     pub fn is_dir(&self) -> bool {
-        self.file_type()
-            .map(|ft| ft.is_dir())
-            .unwrap_or(false)
+        self.file_type().map(|ft| ft.is_dir()).unwrap_or(false)
     }
 
     /// Is the Node a symlink.
@@ -106,7 +103,9 @@ impl Node {
 
     /// Returns the file name of the symlink target if [Node] represents a symlink.
     pub fn symlink_target_file_name(&self) -> Option<&OsStr> {
-        self.symlink_target_path().map(|path| path.file_name()).flatten()
+        self.symlink_target_path()
+            .map(|path| path.file_name())
+            .flatten()
     }
 
     /// Returns reference to underlying [FileType].
@@ -149,9 +148,11 @@ impl Node {
     /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
     /// [`LS_COLORS`] foreground configuration of the associated file name.
     ///
-    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS 
+    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS
     fn get_icon(&self) -> Option<String> {
-        if !self.show_icon { return None }
+        if !self.show_icon {
+            return None;
+        }
 
         let path = self.symlink_target_path().unwrap_or_else(|| self.path());
 
@@ -163,7 +164,9 @@ impl Node {
             return Some(self.stylize(icon));
         }
 
-        let file_name = self.symlink_target_file_name().unwrap_or_else(|| self.file_name());
+        let file_name = self
+            .symlink_target_file_name()
+            .unwrap_or_else(|| self.file_name());
 
         if let Some(icon) = icon_from_file_name(file_name) {
             return Some(self.stylize(icon));
@@ -174,23 +177,22 @@ impl Node {
 
     /// Stylizes input, `entity` based on [`LS_COLORS`]
     ///
-    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS 
+    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS
     fn stylize(&self, entity: &str) -> String {
         self.style().foreground.map_or_else(
             || entity.to_string(),
-            |fg| fg.bold().paint(entity).to_string()
+            |fg| fg.bold().paint(entity).to_string(),
         )
     }
 
     /// Stylizes symlink name for display.
     fn stylize_link_name(&self) -> Option<String> {
-        self.symlink_target_file_name()
-            .map(|name| {
-                let file_name = self.file_name_lossy();
-                let styled_name = self.stylize(&file_name);
-                let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_string_lossy()));
-                format!("{} {}", styled_name, target_name)
-            })
+        self.symlink_target_file_name().map(|name| {
+            let file_name = self.file_name_lossy();
+            let styled_name = self.stylize(&file_name);
+            let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_string_lossy()));
+            format!("{} {}", styled_name, target_name)
+        })
     }
 }
 
@@ -203,13 +205,19 @@ pub struct NodePrecursor {
 impl NodePrecursor {
     /// Yields a [NodePrecursor] which is used for convenient conversion into a [Node].
     pub fn new(dir_entry: DirEntry, show_icon: bool) -> Self {
-        Self { dir_entry, show_icon }
+        Self {
+            dir_entry,
+            show_icon,
+        }
     }
 }
 
 impl From<NodePrecursor> for Node {
     fn from(precursor: NodePrecursor) -> Self {
-        let NodePrecursor { dir_entry, show_icon } = precursor;
+        let NodePrecursor {
+            dir_entry,
+            show_icon,
+        } = precursor;
 
         let children = None;
 
@@ -264,19 +272,22 @@ impl From<NodePrecursor> for Node {
 
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let size = self.file_size
+        let size = self
+            .file_size
             .map(|size| format!("({})", FileSize::new(size)))
             .or_else(|| Some("".to_owned()))
             .unwrap();
 
-        let icon = self.show_icon
+        let icon = self
+            .show_icon
             .then(|| self.get_icon())
             .flatten()
             .unwrap_or("".to_owned());
 
         let icon_padding = (icon.len() > 1).then(|| icon.len() - 1).unwrap_or(0);
 
-        let (styled_name, name_padding) = self.stylize_link_name()
+        let (styled_name, name_padding) = self
+            .stylize_link_name()
             .map(|name| {
                 let padding = name.len() - 1;
                 (name, padding)
@@ -292,11 +303,11 @@ impl Display for Node {
 
         let output = format!(
             "{:<icon_padding$}{:<name_padding$}{size}",
-             icon,
-             styled_name,
-             icon_padding = icon_padding,
-             name_padding = name_padding
-         );
+            icon,
+            styled_name,
+            icon_padding = icon_padding,
+            name_padding = name_padding
+        );
 
         write!(f, "{output}")
     }

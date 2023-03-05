@@ -1,9 +1,9 @@
-use crate::cli::Clargs;
 use super::order::Order;
 use super::{
     super::error::Error,
-    node::{Node, NodePrecursor}
+    node::{Node, NodePrecursor},
 };
+use crate::cli::Clargs;
 use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
@@ -36,10 +36,20 @@ pub type TreeComponents = (Node, Branches);
 
 impl Tree {
     /// Initializes a [Tree].
-    pub fn new(walker: WalkParallel, order: Order, level: Option<usize>, icons: bool) -> TreeResult<Self> {
+    pub fn new(
+        walker: WalkParallel,
+        order: Order,
+        level: Option<usize>,
+        icons: bool,
+    ) -> TreeResult<Self> {
         let root = Self::traverse(walker, &order, icons)?;
 
-        Ok(Self { level, order, root, icons })
+        Ok(Self {
+            level,
+            order,
+            root,
+            icons,
+        })
     }
 
     /// Returns a reference to the root [Node].
@@ -199,8 +209,10 @@ impl Display for Tree {
                     if let Some(iter_children) = child.children() {
                         let mut new_base = base_prefix.to_owned();
 
-                        let new_theme =
-                            child.is_symlink().then(|| ui::get_link_theme()).unwrap_or(theme);
+                        let new_theme = child
+                            .is_symlink()
+                            .then(|| ui::get_link_theme())
+                            .unwrap_or(theme);
 
                         if last_entry {
                             new_base.push_str(ui::SEP);

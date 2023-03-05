@@ -7,8 +7,7 @@ use std::{
     convert::From,
     error::Error as StdError,
     fmt::{self, Display, Formatter},
-    fs,
-    io,
+    fs, io,
     path::{Path, PathBuf},
     usize,
 };
@@ -146,8 +145,7 @@ impl TryFrom<&Clargs> for WalkParallel {
     fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
         let root = fs::canonicalize(clargs.dir())?;
 
-        fs::metadata(&root)
-            .map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+        fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
         Ok(WalkBuilder::new(root)
             .follow_links(clargs.follow_links)
