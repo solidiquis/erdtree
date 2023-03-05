@@ -150,7 +150,7 @@ impl TryFrom<Clargs> for Tree {
 
     fn try_from(clargs: Clargs) -> Result<Self, Self::Error> {
         let walker = WalkParallel::try_from(&clargs)?;
-        let order = Order::from(clargs.sort());
+        let order = Order::from((clargs.sort(), clargs.dirs_first()));
         let tree = Tree::new(walker, order, clargs.level(), clargs.icons)?;
         Ok(tree)
     }

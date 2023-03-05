@@ -8,9 +8,11 @@ fn glob() {
         utils::run_cmd(&["--sort", "name", "--glob", "*.txt", "tests/data"]),
         indoc!(
             "
-            data (652.00 B)
+            data (1.10 KB)
             ├─ dream_cycle (308.00 B)
             │  └─ polaris.txt (308.00 B)
+            ├─ lipsum (446.00 B)
+            │  └─ lipsum.txt (446.00 B)
             ├─ necronomicon.txt (83.00 B)
             ├─ nemesis.txt (161.00 B)
             ├─ nylarlathotep.txt (100.00 B)
@@ -27,6 +29,7 @@ fn glob_negative() {
             "
             data (143.00 B)
             ├─ dream_cycle 
+            ├─ lipsum 
             └─ the_yellow_king (143.00 B)
                └─ cassildas_song.md (143.00 B)"
         )
@@ -46,9 +49,11 @@ fn glob_case_insensitive() {
         ]),
         indoc!(
             "
-            data (652.00 B)
+            data (1.10 KB)
             ├─ dream_cycle (308.00 B)
             │  └─ polaris.txt (308.00 B)
+            ├─ lipsum (446.00 B)
+            │  └─ lipsum.txt (446.00 B)
             ├─ necronomicon.txt (83.00 B)
             ├─ nemesis.txt (161.00 B)
             ├─ nylarlathotep.txt (100.00 B)
@@ -63,9 +68,11 @@ fn iglob() {
         utils::run_cmd(&["--sort", "name", "--iglob", "*.TXT", "tests/data"]),
         indoc!(
             "
-            data (652.00 B)
+            data (1.10 KB)
             ├─ dream_cycle (308.00 B)
             │  └─ polaris.txt (308.00 B)
+            ├─ lipsum (446.00 B)
+            │  └─ lipsum.txt (446.00 B)
             ├─ necronomicon.txt (83.00 B)
             ├─ nemesis.txt (161.00 B)
             ├─ nylarlathotep.txt (100.00 B)
