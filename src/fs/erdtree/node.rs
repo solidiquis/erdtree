@@ -228,7 +228,10 @@ impl From<NodePrecursor> for Node {
             .ok()
             .flatten();
 
-        let file_name = path.file_name().map(|os_str| os_str.to_owned()).unwrap();
+        let file_name = path.file_name().map_or_else(
+            || OsString::from(path.display().to_string()),
+            |os_str| os_str.to_owned(),
+        );
 
         let style = get_ls_colors()
             .style_for_path_with_metadata(path, metadata.as_ref())
