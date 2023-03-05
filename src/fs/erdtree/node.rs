@@ -8,6 +8,7 @@ use ansi_term::Style;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
 use std::{
+    borrow::Cow,
     convert::From,
     fmt::{self, Display, Formatter},
     ffi::{OsStr, OsString},
@@ -75,6 +76,15 @@ impl Node {
     /// the symlink not the target.
     pub fn file_name(&self) -> &OsStr {
         &self.file_name
+    }
+
+    /// Converts `OsStr` to `String`; if fails does a lossy conversion replacing non-Unicode
+    /// sequences with Unicode replacement scalar value.
+    pub fn file_name_lossy(&self) -> Cow<'_, str> {
+        self.file_name().to_str().map_or_else(
+            || self.file_name().to_string_lossy(),
+            |s| Cow::from(s)
+        )
     }
 
     /// Returns `true` if node is a directory.
@@ -146,17 +156,17 @@ impl Node {
         let path = self.symlink_target_path().unwrap_or_else(|| self.path());
 
         if let Some(icon) = path.extension().map(icon_from_ext).flatten() {
-            return self.stylize(icon)
+            return Some(self.stylize(icon));
         }
 
         if let Some(icon) = self.file_type().map(icon_from_file_type).flatten() {
-            return self.stylize(icon);
+            return Some(self.stylize(icon));
         }
 
         let file_name = self.symlink_target_file_name().unwrap_or_else(|| self.file_name());
 
         if let Some(icon) = icon_from_file_name(file_name) {
-            return self.stylize(icon);
+            return Some(self.stylize(icon));
         }
 
         Some(icons::get_default_icon().to_owned())
@@ -165,20 +175,21 @@ impl Node {
     /// Stylizes input, `entity` based on [`LS_COLORS`]
     ///
     /// [`LS_COLORS`]: super::tree::ui::LS_COLORS 
-    fn stylize(&self, entity: &str) -> Option<String> {
-        self.style()
-            .foreground
-            .map(|fg| fg.bold().paint(entity).to_string())
-            .or_else(|| Some(entity.to_string()))
+    fn stylize(&self, entity: &str) -> String {
+        self.style().foreground.map_or_else(
+            || entity.to_string(),
+            |fg| fg.bold().paint(entity).to_string()
+        )
     }
 
     /// Stylizes symlink name for display.
     fn stylize_link_name(&self) -> Option<String> {
         self.symlink_target_file_name()
             .map(|name| {
-                let file_name = self.file_name().to_str().map(|s| self.stylize(s)).flatten().unwrap();
-                let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_str().unwrap()));
-                format!("{} {}", file_name, target_name)
+                let file_name = self.file_name_lossy();
+                let styled_name = self.stylize(&file_name);
+                let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_string_lossy()));
+                format!("{} {}", styled_name, target_name)
             })
     }
 }
@@ -268,11 +279,8 @@ impl Display for Node {
                 (name, padding)
             })
             .or_else(|| {
-                let name = self.file_name()
-                    .to_str()
-                    .map(|name| self.stylize(name))
-                    .flatten()
-                    .unwrap();
+                let file_name = self.file_name_lossy();
+                let name = self.stylize(&file_name);
                 let padding = name.len() + 1;
 
                 Some((name, padding))
