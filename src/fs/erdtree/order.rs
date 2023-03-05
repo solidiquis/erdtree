@@ -7,6 +7,7 @@ use std::{cmp::Ordering, convert::From};
 pub enum SortType {
     Name,
     Size,
+    SizeRev,
     None,
 }
 
@@ -20,12 +21,12 @@ impl Order {
     /// Yields function pointer to the appropriate `Node` comparator.
     pub fn comparator(&self) -> Option<Box<dyn Fn(&Node, &Node) -> Ordering + '_>> {
         if self.dir_first {
-            Some(Box::new(|a, b| {
+            return Some(Box::new(|a, b| {
                 Self::dir_comparator(a, b, self.sort.comparator())
-            }))
-        } else {
-            self.sort.comparator()
+            }));
         }
+
+        self.sort.comparator()
     }
 
     fn dir_comparator(
@@ -36,13 +37,7 @@ impl Order {
         match (a.is_dir(), b.is_dir()) {
             (true, false) => Ordering::Less,
             (false, true) => Ordering::Greater,
-            _ => {
-                if let Some(sort) = fallback {
-                    sort(a, b)
-                } else {
-                    Ordering::Equal
-                }
-            }
+            _ => fallback.map_or_else(|| Ordering::Equal, |sort| sort(a, b)),
         }
     }
 }
@@ -53,6 +48,7 @@ impl SortType {
         match self {
             Self::Name => Some(Box::new(Self::name_comparator)),
             Self::Size => Some(Box::new(Self::size_comparator)),
+            Self::SizeRev => Some(Box::new(Self::size_rev_comparator)),
             _ => None,
         }
     }
@@ -62,11 +58,18 @@ impl SortType {
         a.file_name().cmp(b.file_name())
     }
 
-    /// Comparator based on `Node` file sizes
+    /// Comparator that sorts [Node]s by size smallest to largest.
     fn size_comparator(a: &Node, b: &Node) -> Ordering {
         let a_size = a.file_size.unwrap_or(0);
         let b_size = b.file_size.unwrap_or(0);
 
+        a_size.cmp(&b_size)
+    }
+
+    /// Comparator that sorts [Node]s by size largest to smallest.
+    fn size_rev_comparator(a: &Node, b: &Node) -> Ordering {
+        let a_size = a.file_size.unwrap_or(0);
+        let b_size = b.file_size.unwrap_or(0);
         b_size.cmp(&a_size)
     }
 }
@@ -85,6 +88,7 @@ impl From<cli::Order> for SortType {
         match ord {
             cli::Order::Name => SortType::Name,
             cli::Order::Size => SortType::Size,
+            cli::Order::SizeRev => SortType::SizeRev,
             cli::Order::None => SortType::None,
         }
     }

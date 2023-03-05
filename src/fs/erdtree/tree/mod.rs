@@ -1,9 +1,10 @@
-use crate::cli::Clargs;
-use super::order::Order;
 use super::{
     super::error::Error,
-    node::{Node, NodePrecursor}
+    disk_usage::DiskUsage,
+    node::{Node, NodePrecursor},
+    order::Order,
 };
+use crate::cli::Clargs;
 use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
@@ -23,6 +24,8 @@ pub mod ui;
 #[derive(Debug)]
 pub struct Tree {
     #[allow(dead_code)]
+    disk_usage: DiskUsage,
+    #[allow(dead_code)]
     icons: bool,
     level: Option<usize>,
     #[allow(dead_code)]
@@ -36,10 +39,22 @@ pub type TreeComponents = (Node, Branches);
 
 impl Tree {
     /// Initializes a [Tree].
-    pub fn new(walker: WalkParallel, order: Order, level: Option<usize>, icons: bool) -> TreeResult<Self> {
-        let root = Self::traverse(walker, &order, icons)?;
+    pub fn new(
+        walker: WalkParallel,
+        order: Order,
+        level: Option<usize>,
+        icons: bool,
+        disk_usage: DiskUsage,
+    ) -> TreeResult<Self> {
+        let root = Self::traverse(walker, &order, icons, &disk_usage)?;
 
-        Ok(Self { level, order, root, icons })
+        Ok(Self {
+            disk_usage,
+            level,
+            order,
+            root,
+            icons,
+        })
     }
 
     /// Returns a reference to the root [Node].
@@ -52,7 +67,12 @@ impl Tree {
     /// system calls are expected to occur during parallel traversal; thus post-processing of all
     /// directory entries should be completely CPU-bound. If filesystem I/O or system calls occur
     /// outside of the parallel traversal step please report an issue.
-    fn traverse(walker: WalkParallel, order: &Order, icons: bool) -> TreeResult<Node> {
+    fn traverse(
+        walker: WalkParallel,
+        order: &Order,
+        icons: bool,
+        disk_usage: &DiskUsage,
+    ) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
         // Receives directory entries from the workers used for parallel traversal to construct the
@@ -96,7 +116,7 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
-                    .map(|entry| NodePrecursor::new(entry, icons))
+                    .map(|entry| NodePrecursor::new(disk_usage, entry, icons))
                     .map(Node::from)
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
@@ -151,7 +171,8 @@ impl TryFrom<Clargs> for Tree {
     fn try_from(clargs: Clargs) -> Result<Self, Self::Error> {
         let walker = WalkParallel::try_from(&clargs)?;
         let order = Order::from((clargs.sort(), clargs.dirs_first()));
-        let tree = Tree::new(walker, order, clargs.level(), clargs.icons)?;
+        let du = DiskUsage::from(clargs.disk_usage());
+        let tree = Tree::new(walker, order, clargs.level(), clargs.icons, du)?;
         Ok(tree)
     }
 }
@@ -199,8 +220,10 @@ impl Display for Tree {
                     if let Some(iter_children) = child.children() {
                         let mut new_base = base_prefix.to_owned();
 
-                        let new_theme =
-                            child.is_symlink().then(|| ui::get_link_theme()).unwrap_or(theme);
+                        let new_theme = child
+                            .is_symlink()
+                            .then(|| ui::get_link_theme())
+                            .unwrap_or(theme);
 
                         if last_entry {
                             new_base.push_str(ui::SEP);

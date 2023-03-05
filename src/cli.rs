@@ -7,21 +7,24 @@ use std::{
     convert::From,
     error::Error as StdError,
     fmt::{self, Display, Formatter},
-    fs,
-    io,
+    fs, io,
     path::{Path, PathBuf},
     usize,
 };
 
 /// Defines the CLI.
 #[derive(Parser, Debug)]
-#[command(name = "Erdtree")]
+#[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
 #[command(version = "1.2")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Clargs {
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
+
+    /// Print physical or logical file size
+    #[arg(short, long, value_enum, default_value_t = DiskUsage::Logical)]
+    disk_usage: DiskUsage,
 
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
@@ -78,21 +81,33 @@ pub enum Order {
     /// Sort entries by file name
     Name,
 
-    /// Sort entries by size in descending order
+    /// Sort entries by size smallest to largest, top to bottom
     Size,
+
+    /// Sort entries by size largest to smallest, bottom to top
+    SizeRev,
 
     /// No sorting
     None,
 }
 
+/// Display disk usage output as either logical size or physical size.
+#[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum DiskUsage {
+    /// How many bytes does a file contain
+    Logical,
+
+    /// How much actual space on disk based on blocks allocated, taking into account sparse files
+    /// and compression.
+    Physical,
+}
+
 impl Clargs {
     /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
-        if let Some(ref path) = self.dir {
-            path.as_path()
-        } else {
-            Path::new(".")
-        }
+        self.dir
+            .as_ref()
+            .map_or_else(|| Path::new("."), |pb| pb.as_path())
     }
 
     /// The sort-order used for printing.
@@ -100,8 +115,14 @@ impl Clargs {
         self.sort
     }
 
+    /// Getter for `dirs_first` field.
     pub fn dirs_first(&self) -> bool {
         self.dirs_first
+    }
+
+    /// Getter for `disk_usage` field.
+    pub fn disk_usage(&self) -> &DiskUsage {
+        &self.disk_usage
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
@@ -146,8 +167,7 @@ impl TryFrom<&Clargs> for WalkParallel {
     fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
         let root = fs::canonicalize(clargs.dir())?;
 
-        fs::metadata(&root)
-            .map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+        fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
         Ok(WalkBuilder::new(root)
             .follow_links(clargs.follow_links)

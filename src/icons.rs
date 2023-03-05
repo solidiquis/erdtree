@@ -1,10 +1,10 @@
-use ansi_term::Color;
 use crate::hash;
+use ansi_term::Color;
 use once_cell::sync::Lazy;
 use std::{
     collections::HashMap,
     ffi::{OsStr, OsString},
-    fs::FileType
+    fs::FileType,
 };
 
 /// Lazily evaluated static hash-map of special file-types and their corresponding styled icons.
