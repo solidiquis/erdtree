@@ -28,7 +28,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 
 ## Description
 
-**erdtree** is a modern alternative to the ancient [tree](https://en.wikipedia.org/wiki/Tree_(command)) command in that it:
+**erdtree** is a modern alternative to `tree` and `du` in that it:
 - offers a minimal and user-friendly CLI
 - respects hidden files and `.gitignore` rules by default
 - displays file sizes in human-readable format by default
@@ -92,7 +92,7 @@ using SI units rather than binary units. As such you can expect `1KB = 1000B` an
 Additionally:
 - A directory will have a size equal to the sum of the sizes of all of its entries. The size of the directory itself is negligble and isn't taken into account.
 - Hidden files, files excluded by `.gitignore`, and files excluded via globbing will be ommitted from the total memory size of their parent directories.
-- Special files such a named pipes, sockets, etc. have negligble sizes so their disk usage isn't reported.
+- Special files such a named pipes, sockets, etc. have negligible sizes so their disk usage aren't reported.
 
 ### Files without read permissions
 
