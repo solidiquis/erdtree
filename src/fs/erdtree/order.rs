@@ -1,24 +1,58 @@
-use crate::cli;
 use super::node::Node;
-use std::{
-    convert::From,
-    cmp::Ordering,
-};
+use crate::cli;
+use std::{cmp::Ordering, convert::From};
 
 /// Order in which to print nodes.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Order {
+pub enum SortType {
     Name,
     Size,
     None,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Order {
+    sort: SortType,
+    dir_first: bool,
+}
+
 impl Order {
     /// Yields function pointer to the appropriate `Node` comparator.
-    pub fn comparator(&self) -> Option<fn(a: &Node, b: &Node) -> Ordering> {
+    pub fn comparator(&self) -> Option<Box<dyn Fn(&Node, &Node) -> Ordering + '_>> {
+        if self.dir_first {
+            Some(Box::new(|a, b| {
+                Self::dir_comparator(a, b, self.sort.comparator())
+            }))
+        } else {
+            self.sort.comparator()
+        }
+    }
+
+    fn dir_comparator(
+        a: &Node,
+        b: &Node,
+        fallback: Option<impl Fn(&Node, &Node) -> Ordering>,
+    ) -> Ordering {
+        match (a.is_dir(), b.is_dir()) {
+            (true, false) => Ordering::Less,
+            (false, true) => Ordering::Greater,
+            _ => {
+                if let Some(sort) = fallback {
+                    sort(a, b)
+                } else {
+                    Ordering::Equal
+                }
+            }
+        }
+    }
+}
+
+impl SortType {
+    /// Yields function pointer to the appropriate `Node` comparator.
+    pub fn comparator(&self) -> Option<Box<dyn Fn(&Node, &Node) -> Ordering>> {
         match self {
-            Self::Name => Some(Self::name_comparator),
-            Self::Size => Some(Self::size_comparator),
+            Self::Name => Some(Box::new(Self::name_comparator)),
+            Self::Size => Some(Box::new(Self::size_comparator)),
             _ => None,
         }
     }
@@ -37,12 +71,21 @@ impl Order {
     }
 }
 
-impl From<cli::Order> for Order {
+impl From<(cli::Order, bool)> for Order {
+    fn from((order, dir_first): (cli::Order, bool)) -> Self {
+        Order {
+            sort: order.into(),
+            dir_first,
+        }
+    }
+}
+
+impl From<cli::Order> for SortType {
     fn from(ord: cli::Order) -> Self {
         match ord {
-            cli::Order::Name => Order::Name,
-            cli::Order::Size => Order::Size,
-            cli::Order::None => Order::None
+            cli::Order::Name => SortType::Name,
+            cli::Order::Size => SortType::Size,
+            cli::Order::None => SortType::None,
         }
     }
 }

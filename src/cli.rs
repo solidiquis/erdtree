@@ -59,6 +59,10 @@ pub struct Clargs {
     #[arg(short, long, value_enum, default_value_t = Order::None)]
     sort: Order,
 
+    /// Always sorts directories above files
+    #[arg(long)]
+    dirs_first: bool,
+
     /// Traverse symlink directories and consider their disk usage; disabled by default
     #[arg(short = 'S', long)]
     follow_links: bool,
@@ -94,6 +98,10 @@ impl Clargs {
     /// The sort-order used for printing.
     pub fn sort(&self) -> Order {
         self.sort
+    }
+
+    pub fn dirs_first(&self) -> bool {
+        self.dirs_first
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
