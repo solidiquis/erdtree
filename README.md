@@ -170,7 +170,7 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 - `dust` only shows a limited set of files in the file-tree by default, but also defaults to showing the largest files first.
 - `erdtree` keeps the spirit of `tree` with respect to the output while `dust` has a horizontal bar graph.
 
-I haven't used `dust` substantially so these are the immediate differences I cam across. Try `dust` and `erdtree` and see which best suits you.
+I haven't used `dust` substantially so these are the immediate differences I came across. Try `dust` and `erdtree` and see which best suits you.
 
 ## Rules for Contributing and Feature Requests
 
