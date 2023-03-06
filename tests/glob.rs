@@ -9,13 +9,13 @@ fn glob() {
         indoc!(
             "
             data (1.07 KiB)
-            ├─ dream_cycle (308.00 B)
-            │  └─ polaris.txt (308.00 B)
-            ├─ lipsum (446.00 B)
-            │  └─ lipsum.txt (446.00 B)
-            ├─ necronomicon.txt (83.00 B)
-            ├─ nemesis.txt (161.00 B)
-            ├─ nylarlathotep.txt (100.00 B)
+            ├─ dream_cycle (308 B)
+            │  └─ polaris.txt (308 B)
+            ├─ lipsum (446 B)
+            │  └─ lipsum.txt (446 B)
+            ├─ necronomicon.txt (83 B)
+            ├─ nemesis.txt (161 B)
+            ├─ nylarlathotep.txt (100 B)
             └─ the_yellow_king"
         )
     )
@@ -27,11 +27,11 @@ fn glob_negative() {
         utils::run_cmd(&["--sort", "name", "--glob", "!*.txt", "tests/data"]),
         indoc!(
             "
-            data (143.00 B)
+            data (143 B)
             ├─ dream_cycle 
             ├─ lipsum 
-            └─ the_yellow_king (143.00 B)
-               └─ cassildas_song.md (143.00 B)"
+            └─ the_yellow_king (143 B)
+               └─ cassildas_song.md (143 B)"
         )
     )
 }
@@ -50,13 +50,13 @@ fn glob_case_insensitive() {
         indoc!(
             "
             data (1.07 KiB)
-            ├─ dream_cycle (308.00 B)
-            │  └─ polaris.txt (308.00 B)
-            ├─ lipsum (446.00 B)
-            │  └─ lipsum.txt (446.00 B)
-            ├─ necronomicon.txt (83.00 B)
-            ├─ nemesis.txt (161.00 B)
-            ├─ nylarlathotep.txt (100.00 B)
+            ├─ dream_cycle (308 B)
+            │  └─ polaris.txt (308 B)
+            ├─ lipsum (446 B)
+            │  └─ lipsum.txt (446 B)
+            ├─ necronomicon.txt (83 B)
+            ├─ nemesis.txt (161 B)
+            ├─ nylarlathotep.txt (100 B)
             └─ the_yellow_king"
         )
     )
@@ -69,13 +69,13 @@ fn iglob() {
         indoc!(
             "
             data (1.07 KiB)
-            ├─ dream_cycle (308.00 B)
-            │  └─ polaris.txt (308.00 B)
-            ├─ lipsum (446.00 B)
-            │  └─ lipsum.txt (446.00 B)
-            ├─ necronomicon.txt (83.00 B)
-            ├─ nemesis.txt (161.00 B)
-            ├─ nylarlathotep.txt (100.00 B)
+            ├─ dream_cycle (308 B)
+            │  └─ polaris.txt (308 B)
+            ├─ lipsum (446 B)
+            │  └─ lipsum.txt (446 B)
+            ├─ necronomicon.txt (83 B)
+            ├─ nemesis.txt (161 B)
+            ├─ nylarlathotep.txt (100 B)
             └─ the_yellow_king"
        )
     )

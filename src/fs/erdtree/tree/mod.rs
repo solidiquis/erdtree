@@ -31,6 +31,8 @@ pub struct Tree {
     #[allow(dead_code)]
     order: Order,
     root: Node,
+    #[allow(dead_code)]
+    scale: usize,
 }
 
 pub type TreeResult<T> = Result<T, Error>;
@@ -45,8 +47,9 @@ impl Tree {
         level: Option<usize>,
         icons: bool,
         disk_usage: DiskUsage,
+        scale: usize,
     ) -> TreeResult<Self> {
-        let root = Self::traverse(walker, &order, icons, &disk_usage)?;
+        let root = Self::traverse(walker, &order, icons, &disk_usage, scale)?;
 
         Ok(Self {
             disk_usage,
@@ -54,6 +57,7 @@ impl Tree {
             order,
             root,
             icons,
+            scale
         })
     }
 
@@ -72,6 +76,7 @@ impl Tree {
         order: &Order,
         icons: bool,
         disk_usage: &DiskUsage,
+        scale: usize,
     ) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
@@ -124,7 +129,7 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
-                    .map(|entry| NodePrecursor::new(disk_usage, entry, icons))
+                    .map(|entry| NodePrecursor::new(disk_usage, entry, icons, scale))
                     .map(Node::from)
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
@@ -136,7 +141,7 @@ impl Tree {
 
         let (mut root, mut branches) = tree_components.join().unwrap()?;
 
-        Self::assemble_tree(&mut root, &mut branches, order, disk_usage);
+        Self::assemble_tree(&mut root, &mut branches, order, disk_usage, scale);
 
         Ok(root)
     }
@@ -147,7 +152,8 @@ impl Tree {
         current_dir: &mut Node,
         branches: &mut Branches,
         order: &Order,
-        disk_usage: &DiskUsage
+        disk_usage: &DiskUsage,
+        scale: usize,
     ) {
         let current_node = branches
             .remove(current_dir.path())
@@ -157,12 +163,12 @@ impl Tree {
             })
             .unwrap();
 
-        let mut dir_size = FileSize::new(0, disk_usage.clone());
+        let mut dir_size = FileSize::new(0, disk_usage.clone(), scale);
 
         current_node.children_mut().map(|nodes| {
             nodes.iter_mut().for_each(|node| {
                 if node.is_dir() {
-                    Self::assemble_tree(node, branches, order, disk_usage);
+                    Self::assemble_tree(node, branches, order, disk_usage, scale);
                 }
 
                 if let Some(fs) = node.file_size() {
@@ -188,7 +194,8 @@ impl TryFrom<Clargs> for Tree {
         let walker = WalkParallel::try_from(&clargs)?;
         let order = Order::from((clargs.sort(), clargs.dirs_first()));
         let du = DiskUsage::from(clargs.disk_usage());
-        let tree = Tree::new(walker, order, clargs.level(), clargs.icons, du)?;
+        let scale = clargs.scale;
+        let tree = Tree::new(walker, order, clargs.level(), clargs.icons, du, scale)?;
         Ok(tree)
     }
 }
