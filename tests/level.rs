@@ -8,7 +8,7 @@ fn level() {
         utils::run_cmd(&["--sort", "name", "--level", "1", "tests/data"]),
         indoc!(
             "
-            data (1.24 KB)
+            data (1.21 KiB)
             ├─ dream_cycle (308.00 B)
             ├─ lipsum (446.00 B)
             ├─ necronomicon.txt (83.00 B)

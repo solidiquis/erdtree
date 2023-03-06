@@ -1,6 +1,6 @@
 use super::{
     super::error::Error,
-    disk_usage::DiskUsage,
+    disk_usage::{DiskUsage, FileSize},
     node::{Node, NodePrecursor},
     order::Order,
 };
@@ -136,14 +136,19 @@ impl Tree {
 
         let (mut root, mut branches) = tree_components.join().unwrap()?;
 
-        Self::assemble_tree(&mut root, &mut branches, order);
+        Self::assemble_tree(&mut root, &mut branches, order, disk_usage);
 
         Ok(root)
     }
 
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
     /// structure. Sorting occurs if specified.
-    fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, order: &Order) {
+    fn assemble_tree(
+        current_dir: &mut Node,
+        branches: &mut Branches,
+        order: &Order,
+        disk_usage: &DiskUsage
+    ) {
         let current_node = branches
             .remove(current_dir.path())
             .map(|children| {
@@ -152,18 +157,21 @@ impl Tree {
             })
             .unwrap();
 
-        let mut dir_size = 0;
+        let mut dir_size = FileSize::new(0, disk_usage.clone());
 
         current_node.children_mut().map(|nodes| {
             nodes.iter_mut().for_each(|node| {
                 if node.is_dir() {
-                    Self::assemble_tree(node, branches, order);
+                    Self::assemble_tree(node, branches, order, disk_usage);
                 }
-                dir_size += node.file_size.unwrap_or(0);
+
+                if let Some(fs) = node.file_size() {
+                    dir_size += fs
+                }
             })
         });
 
-        if dir_size > 0 {
+        if dir_size.bytes > 0 {
             current_node.set_file_size(dir_size)
         }
 

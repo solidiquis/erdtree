@@ -8,7 +8,7 @@ fn glob() {
         utils::run_cmd(&["--sort", "name", "--glob", "*.txt", "tests/data"]),
         indoc!(
             "
-            data (1.10 KB)
+            data (1.07 KiB)
             ├─ dream_cycle (308.00 B)
             │  └─ polaris.txt (308.00 B)
             ├─ lipsum (446.00 B)
@@ -49,7 +49,7 @@ fn glob_case_insensitive() {
         ]),
         indoc!(
             "
-            data (1.10 KB)
+            data (1.07 KiB)
             ├─ dream_cycle (308.00 B)
             │  └─ polaris.txt (308.00 B)
             ├─ lipsum (446.00 B)
@@ -68,7 +68,7 @@ fn iglob() {
         utils::run_cmd(&["--sort", "name", "--iglob", "*.TXT", "tests/data"]),
         indoc!(
             "
-            data (1.10 KB)
+            data (1.07 KiB)
             ├─ dream_cycle (308.00 B)
             │  └─ polaris.txt (308.00 B)
             ├─ lipsum (446.00 B)
@@ -77,6 +77,6 @@ fn iglob() {
             ├─ nemesis.txt (161.00 B)
             ├─ nylarlathotep.txt (100.00 B)
             └─ the_yellow_king"
-        )
+       )
     )
 }

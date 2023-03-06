@@ -4,12 +4,11 @@ use super::{
     get_ls_colors,
 };
 use crate::{
-    fs::file_size::FileSize,
+    fs::erdtree::disk_usage::FileSize,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
 };
 use ansi_term::Color;
 use ansi_term::Style;
-use filesize::PathExt;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
 use std::{
@@ -31,7 +30,7 @@ use std::{
 #[derive(Debug)]
 pub struct Node {
     pub depth: usize,
-    pub file_size: Option<u64>,
+    pub file_size: Option<FileSize>,
     children: Option<Vec<Node>>,
     file_name: OsString,
     file_type: Option<FileType>,
@@ -46,7 +45,7 @@ impl Node {
     /// Initializes a new [Node].
     pub fn new(
         depth: usize,
-        file_size: Option<u64>,
+        file_size: Option<FileSize>,
         children: Option<Vec<Node>>,
         file_name: OsString,
         file_type: Option<FileType>,
@@ -143,8 +142,13 @@ impl Node {
         self.children = Some(children);
     }
 
+    /// Gets 'file_size'.
+    pub fn file_size(&self) -> Option<&FileSize> {
+        self.file_size.as_ref()
+    }
+
     /// Sets `file_size`.
-    pub fn set_file_size(&mut self, size: u64) {
+    pub fn set_file_size(&mut self, size: FileSize) {
         self.file_size = Some(size);
     }
 
@@ -268,8 +272,8 @@ impl From<NodePrecursor<'_>> for Node {
             if ft.is_file() {
                 if let Some(ref md) = metadata {
                     file_size = match disk_usage {
-                        DiskUsage::Logical => Some(md.len()),
-                        DiskUsage::Physical => path.size_on_disk_fast(md).ok(),
+                        DiskUsage::Logical => Some(FileSize::logical(md)),
+                        DiskUsage::Physical => FileSize::physical(path, md),
                     }
                 }
             }
@@ -299,8 +303,8 @@ impl From<NodePrecursor<'_>> for Node {
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let size = self
-            .file_size
-            .map(|size| format!("({})", FileSize::new(size)))
+            .file_size()
+            .map(|size| format!("({})", size))
             .or_else(|| Some("".to_owned()))
             .unwrap();
 

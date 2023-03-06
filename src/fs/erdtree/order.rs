@@ -60,16 +60,16 @@ impl SortType {
 
     /// Comparator that sorts [Node]s by size smallest to largest.
     fn size_comparator(a: &Node, b: &Node) -> Ordering {
-        let a_size = a.file_size.unwrap_or(0);
-        let b_size = b.file_size.unwrap_or(0);
+        let a_size = a.file_size().map(|fs| fs.bytes).unwrap_or(0);
+        let b_size = b.file_size().map(|fs| fs.bytes).unwrap_or(0);
 
         a_size.cmp(&b_size)
     }
 
     /// Comparator that sorts [Node]s by size largest to smallest.
     fn size_rev_comparator(a: &Node, b: &Node) -> Ordering {
-        let a_size = a.file_size.unwrap_or(0);
-        let b_size = b.file_size.unwrap_or(0);
+        let a_size = a.file_size().map(|fs| fs.bytes).unwrap_or(0);
+        let b_size = b.file_size().map(|fs| fs.bytes).unwrap_or(0);
         b_size.cmp(&a_size)
     }
 }
