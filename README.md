@@ -21,7 +21,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   - [Symlinks](#symlinks)
   - [File coloring](#file-coloring)
   - [Icons](#icons)
-* [Comparisons against similar programs]
+* [Comparisons against similar programs](#comparisons-against-similar-programs)
   - [tree command](#tree-command)
   - [Advantages over exa --tree](#advantages-over-exa---tree)
   - [dua](#dua)
