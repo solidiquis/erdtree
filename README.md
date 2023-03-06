@@ -75,14 +75,6 @@ Options:
 1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
 2. `$ cargo install erdtree`
 
-### Homebrew
-
-While I try and figure out how to get this on homebrew-core, here's how to install from my custom tap:
-
-```
-$ brew tap solidiquis/tap && brew install erdtree
-```
-
 ### Releases
 Binaries for common architectures can be downloaded from latest releases.
 

@@ -34,3 +34,23 @@ Did a complete rewrite with emphasis on an intuitive interface and performance. 
 - [Icon support](https://github.com/solidiquis/erdtree/pull/24)
 - [--ignore-git](https://github.com/solidiquis/erdtree/pull/25)
 - [Better UI for symlinks](https://github.com/solidiquis/erdtree/pull/26)
+
+## [1.3.0] - 2023-03-04
+
+### Bug Fixes
+- [Fixed panic when file names contain non Unicode sequences](https://github.com/solidiquis/erdtree/pull/32)
+- [Fixed panic when running from root directory](https://github.com/solidiquis/erdtree/pull/33)
+
+### Additions
+- [bryceberger](https://github.com/bryceberger): [Allow multiple uses of the same option for override](https://github.com/solidiquis/erdtree/pull/35)
+- [bryceberger](https://github.com/bryceberger): [--dirst-first sorting option](https://github.com/solidiquis/erdtree/pull/38)
+- [Added option to toggle logical vs. physical size and changed size sorting default so that largest is on bottom](https://github.com/solidiquis/erdtree/pull/39)
+- [If multiple hardlinks in the same file-tree only one is taken into account](https://github.com/solidiquis/erdtree/pull/40)
+- [Can now adjust scale of disk usage report](https://github.com/solidiquis/erdtree/pull/41)
+
+### Major Changes
+- [Binary prefixes have now replaced SI prefixes for reporting disk usage](https://github.com/solidiquis/erdtree/commit/b118006640a53e8083977d393beb1eca1c239e15)
+
+### Special thanks
+
+Thank you to all of the folks from [this Reddit thread](https://www.reddit.com/r/rust/comments/11ioq1n/erdtree_v120_a_modern_multithreaded_alternative/) who helped shape `erdtree` with their very valuable feedback as well as contributors!
