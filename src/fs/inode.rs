@@ -46,22 +46,7 @@ impl TryFrom<Metadata> for Inode {
         Ok(Self::new(md.ino(), md.dev(), md.nlink()))
     }
 
-    #[cfg(windows)]
-    fn try_from(md: Metadata) -> Result<Self, Self::Error> {
-        use std::os::windows::fs::MetadataExt;
-
-        if let (Some(ino), Some(dev), Some(nlinks)) = (
-            md.file_index(),
-            md.volume_serial_number(),
-            md.number_of_links(),
-        ) {
-            return Ok(Self::new(md, dev, nlink));
-        }
-
-        Err(Error {})
-    }
-
-    #[cfg(not(any(unix, windows)))]
+    #[cfg(not(any(unix)))]
     fn try_from(md: Metadata) -> Result<Self, Self::Error> {
         Err(Error {})
     }
