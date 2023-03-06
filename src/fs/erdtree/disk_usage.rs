@@ -40,7 +40,11 @@ pub struct FileSize {
 impl FileSize {
     /// Initializes a [FileSize].
     pub fn new(bytes: u64, disk_usage: DiskUsage, scale: usize) -> Self {
-        Self { bytes, disk_usage, scale }
+        Self {
+            bytes,
+            disk_usage,
+            scale,
+        }
     }
 
     /// Computes the logical size of a file given its [Metadata].
@@ -71,11 +75,26 @@ impl Display for FileSize {
         let output = if log < 10.0 {
             Color::Cyan.paint(format!("{} {}", self.bytes, Prefix::Base))
         } else if (10.0..20.0).contains(&log) {
-            Color::Yellow.paint(format!("{:.scale$} {}", fbytes / 1024.0_f64, Prefix::Kibi, scale = self.scale))
+            Color::Yellow.paint(format!(
+                "{:.scale$} {}",
+                fbytes / 1024.0_f64,
+                Prefix::Kibi,
+                scale = self.scale
+            ))
         } else if (20.0..30.0).contains(&log) {
-            Color::Green.paint(format!("{:.scale$} {}", fbytes / 1024.0_f64.powi(2), Prefix::Mebi, scale = self.scale))
+            Color::Green.paint(format!(
+                "{:.scale$} {}",
+                fbytes / 1024.0_f64.powi(2),
+                Prefix::Mebi,
+                scale = self.scale
+            ))
         } else {
-            Color::Red.paint(format!("{:.scale$} {}", fbytes / 1024.0_f64.powi(3), Prefix::Gibi, scale = self.scale))
+            Color::Red.paint(format!(
+                "{:.scale$} {}",
+                fbytes / 1024.0_f64.powi(3),
+                Prefix::Gibi,
+                scale = self.scale
+            ))
         };
 
         write!(f, "{output}")
@@ -101,4 +120,3 @@ impl Display for Prefix {
         }
     }
 }
-

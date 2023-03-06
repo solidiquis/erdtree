@@ -77,6 +77,6 @@ fn iglob() {
             ├─ nemesis.txt (161 B)
             ├─ nylarlathotep.txt (100 B)
             └─ the_yellow_king"
-       )
+        )
     )
 }
