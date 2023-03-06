@@ -19,6 +19,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   - [Logical or physical disk usage](#logical-or-physical-disk-usage)
   - [How are directory sizes computed](#how-are-directory-sizes-computed)
   - [Symlinks](#symlinks)
+  - [Hardlink](#hardlinks)
   - [File coloring](#file-coloring)
   - [Icons](#icons)
 * [Comparisons against similar programs](#comparisons-against-similar-programs)
@@ -110,6 +111,10 @@ Logical sizes are reported by default but you can toggle the reporting to physic
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlink.png?raw=true" alt="failed to load png" />
 </p>
+
+### Hardlinks
+
+If you happen to have multiple hardlinks pointing to the same underlying inode in a given file-tree, everything subsequent to the first will be skipped and ignored as to not be double counted in the overall disk-usage.
 
 ### File coloring
 
