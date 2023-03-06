@@ -19,6 +19,7 @@ pub enum DiskUsage {
     Physical,
 }
 
+/// Binary prefixes
 #[derive(Debug)]
 pub enum Prefix {
     Base,
@@ -27,27 +28,32 @@ pub enum Prefix {
     Gibi,
 }
 
+/// Represents either logical or physical size and handles presentation.
 #[derive(Debug)]
 pub struct FileSize {
     pub bytes: u64,
     #[allow(dead_code)]
     disk_usage: DiskUsage,
+    scale: usize,
 }
 
 impl FileSize {
-    pub fn new(bytes: u64, disk_usage: DiskUsage) -> Self {
-        Self { bytes, disk_usage }
+    /// Initializes a [FileSize].
+    pub fn new(bytes: u64, disk_usage: DiskUsage, scale: usize) -> Self {
+        Self { bytes, disk_usage, scale }
     }
 
-    pub fn logical(md: &Metadata) -> Self {
+    /// Computes the logical size of a file given its [Metadata].
+    pub fn logical(md: &Metadata, scale: usize) -> Self {
         let bytes = md.len();
-        Self::new(bytes, DiskUsage::Logical)
+        Self::new(bytes, DiskUsage::Logical, scale)
     }
 
-    pub fn physical(path: &Path, md: &Metadata) -> Option<Self> {
+    /// Computes the physical size of a file given its [Path] and [Metadata].
+    pub fn physical(path: &Path, md: &Metadata, scale: usize) -> Option<Self> {
         path.size_on_disk_fast(md)
             .ok()
-            .map(|bytes| Self::new(bytes, DiskUsage::Physical))
+            .map(|bytes| Self::new(bytes, DiskUsage::Physical, scale))
     }
 }
 
@@ -63,13 +69,13 @@ impl Display for FileSize {
         let log = fbytes.log(2.0);
 
         let output = if log < 10.0 {
-            Color::Cyan.paint(format!("{:.2} {}", fbytes, Prefix::Base))
+            Color::Cyan.paint(format!("{} {}", self.bytes, Prefix::Base))
         } else if (10.0..20.0).contains(&log) {
-            Color::Yellow.paint(format!("{:.2} {}", fbytes / 1024.0_f64, Prefix::Kibi))
+            Color::Yellow.paint(format!("{:.scale$} {}", fbytes / 1024.0_f64, Prefix::Kibi, scale = self.scale))
         } else if (20.0..30.0).contains(&log) {
-            Color::Green.paint(format!("{:.2} {}", fbytes / 1024.0_f64.powi(2), Prefix::Mebi))
+            Color::Green.paint(format!("{:.scale$} {}", fbytes / 1024.0_f64.powi(2), Prefix::Mebi, scale = self.scale))
         } else {
-            Color::Red.paint(format!("{:.2} {}", fbytes / 1024.0_f64.powi(3), Prefix::Gibi))
+            Color::Red.paint(format!("{:.scale$} {}", fbytes / 1024.0_f64.powi(3), Prefix::Gibi, scale = self.scale))
         };
 
         write!(f, "{output}")
