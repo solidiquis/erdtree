@@ -51,9 +51,9 @@ impl TryFrom<Metadata> for Inode {
         use std::os::windows::fs::MetadataExt;
 
         if let (Some(ino), Some(dev), Some(nlinks)) = (
-            metadata.file_index(),
-            metadata.volume_serial_number(),
-            metadata.number_of_links(),
+            md.file_index(),
+            md.volume_serial_number(),
+            md.number_of_links(),
         ) {
             return Ok(Self::new(md, dev, nlink));
         }
