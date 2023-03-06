@@ -19,7 +19,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   - [Logical or physical disk usage](#logical-or-physical-disk-usage)
   - [How are directory sizes computed](#how-are-directory-sizes-computed)
   - [Symlinks](#symlinks)
-  - [Hardlink](#hardlinks)
+  - [Hardlinks](#hardlinks)
   - [File coloring](#file-coloring)
   - [Icons](#icons)
 * [Comparisons against similar programs](#comparisons-against-similar-programs)
