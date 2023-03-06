@@ -1,4 +1,8 @@
-use super::{disk_usage::DiskUsage, get_ls_colors};
+use super::{
+    super::inode::Inode,
+    disk_usage::DiskUsage,
+    get_ls_colors,
+};
 use crate::{
     fs::file_size::FileSize,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
@@ -31,6 +35,7 @@ pub struct Node {
     children: Option<Vec<Node>>,
     file_name: OsString,
     file_type: Option<FileType>,
+    inode: Option<Inode>,
     path: PathBuf,
     show_icon: bool,
     style: Style,
@@ -45,6 +50,7 @@ impl Node {
         children: Option<Vec<Node>>,
         file_name: OsString,
         file_type: Option<FileType>,
+        inode: Option<Inode>,
         path: PathBuf,
         show_icon: bool,
         style: Style,
@@ -56,6 +62,7 @@ impl Node {
             file_name,
             file_size,
             file_type,
+            inode,
             path,
             show_icon,
             style,
@@ -144,6 +151,11 @@ impl Node {
     /// Sets 'style'.
     pub fn style(&self) -> &Style {
         &self.style
+    }
+
+    /// Returns reference to underlying [Inode] if any.
+    pub fn inode(&self) -> Option<&Inode> {
+        self.inode.as_ref()
     }
 
     /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
@@ -263,12 +275,19 @@ impl From<NodePrecursor<'_>> for Node {
             }
         };
 
+        let inode = metadata
+            .map(Inode::try_from)
+            .transpose()
+            .ok()
+            .flatten();
+
         Self::new(
             depth,
             file_size,
             children,
             file_name,
             file_type,
+            inode,
             path.into(),
             show_icon,
             style,

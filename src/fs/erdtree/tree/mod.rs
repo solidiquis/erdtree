@@ -8,7 +8,7 @@ use crate::cli::Clargs;
 use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     convert::TryFrom,
     fmt::{self, Display, Formatter},
     path::PathBuf,
@@ -79,6 +79,7 @@ impl Tree {
         // components needed to assemble a `Tree`.
         let tree_components = thread::spawn(move || -> TreeResult<TreeComponents> {
             let mut branches: Branches = HashMap::new();
+            let mut inodes = HashSet::new();
             let mut root = None;
 
             while let Ok(node) = rx.recv() {
@@ -92,6 +93,13 @@ impl Tree {
                     if node.depth == 0 {
                         root = Some(node);
                         continue;
+                    }
+                } else {
+                    // If a hard-link is already accounted for skip the subsequent one.
+                    if let Some(inode) = node.inode() {
+                        if !inodes.insert(inode.properties()) {
+                            continue
+                        }
                     }
                 }
 
