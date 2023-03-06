@@ -1,8 +1,4 @@
-use super::{
-    super::inode::Inode,
-    disk_usage::DiskUsage,
-    get_ls_colors,
-};
+use super::{super::inode::Inode, disk_usage::DiskUsage, get_ls_colors};
 use crate::{
     fs::erdtree::disk_usage::FileSize,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
@@ -223,7 +219,12 @@ pub struct NodePrecursor<'a> {
 
 impl<'a> NodePrecursor<'a> {
     /// Yields a [NodePrecursor] which is used for convenient conversion into a [Node].
-    pub fn new(disk_usage: &'a DiskUsage, dir_entry: DirEntry, show_icon: bool, scale: usize) -> Self {
+    pub fn new(
+        disk_usage: &'a DiskUsage,
+        dir_entry: DirEntry,
+        show_icon: bool,
+        scale: usize,
+    ) -> Self {
         Self {
             disk_usage,
             dir_entry,
@@ -282,11 +283,7 @@ impl From<NodePrecursor<'_>> for Node {
             }
         };
 
-        let inode = metadata
-            .map(Inode::try_from)
-            .transpose()
-            .ok()
-            .flatten();
+        let inode = metadata.map(Inode::try_from).transpose().ok().flatten();
 
         Self::new(
             depth,

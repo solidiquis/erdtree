@@ -57,7 +57,7 @@ impl Tree {
             order,
             root,
             icons,
-            scale
+            scale,
         })
     }
 

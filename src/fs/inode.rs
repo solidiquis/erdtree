@@ -10,7 +10,7 @@ use std::{
 pub struct Inode {
     pub ino: u64,
     pub dev: u64,
-    pub nlink: u64
+    pub nlink: u64,
 }
 
 impl Inode {
