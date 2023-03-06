@@ -99,11 +99,13 @@ impl Tree {
                         root = Some(node);
                         continue;
                     }
-                } else {
-                    // If a hard-link is already accounted for skip the subsequent one.
-                    if let Some(inode) = node.inode() {
+                }
+
+                if let Some(inode) = node.inode() {
+                    if inode.nlink > 1 {
+                        // If a hard-link is already accounted for skip the subsequent one.
                         if !inodes.insert(inode.properties()) {
-                            continue
+                            continue;
                         }
                     }
                 }

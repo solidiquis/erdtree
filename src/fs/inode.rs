@@ -8,9 +8,9 @@ use std::{
 /// Represents a file's underlying inode.
 #[derive(Debug)]
 pub struct Inode {
-    ino: u64,
-    dev: u64,
-    nlink: u64
+    pub ino: u64,
+    pub dev: u64,
+    pub nlink: u64
 }
 
 impl Inode {
@@ -19,9 +19,9 @@ impl Inode {
         Self { ino, dev, nlink }
     }
 
-    /// Returns a tuple of all the fields of the [Inode].
-    pub fn properties(&self) -> (u64, u64, u64) {
-        (self.ino, self.dev, self.nlink)
+    /// Returns a tuple fields of the [Inode] that mark is unique.
+    pub fn properties(&self) -> (u64, u64) {
+        (self.ino, self.dev)
     }
 }
 
