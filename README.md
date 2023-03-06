@@ -71,10 +71,8 @@ Options:
 
 ### Homebrew
 
-While I try and figure out how to get this on homebrew-core, here's how to install from my custom tap:
-
 ```
-$ brew tap solidiquis/tap && brew install erdtree
+$ brew install erdtree
 ```
 
 ### Releases
