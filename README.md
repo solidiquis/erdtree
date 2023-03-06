@@ -143,12 +143,12 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 #### exa
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/exa.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/exa_cmp.png?raw=true" alt="failed to load png" />
 </p>
 
 #### erdtree
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_cmp.png?raw=true" alt="failed to load png" />
 </p>
 
 ### dua
