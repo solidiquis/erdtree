@@ -76,6 +76,12 @@ Options:
 1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
 2. `$ cargo install erdtree`
 
+### Homebrew-core
+
+```
+$ brew install erdtree
+```
+
 ### Releases
 Binaries for common architectures can be downloaded from latest releases.
 
