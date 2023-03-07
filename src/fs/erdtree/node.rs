@@ -215,6 +215,7 @@ pub struct NodePrecursor<'a> {
     dir_entry: DirEntry,
     show_icon: bool,
     scale: usize,
+    suppress_size: bool,
 }
 
 impl<'a> NodePrecursor<'a> {
@@ -224,12 +225,14 @@ impl<'a> NodePrecursor<'a> {
         dir_entry: DirEntry,
         show_icon: bool,
         scale: usize,
+        suppress_size: bool,
     ) -> Self {
         Self {
             disk_usage,
             dir_entry,
             show_icon,
             scale,
+            suppress_size,
         }
     }
 }
@@ -241,6 +244,7 @@ impl From<NodePrecursor<'_>> for Node {
             dir_entry,
             show_icon,
             scale,
+            suppress_size,
         } = precursor;
 
         let children = None;
@@ -272,12 +276,14 @@ impl From<NodePrecursor<'_>> for Node {
 
         let mut file_size = None;
 
-        if let Some(ref ft) = file_type {
-            if ft.is_file() {
-                if let Some(ref md) = metadata {
-                    file_size = match disk_usage {
-                        DiskUsage::Logical => Some(FileSize::logical(md, scale)),
-                        DiskUsage::Physical => FileSize::physical(path, md, scale),
+        if !suppress_size {
+            if let Some(ref ft) = file_type {
+                if ft.is_file() {
+                    if let Some(ref md) = metadata {
+                        file_size = match disk_usage {
+                            DiskUsage::Logical => Some(FileSize::logical(md, scale)),
+                            DiskUsage::Physical => FileSize::physical(path, md, scale),
+                        }
                     }
                 }
             }

@@ -77,6 +77,10 @@ pub struct Clargs {
     /// Number of threads to use
     #[arg(short, long, default_value_t = 4)]
     pub threads: usize,
+
+    /// Don't show size; disabled by default
+    #[arg(long)]
+    pub suppress_size: bool,
 }
 
 /// Order in which to print nodes.
