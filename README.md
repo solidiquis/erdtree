@@ -190,6 +190,7 @@ Feature requests in the form of issues in general are welcome.
 - to Reddit user `/u/Freeky` for suggestions on how to handle hardlinks and physical disk sizes.
 - to Reddit user `/u/lucca_huguet` (can be found as [luccahuguet](https://github.com/luccahuguet) on Github) for suggesting that the compiled `erdtree` binary be shorted to `et`.
 - to all of the lovely people on [this](https://www.reddit.com/r/rust/comments/11ioq1n/erdtree_v120_a_modern_multithreaded_alternative/) Reddit thread who helped shaped `erdtree` with their very valuable feedback.
+- to [messense](https://github.com/messense) for getting this on Homebrew-core!
 - to all contributors :]
 
 ## Questions you might have
