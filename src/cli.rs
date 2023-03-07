@@ -78,7 +78,7 @@ pub struct Clargs {
     #[arg(short, long, default_value_t = 4)]
     pub threads: usize,
 
-    /// Don't show size; disabled by default
+    /// Omit disk usage from output; disabled by default"
     #[arg(long)]
     pub suppress_size: bool,
 }
