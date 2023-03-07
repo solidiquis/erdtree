@@ -5,19 +5,19 @@ mod utils;
 #[test]
 fn suppress_size() {
     assert_eq!(
-        utils::run_cmd(&["--suppress-size", "tests/data"]),
+        utils::run_cmd(&["--suppress-size", "--sort", "name", "tests/data"]),
         indoc!(
             "
             data 
-            ├─ nylarlathotep.txt 
-            ├─ lipsum 
-            │  └─ lipsum.txt 
             ├─ dream_cycle 
             │  └─ polaris.txt 
+            ├─ lipsum 
+            │  └─ lipsum.txt 
             ├─ necronomicon.txt 
-            ├─ the_yellow_king 
-            │  └─ cassildas_song.md 
-            └─ nemesis.txt"
+            ├─ nemesis.txt 
+            ├─ nylarlathotep.txt 
+            └─ the_yellow_king 
+               └─ cassildas_song.md"
         ),
         "Failed to suppress size."
     )
