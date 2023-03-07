@@ -62,6 +62,7 @@ Options:
   -l, --level <NUM>              Maximum depth to display
   -n, --scale <NUM>              Total number of digits after the decimal to display for disk usage [default: 2]
   -s, --sort <SORT>              Sort-order to display directory content [default: none] [possible values: name, size, size-rev, none]
+      --suppress-size            Omit disk usage from output
       --dirs-first               Always sorts directories above files
   -S, --follow-links             Traverse symlink directories and consider their disk usage; disabled by default
   -t, --threads <THREADS>        Number of threads to use [default: 4]

@@ -33,6 +33,8 @@ pub struct Tree {
     root: Node,
     #[allow(dead_code)]
     scale: usize,
+    #[allow(dead_code)]
+    suppress_size: bool,
 }
 
 pub type TreeResult<T> = Result<T, Error>;
@@ -48,8 +50,9 @@ impl Tree {
         icons: bool,
         disk_usage: DiskUsage,
         scale: usize,
+        suppress_size: bool,
     ) -> TreeResult<Self> {
-        let root = Self::traverse(walker, &order, icons, &disk_usage, scale)?;
+        let root = Self::traverse(walker, &order, icons, &disk_usage, scale, suppress_size)?;
 
         Ok(Self {
             disk_usage,
@@ -58,6 +61,7 @@ impl Tree {
             root,
             icons,
             scale,
+            suppress_size,
         })
     }
 
@@ -77,6 +81,7 @@ impl Tree {
         icons: bool,
         disk_usage: &DiskUsage,
         scale: usize,
+        suppress_size: bool,
     ) -> TreeResult<Node> {
         let (tx, rx) = channel::unbounded::<Node>();
 
@@ -131,7 +136,7 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
-                    .map(|entry| NodePrecursor::new(disk_usage, entry, icons, scale))
+                    .map(|entry| NodePrecursor::new(disk_usage, entry, icons, scale, suppress_size))
                     .map(Node::from)
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
@@ -197,7 +202,16 @@ impl TryFrom<Clargs> for Tree {
         let order = Order::from((clargs.sort(), clargs.dirs_first()));
         let du = DiskUsage::from(clargs.disk_usage());
         let scale = clargs.scale;
-        let tree = Tree::new(walker, order, clargs.level(), clargs.icons, du, scale)?;
+        let suppress_size = clargs.suppress_size;
+        let tree = Tree::new(
+            walker,
+            order,
+            clargs.level(),
+            clargs.icons,
+            du,
+            scale,
+            suppress_size,
+        )?;
         Ok(tree)
     }
 }
