@@ -180,7 +180,9 @@ I haven't used `dust` substantially so these are the immediate differences I cam
 
 Happy to accept contributions but please keep the following in mind:
 - If you're doing some minor refactoring and/or code cleanup feel free to just submit a PR.
-- If you'd like to add a feature please open up an issue and receive approval first unless you've previously contributed.
+- If you'd like to add a feature please open up an issue and receive approval first unless you've previously contributed. You can also start a [discussion](https://github.com/solidiquis/erdtree/discussions/49).
+- If new arguments/options are added please do your best to keep them sensibly alphabetized.
+- The code is heavily documented so please follow suit. `cargo doc --open` can be extremely helpful.
 - Feature adds generally require tests.
 
 Feature requests in the form of issues in general are welcome.
