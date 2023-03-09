@@ -1,6 +1,8 @@
 use super::{
-    super::error::Error,
-    disk_usage::{DiskUsage, FileSize},
+    super::{
+        disk_usage::{DiskUsage, FileSize},
+        error::Error,
+    },
     node::{Node, NodePrecursor},
     order::Order,
 };
