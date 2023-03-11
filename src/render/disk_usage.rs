@@ -1,8 +1,7 @@
-use crate::context;
 use ansi_term::Color;
+use clap::ValueEnum;
 use filesize::PathExt;
 use std::{
-    convert::From,
     fmt::{self, Display},
     fs::Metadata,
     ops::AddAssign,
@@ -10,7 +9,7 @@ use std::{
 };
 
 /// Determines between logical or physical size for display
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug, ValueEnum)]
 pub enum DiskUsage {
     /// How many bytes does a file contain
     Logical,
@@ -98,15 +97,6 @@ impl Display for FileSize {
         };
 
         write!(f, "{output}")
-    }
-}
-
-impl From<&context::DiskUsage> for DiskUsage {
-    fn from(du: &context::DiskUsage) -> Self {
-        match du {
-            context::DiskUsage::Logical => Self::Logical,
-            context::DiskUsage::Physical => Self::Physical,
-        }
     }
 }
 

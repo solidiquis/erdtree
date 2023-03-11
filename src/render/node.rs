@@ -1,10 +1,8 @@
 use super::get_ls_colors;
 use crate::{
+    fs::inode::Inode,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
-    fs::{
-        disk_usage::{DiskUsage, FileSize},
-        inode::Inode,
-    },
+    render::disk_usage::{DiskUsage, FileSize},
 };
 use ansi_term::Color;
 use ansi_term::Style;

@@ -1,4 +1,5 @@
-use clap::{FromArgMatches, Parser, ValueEnum};
+use super::{disk_usage::DiskUsage, order::SortType};
+use clap::Parser;
 use ignore::{
     overrides::{Override, OverrideBuilder},
     WalkBuilder, WalkParallel,
@@ -27,7 +28,7 @@ pub struct Context {
 
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::Logical)]
-    disk_usage: DiskUsage,
+    pub disk_usage: DiskUsage,
 
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
@@ -66,8 +67,8 @@ pub struct Context {
     pub scale: usize,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = Order::None)]
-    sort: Order,
+    #[arg(short, long, value_enum)]
+    sort: Option<SortType>,
 
     /// Always sorts directories above files
     #[arg(long)]
@@ -86,33 +87,6 @@ pub struct Context {
     pub suppress_size: bool,
 }
 
-/// Order in which to print nodes.
-#[derive(Copy, Clone, Debug, ValueEnum)]
-pub enum Order {
-    /// Sort entries by file name
-    Name,
-
-    /// Sort entries by size smallest to largest, top to bottom
-    Size,
-
-    /// Sort entries by size largest to smallest, bottom to top
-    SizeRev,
-
-    /// No sorting
-    None,
-}
-
-/// Display disk usage output as either logical size or physical size.
-#[derive(Copy, Clone, Debug, ValueEnum)]
-pub enum DiskUsage {
-    /// How many bytes does a file contain
-    Logical,
-
-    /// How much actual space on disk based on blocks allocated, taking into account sparse files
-    /// and compression.
-    Physical,
-}
-
 impl Context {
     /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
@@ -122,18 +96,13 @@ impl Context {
     }
 
     /// The sort-order used for printing.
-    pub fn sort(&self) -> Order {
+    pub fn sort(&self) -> Option<SortType> {
         self.sort
     }
 
     /// Getter for `dirs_first` field.
     pub fn dirs_first(&self) -> bool {
         self.dirs_first
-    }
-
-    /// Getter for `disk_usage` field.
-    pub fn disk_usage(&self) -> &DiskUsage {
-        &self.disk_usage
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file

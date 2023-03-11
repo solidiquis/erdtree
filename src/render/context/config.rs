@@ -1,8 +1,4 @@
-use std::{
-    env,
-    fs,
-    path::PathBuf,
-};
+use std::{env, fs, path::PathBuf};
 
 pub const CONFIG_ENV_VAR: &str = "ERDTREE_CONFIG_PATH";
 pub const CONFIG_NAME: &str = ".erdtreerc";

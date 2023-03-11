@@ -3,10 +3,10 @@ use super::{
     order::Order,
 };
 use crate::{
-    context::Context,
-    fs::{
+    fs::error::Error,
+    render::{
+        context::Context,
         disk_usage::{DiskUsage, FileSize},
-        error::Error,
     },
 };
 use crossbeam::channel::{self, Sender};
@@ -33,7 +33,7 @@ pub struct Tree {
     icons: bool,
     pub level: Option<usize>,
     #[allow(dead_code)]
-    order: Order,
+    order: Option<Order>,
     root: Node,
     #[allow(dead_code)]
     scale: usize,
@@ -49,14 +49,14 @@ impl Tree {
     /// Initializes a [Tree].
     pub fn new(
         walker: WalkParallel,
-        order: Order,
+        order: Option<Order>,
         level: Option<usize>,
         icons: bool,
         disk_usage: DiskUsage,
         scale: usize,
         suppress_size: bool,
     ) -> TreeResult<Self> {
-        let root = Self::traverse(walker, &order, icons, &disk_usage, scale, suppress_size)?;
+        let root = Self::traverse(walker, order, icons, &disk_usage, scale, suppress_size)?;
 
         Ok(Self {
             disk_usage,
@@ -81,7 +81,7 @@ impl Tree {
     /// outside of the parallel traversal step please report an issue.
     fn traverse(
         walker: WalkParallel,
-        order: &Order,
+        order: Option<Order>,
         icons: bool,
         disk_usage: &DiskUsage,
         scale: usize,
@@ -162,7 +162,7 @@ impl Tree {
     fn assemble_tree(
         current_dir: &mut Node,
         branches: &mut Branches,
-        order: &Order,
+        order: Option<Order>,
         disk_usage: &DiskUsage,
         scale: usize,
     ) {
@@ -192,9 +192,10 @@ impl Tree {
             current_node.set_file_size(dir_size)
         }
 
-        order
-            .comparator()
-            .map(|func| current_node.children_mut().map(|nodes| nodes.sort_by(func)));
+        if let Some(ord) = order {
+            ord.comparator()
+                .map(|func| current_node.children_mut().map(|nodes| nodes.sort_by(func)));
+        }
     }
 }
 
@@ -203,8 +204,8 @@ impl TryFrom<Context> for Tree {
 
     fn try_from(clargs: Context) -> Result<Self, Self::Error> {
         let walker = WalkParallel::try_from(&clargs)?;
-        let order = Order::from((clargs.sort(), clargs.dirs_first()));
-        let du = DiskUsage::from(clargs.disk_usage());
+        let order = clargs.sort().map(|s| Order::from((s, clargs.dirs_first())));
+        let du = clargs.disk_usage;
         let scale = clargs.scale;
         let suppress_size = clargs.suppress_size;
         let tree = Tree::new(

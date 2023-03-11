@@ -1,11 +1,10 @@
 use std::process::ExitCode;
 
 use clap::{CommandFactory, FromArgMatches};
-use context::Context;
-use render::tree::{self, Tree};
-
-/// CLI rules and definitions and context wherein [Tree] will operate.
-mod context;
+use render::{
+    context::Context,
+    tree::{self, Tree},
+};
 
 /// Filesystem operations.
 mod fs;

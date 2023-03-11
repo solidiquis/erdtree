@@ -1,14 +1,18 @@
 use super::node::Node;
-use crate::context;
+use clap::ValueEnum;
 use std::{cmp::Ordering, convert::From};
 
 /// Order in which to print nodes.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SortType {
+    /// Sort entries by file name
     Name,
+
+    /// Sort entries by size smallest to largest, top to bottom
     Size,
+
+    /// Sort entries by size largest to smallest, bottom to top
     SizeRev,
-    None,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -74,22 +78,8 @@ impl SortType {
     }
 }
 
-impl From<(context::Order, bool)> for Order {
-    fn from((order, dir_first): (context::Order, bool)) -> Self {
-        Order {
-            sort: order.into(),
-            dir_first,
-        }
-    }
-}
-
-impl From<context::Order> for SortType {
-    fn from(ord: context::Order) -> Self {
-        match ord {
-            context::Order::Name => SortType::Name,
-            context::Order::Size => SortType::Size,
-            context::Order::SizeRev => SortType::SizeRev,
-            context::Order::None => SortType::None,
-        }
+impl From<(SortType, bool)> for Order {
+    fn from((sort, dir_first): (SortType, bool)) -> Self {
+        Order { sort, dir_first }
     }
 }
