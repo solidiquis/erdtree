@@ -1,5 +1,5 @@
 use super::node::Node;
-use crate::cli;
+use crate::context;
 use std::{cmp::Ordering, convert::From};
 
 /// Order in which to print nodes.
@@ -74,8 +74,8 @@ impl SortType {
     }
 }
 
-impl From<(cli::Order, bool)> for Order {
-    fn from((order, dir_first): (cli::Order, bool)) -> Self {
+impl From<(context::Order, bool)> for Order {
+    fn from((order, dir_first): (context::Order, bool)) -> Self {
         Order {
             sort: order.into(),
             dir_first,
@@ -83,13 +83,13 @@ impl From<(cli::Order, bool)> for Order {
     }
 }
 
-impl From<cli::Order> for SortType {
-    fn from(ord: cli::Order) -> Self {
+impl From<context::Order> for SortType {
+    fn from(ord: context::Order) -> Self {
         match ord {
-            cli::Order::Name => SortType::Name,
-            cli::Order::Size => SortType::Size,
-            cli::Order::SizeRev => SortType::SizeRev,
-            cli::Order::None => SortType::None,
+            context::Order::Name => SortType::Name,
+            context::Order::Size => SortType::Size,
+            context::Order::SizeRev => SortType::SizeRev,
+            context::Order::None => SortType::None,
         }
     }
 }

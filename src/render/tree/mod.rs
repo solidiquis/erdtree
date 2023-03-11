@@ -1,12 +1,14 @@
 use super::{
-    super::{
-        disk_usage::{DiskUsage, FileSize},
-        error::Error,
-    },
     node::{Node, NodePrecursor},
     order::Order,
 };
-use crate::cli::Clargs;
+use crate::{
+    context::Context,
+    fs::{
+        disk_usage::{DiskUsage, FileSize},
+        error::Error,
+    },
+};
 use crossbeam::channel::{self, Sender};
 use ignore::{WalkParallel, WalkState};
 use std::{
@@ -29,7 +31,7 @@ pub struct Tree {
     disk_usage: DiskUsage,
     #[allow(dead_code)]
     icons: bool,
-    level: Option<usize>,
+    pub level: Option<usize>,
     #[allow(dead_code)]
     order: Order,
     root: Node,
@@ -196,10 +198,10 @@ impl Tree {
     }
 }
 
-impl TryFrom<Clargs> for Tree {
+impl TryFrom<Context> for Tree {
     type Error = Error;
 
-    fn try_from(clargs: Clargs) -> Result<Self, Self::Error> {
+    fn try_from(clargs: Context) -> Result<Self, Self::Error> {
         let walker = WalkParallel::try_from(&clargs)?;
         let order = Order::from((clargs.sort(), clargs.dirs_first()));
         let du = DiskUsage::from(clargs.disk_usage());

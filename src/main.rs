@@ -1,17 +1,20 @@
 use std::process::ExitCode;
 
 use clap::{CommandFactory, FromArgMatches};
-use cli::Clargs;
-use fs::erdtree::{self, tree::Tree};
+use context::Context;
+use render::tree::{self, Tree};
 
-/// CLI rules and definitions.
-mod cli;
+/// CLI rules and definitions and context wherein [Tree] will operate.
+mod context;
 
 /// Filesystem operations.
 mod fs;
 
 /// Dev icons.
 mod icons;
+
+/// Tools and operations to display root-directory interact with ANSI configs.
+mod render;
 
 /// Common utilities.
 mod utils;
@@ -26,9 +29,10 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    erdtree::tree::ui::init();
-    let matches = Clargs::command().args_override_self(true).get_matches();
-    let clargs = Clargs::from_arg_matches(&matches)?;
+    tree::ui::init();
+    let matches = Context::command().args_override_self(true).get_matches();
+    let clargs = Context::from_arg_matches(&matches)?;
+
     let tree = Tree::try_from(clargs)?;
 
     println!("{tree}");

@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::{FromArgMatches, Parser, ValueEnum};
 use ignore::{
     overrides::{Override, OverrideBuilder},
     WalkBuilder, WalkParallel,
@@ -12,13 +12,16 @@ use std::{
     usize,
 };
 
+/// Operations to load in `.erdtree.toml` defaults.
+pub mod config;
+
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
 #[command(version = "1.3.0")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
-pub struct Clargs {
+pub struct Context {
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
@@ -110,7 +113,7 @@ pub enum DiskUsage {
     Physical,
 }
 
-impl Clargs {
+impl Context {
     /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
         self.dir
@@ -169,10 +172,10 @@ impl Clargs {
     }
 }
 
-impl TryFrom<&Clargs> for WalkParallel {
+impl TryFrom<&Context> for WalkParallel {
     type Error = Error;
 
-    fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
+    fn try_from(clargs: &Context) -> Result<Self, Self::Error> {
         let root = fs::canonicalize(clargs.dir())?;
 
         fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;

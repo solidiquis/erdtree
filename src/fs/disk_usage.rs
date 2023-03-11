@@ -1,4 +1,4 @@
-use crate::cli;
+use crate::context;
 use ansi_term::Color;
 use filesize::PathExt;
 use std::{
@@ -101,11 +101,11 @@ impl Display for FileSize {
     }
 }
 
-impl From<&cli::DiskUsage> for DiskUsage {
-    fn from(du: &cli::DiskUsage) -> Self {
+impl From<&context::DiskUsage> for DiskUsage {
+    fn from(du: &context::DiskUsage) -> Self {
         match du {
-            cli::DiskUsage::Logical => Self::Logical,
-            cli::DiskUsage::Physical => Self::Physical,
+            context::DiskUsage::Logical => Self::Logical,
+            context::DiskUsage::Physical => Self::Physical,
         }
     }
 }

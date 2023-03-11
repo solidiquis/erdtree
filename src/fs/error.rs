@@ -1,4 +1,4 @@
-use crate::cli;
+use crate::context;
 use std::{
     convert::From,
     error::Error as StdError,
@@ -8,7 +8,7 @@ use std::{
 /// Errors that may occur during filesystem traversal.
 #[derive(Debug)]
 pub enum Error {
-    CliError(cli::Error),
+    CliError(context::Error),
     ExpectedParent,
     MissingRoot,
 }
@@ -25,8 +25,8 @@ impl Display for Error {
 
 impl StdError for Error {}
 
-impl From<cli::Error> for Error {
-    fn from(e: cli::Error) -> Self {
+impl From<context::Error> for Error {
+    fn from(e: context::Error) -> Self {
         Self::CliError(e)
     }
 }
