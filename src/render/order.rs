@@ -1,10 +1,9 @@
 use super::node::Node;
 use clap::ValueEnum;
-use serde::Deserialize;
 use std::{cmp::Ordering, convert::From};
 
 /// Order in which to print nodes.
-#[derive(Copy, Clone, Debug, Deserialize, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SortType {
     /// Sort entries by file name
     Name,
