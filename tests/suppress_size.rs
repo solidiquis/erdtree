@@ -5,7 +5,13 @@ mod utils;
 #[test]
 fn suppress_size() {
     assert_eq!(
-        utils::run_cmd(&["--suppress-size", "--sort", "name", "tests/data"]),
+        utils::run_cmd(&[
+            "--suppress-size",
+            "--sort",
+            "name",
+            "--no-config",
+            "tests/data"
+        ]),
         indoc!(
             "
             data 

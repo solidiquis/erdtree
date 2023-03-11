@@ -1,7 +1,10 @@
 use super::{disk_usage::DiskUsage, order::SortType};
-use clap::Parser;
+use clap::{CommandFactory, Error as ClapError, FromArgMatches, Parser};
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
+    convert::From,
+    error::Error as StdError,
+    fmt::{self, Display},
     path::{Path, PathBuf},
     usize,
 };
@@ -75,12 +78,47 @@ pub struct Context {
     #[arg(short, long, default_value_t = 4)]
     pub threads: usize,
 
-    /// Omit disk usage from output; disabled by default"
+    /// Omit disk usage from output; disabled by default
     #[arg(long)]
     pub suppress_size: bool,
+
+    /// Don't read configuration file
+    #[arg(long)]
+    pub no_config: bool,
 }
 
 impl Context {
+    /// Initializes [Context], optionally reading in the configuration file to override defaults.
+    /// Arguments provided will take precedence over config.
+    pub fn init() -> Result<Self, Error> {
+        let clargs = Context::command().args_override_self(true).get_matches();
+
+        let no_config = clargs
+            .get_one("no_config")
+            .map(bool::clone)
+            .unwrap_or(false);
+
+        let context = {
+            if no_config {
+                Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
+            } else {
+                if let Some(ref config) = config::read_config_to_string(None) {
+                    let raw_config_args = config::parse_config(config);
+                    let config_args = Context::command().get_matches_from(raw_config_args);
+                    let mut ctx =
+                        Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
+                    ctx.update_from_arg_matches(&clargs)
+                        .map_err(|e| Error::ArgParse(e))?;
+                    ctx
+                } else {
+                    Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
+                }
+            }
+        };
+
+        Ok(context)
+    }
+
     /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
         self.dir
@@ -133,3 +171,20 @@ impl Context {
         builder.build()
     }
 }
+
+#[derive(Debug)]
+pub enum Error {
+    ArgParse(ClapError),
+    Config(ClapError),
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ArgParse(e) => write!(f, "{e}"),
+            Self::Config(e) => write!(f, "A configuration file was found but failed to parse: {e}"),
+        }
+    }
+}
+
+impl StdError for Error {}

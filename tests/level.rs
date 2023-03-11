@@ -5,7 +5,14 @@ mod utils;
 #[test]
 fn level() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--level", "1", "tests/data"]),
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--level",
+            "1",
+            "--no-config",
+            "tests/data"
+        ]),
         indoc!(
             "
             data (1.21 KiB)

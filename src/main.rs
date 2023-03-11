@@ -1,10 +1,8 @@
-use std::process::ExitCode;
-
-use clap::{CommandFactory, FromArgMatches};
 use render::{
     context::Context,
     tree::{self, Tree},
 };
+use std::process::ExitCode;
 
 /// Filesystem operations.
 mod fs;
@@ -12,7 +10,7 @@ mod fs;
 /// Dev icons.
 mod icons;
 
-/// Tools and operations to display root-directory interact with ANSI configs.
+/// Tools and operations to display root-directory.
 mod render;
 
 /// Common utilities.
@@ -29,9 +27,7 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     tree::ui::init();
-    let matches = Context::command().args_override_self(true).get_matches();
-    let ctx = Context::from_arg_matches(&matches)?;
-
+    let ctx = Context::init()?;
     let tree = Tree::init(ctx)?;
 
     println!("{tree}");
