@@ -30,9 +30,9 @@ fn main() -> ExitCode {
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     tree::ui::init();
     let matches = Context::command().args_override_self(true).get_matches();
-    let clargs = Context::from_arg_matches(&matches)?;
+    let ctx = Context::from_arg_matches(&matches)?;
 
-    let tree = Tree::try_from(clargs)?;
+    let tree = Tree::init(ctx)?;
 
     println!("{tree}");
 

@@ -1,14 +1,7 @@
 use super::{disk_usage::DiskUsage, order::SortType};
 use clap::Parser;
-use ignore::{
-    overrides::{Override, OverrideBuilder},
-    WalkBuilder, WalkParallel,
-};
+use ignore::overrides::{Override, OverrideBuilder};
 use std::{
-    convert::From,
-    error::Error as StdError,
-    fmt::{self, Display, Formatter},
-    fs, io,
     path::{Path, PathBuf},
     usize,
 };
@@ -76,7 +69,7 @@ pub struct Context {
 
     /// Traverse symlink directories and consider their disk usage; disabled by default
     #[arg(short = 'S', long)]
-    follow_links: bool,
+    pub follow_links: bool,
 
     /// Number of threads to use
     #[arg(short, long, default_value_t = 4)]
@@ -138,55 +131,5 @@ impl Context {
         }
 
         builder.build()
-    }
-}
-
-impl TryFrom<&Context> for WalkParallel {
-    type Error = Error;
-
-    fn try_from(clargs: &Context) -> Result<Self, Self::Error> {
-        let root = fs::canonicalize(clargs.dir())?;
-
-        fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
-
-        Ok(WalkBuilder::new(root)
-            .follow_links(clargs.follow_links)
-            .overrides(clargs.overrides()?)
-            .git_ignore(!clargs.ignore_git_ignore)
-            .hidden(!clargs.hidden)
-            .threads(clargs.threads)
-            .build_parallel())
-    }
-}
-
-/// Errors which may occur during command-line argument parsing.
-#[derive(Debug)]
-pub enum Error {
-    InvalidGlobPatterns(ignore::Error),
-    DirNotFound(String),
-    PathCanonicalizationError(io::Error),
-}
-
-impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::InvalidGlobPatterns(e) => write!(f, "Invalid glob patterns: {e}"),
-            Error::DirNotFound(e) => write!(f, "{e}"),
-            Error::PathCanonicalizationError(e) => write!(f, "{e}"),
-        }
-    }
-}
-
-impl StdError for Error {}
-
-impl From<ignore::Error> for Error {
-    fn from(value: ignore::Error) -> Self {
-        Self::InvalidGlobPatterns(value)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(value: io::Error) -> Self {
-        Self::PathCanonicalizationError(value)
     }
 }

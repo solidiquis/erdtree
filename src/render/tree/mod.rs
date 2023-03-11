@@ -2,23 +2,22 @@ use super::{
     node::{Node, NodePrecursor},
     order::Order,
 };
-use crate::{
-    fs::error::Error,
-    render::{
-        context::Context,
-        disk_usage::{DiskUsage, FileSize},
-    },
-};
+use crate::render::{context::Context, disk_usage::FileSize};
 use crossbeam::channel::{self, Sender};
-use ignore::{WalkParallel, WalkState};
+use error::Error;
+use ignore::{WalkBuilder, WalkParallel, WalkState};
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
     fmt::{self, Display, Formatter},
+    fs,
     path::PathBuf,
     slice::Iter,
     thread,
 };
+
+/// Errors.
+pub mod error;
 
 /// [ui::LS_COLORS] initialization and ui theme for [Tree].
 pub mod ui;
@@ -27,18 +26,8 @@ pub mod ui;
 /// hidden file rules depending on [WalkParallel] config.
 #[derive(Debug)]
 pub struct Tree {
-    #[allow(dead_code)]
-    disk_usage: DiskUsage,
-    #[allow(dead_code)]
-    icons: bool,
-    pub level: Option<usize>,
-    #[allow(dead_code)]
-    order: Option<Order>,
     root: Node,
-    #[allow(dead_code)]
-    scale: usize,
-    #[allow(dead_code)]
-    suppress_size: bool,
+    ctx: Context,
 }
 
 pub type TreeResult<T> = Result<T, Error>;
@@ -46,27 +35,16 @@ pub type Branches = HashMap<PathBuf, Vec<Node>>;
 pub type TreeComponents = (Node, Branches);
 
 impl Tree {
-    /// Initializes a [Tree].
-    pub fn new(
-        walker: WalkParallel,
-        order: Option<Order>,
-        level: Option<usize>,
-        icons: bool,
-        disk_usage: DiskUsage,
-        scale: usize,
-        suppress_size: bool,
-    ) -> TreeResult<Self> {
-        let root = Self::traverse(walker, order, icons, &disk_usage, scale, suppress_size)?;
+    /// Constructor for [Tree].
+    pub fn new(root: Node, ctx: Context) -> Self {
+        Self { root, ctx }
+    }
 
-        Ok(Self {
-            disk_usage,
-            level,
-            order,
-            root,
-            icons,
-            scale,
-            suppress_size,
-        })
+    /// Initiates file-system traversal and [Tree construction].
+    pub fn init(ctx: Context) -> TreeResult<Self> {
+        let root = Self::traverse(&ctx)?;
+
+        Ok(Self::new(root, ctx))
     }
 
     /// Returns a reference to the root [Node].
@@ -74,19 +52,18 @@ impl Tree {
         &self.root
     }
 
+    /// Maximum depth to display
+    pub fn level(&self) -> usize {
+        self.ctx.level.unwrap_or(usize::MAX)
+    }
+
     /// Parallel traversal of the root directory and its contents taking `.gitignore` into
     /// consideration. Parallel traversal relies on `WalkParallel`. Any filesystem I/O or related
     /// system calls are expected to occur during parallel traversal; thus post-processing of all
     /// directory entries should be completely CPU-bound. If filesystem I/O or system calls occur
     /// outside of the parallel traversal step please report an issue.
-    fn traverse(
-        walker: WalkParallel,
-        order: Option<Order>,
-        icons: bool,
-        disk_usage: &DiskUsage,
-        scale: usize,
-        suppress_size: bool,
-    ) -> TreeResult<Node> {
+    fn traverse(ctx: &Context) -> TreeResult<Node> {
+        let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = channel::unbounded::<Node>();
 
         // Receives directory entries from the workers used for parallel traversal to construct the
@@ -140,7 +117,15 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
-                    .map(|entry| NodePrecursor::new(disk_usage, entry, icons, scale, suppress_size))
+                    .map(|entry| {
+                        NodePrecursor::new(
+                            &ctx.disk_usage,
+                            entry,
+                            ctx.icons,
+                            ctx.scale,
+                            ctx.suppress_size,
+                        )
+                    })
                     .map(Node::from)
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
@@ -152,20 +137,14 @@ impl Tree {
 
         let (mut root, mut branches) = tree_components.join().unwrap()?;
 
-        Self::assemble_tree(&mut root, &mut branches, order, disk_usage, scale);
+        Self::assemble_tree(&mut root, &mut branches, ctx);
 
         Ok(root)
     }
 
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
     /// structure. Sorting occurs if specified.
-    fn assemble_tree(
-        current_dir: &mut Node,
-        branches: &mut Branches,
-        order: Option<Order>,
-        disk_usage: &DiskUsage,
-        scale: usize,
-    ) {
+    fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, ctx: &Context) {
         let current_node = branches
             .remove(current_dir.path())
             .map(|children| {
@@ -174,12 +153,12 @@ impl Tree {
             })
             .unwrap();
 
-        let mut dir_size = FileSize::new(0, disk_usage.clone(), scale);
+        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.scale);
 
         current_node.children_mut().map(|nodes| {
             nodes.iter_mut().for_each(|node| {
                 if node.is_dir() {
-                    Self::assemble_tree(node, branches, order, disk_usage, scale);
+                    Self::assemble_tree(node, branches, ctx);
                 }
 
                 if let Some(fs) = node.file_size() {
@@ -192,39 +171,35 @@ impl Tree {
             current_node.set_file_size(dir_size)
         }
 
-        if let Some(ord) = order {
+        if let Some(ord) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
             ord.comparator()
                 .map(|func| current_node.children_mut().map(|nodes| nodes.sort_by(func)));
         }
     }
 }
 
-impl TryFrom<Context> for Tree {
+impl TryFrom<&Context> for WalkParallel {
     type Error = Error;
 
-    fn try_from(clargs: Context) -> Result<Self, Self::Error> {
-        let walker = WalkParallel::try_from(&clargs)?;
-        let order = clargs.sort().map(|s| Order::from((s, clargs.dirs_first())));
-        let du = clargs.disk_usage;
-        let scale = clargs.scale;
-        let suppress_size = clargs.suppress_size;
-        let tree = Tree::new(
-            walker,
-            order,
-            clargs.level(),
-            clargs.icons,
-            du,
-            scale,
-            suppress_size,
-        )?;
-        Ok(tree)
+    fn try_from(clargs: &Context) -> Result<Self, Self::Error> {
+        let root = fs::canonicalize(clargs.dir())?;
+
+        fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+
+        Ok(WalkBuilder::new(root)
+            .follow_links(clargs.follow_links)
+            .overrides(clargs.overrides()?)
+            .git_ignore(!clargs.ignore_git_ignore)
+            .hidden(!clargs.hidden)
+            .threads(clargs.threads)
+            .build_parallel())
     }
 }
 
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let root = self.root();
-        let level = self.level.unwrap_or(std::usize::MAX);
+        let level = self.level();
         let theme = ui::get_theme();
         let mut output = String::from("");
 
