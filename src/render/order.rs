@@ -21,9 +21,12 @@ pub struct Order {
     dir_first: bool,
 }
 
+/// Comparator type used to sort [Node]s.
+pub type NodeComparator<'a> = dyn Fn(&Node, &Node) -> Ordering + 'a;
+
 impl Order {
     /// Yields function pointer to the appropriate `Node` comparator.
-    pub fn comparator(&self) -> Option<Box<dyn Fn(&Node, &Node) -> Ordering + '_>> {
+    pub fn comparator(&self) -> Option<Box<NodeComparator<'_>>> {
         if self.dir_first {
             return Some(Box::new(|a, b| {
                 Self::dir_comparator(a, b, self.sort.comparator())

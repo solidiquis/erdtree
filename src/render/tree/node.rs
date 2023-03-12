@@ -5,6 +5,7 @@ use crate::{
     render::{
         context::Context,
         disk_usage::{DiskUsage, FileSize},
+        order::NodeComparator,
     },
 };
 use ansi_term::Color;
@@ -18,7 +19,8 @@ use std::{
     fmt::{self, Display, Formatter},
     fs::{self, FileType},
     path::{Path, PathBuf},
-    slice::Iter,
+    ptr::addr_of,
+    slice::{Iter, IterMut},
 };
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
@@ -27,7 +29,7 @@ use std::{
 ///
 /// [`Tree`]: super::tree::Tree
 /// [`LS_COLORS`]: super::tree::ui::LS_COLORS
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Node {
     pub depth: usize,
     pub file_size: Option<FileSize>,
@@ -70,13 +72,42 @@ impl Node {
     }
 
     /// Returns a mutable reference to `children` if any.
-    pub fn children_mut(&mut self) -> Option<&mut Vec<Node>> {
-        self.children.as_mut()
+    pub fn children_mut(&mut self) -> Option<IterMut<Node>> {
+        self.children.as_mut().map(|children| children.iter_mut())
     }
 
     /// Returns an iter over a `children` slice if any.
     pub fn children(&self) -> Option<Iter<Node>> {
         self.children.as_ref().map(|children| children.iter())
+    }
+
+    /// Sorts `children` given comparator.
+    pub fn sort_children(&mut self, comparator: Box<NodeComparator<'_>>) {
+        self.children.as_mut().map(|nodes| nodes.sort_by(comparator));
+    }
+
+    /// Recursively traverse [Node]s, removing any [Node]s that have no children.
+    pub fn prune_directories(&mut self) {
+        let pruned_nodes = self.children.as_mut().map(|nodes| {
+            nodes.iter_mut()
+                .filter(|node| {
+                    if !node.is_dir() { return true }
+                    if node.children.is_none() { return false }
+
+                    // This allows us to recursively prune as we filter.
+                    unsafe {
+                        let raw_node_ptr = addr_of!(**node);
+                        let raw_mut_ptr = raw_node_ptr as *mut Node;
+                        raw_mut_ptr.as_mut().map(Self::prune_directories);
+                    }
+
+                    true 
+                })
+                .map(|node| node.clone())
+                .collect::<Vec<Node>>()
+        });
+
+        self.children = pruned_nodes;
     }
 
     /// Returns a reference to `file_name`. If file is a symlink then `file_name` is the name of

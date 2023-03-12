@@ -6,7 +6,7 @@ use std::{
 };
 
 /// Represents a file's underlying inode.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Inode {
     pub ino: u64,
     pub dev: u64,
