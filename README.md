@@ -14,7 +14,8 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 * [Description](#description)
 * [Usage](#usage)
 * [Installation](#installation)
-* [Disambiguations](#disambiguations)
+* [Info](#info)
+  - [Configuration file](#configuration-file)
   - [Binary prefix or SI prefix](#binary-prefix-or-si-prefix)
   - [Logical or physical disk usage](#logical-or-physical-disk-usage)
   - [How are directory sizes computed](#how-are-directory-sizes-computed)
@@ -41,6 +42,8 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 - displays files using ANSI colors by default
 - supports icons! (checkout the [Icons](#icons) section before using)
 
+If the chosen defaults don't meet your requirements and you don't want to bloat your shell configs with aliases, you can use a [configuration file](#configuration-file) instead.
+
 ## Usage
 ```
 erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.
@@ -61,11 +64,12 @@ Options:
   -i, --ignore-git-ignore        Ignore .gitignore; disabled by default
   -l, --level <NUM>              Maximum depth to display
   -n, --scale <NUM>              Total number of digits after the decimal to display for disk usage [default: 2]
-  -s, --sort <SORT>              Sort-order to display directory content [default: none] [possible values: name, size, size-rev, none]
-      --suppress-size            Omit disk usage from output
+  -s, --sort <SORT>              Sort-order to display directory content [possible values: name, size, size-rev]
       --dirs-first               Always sorts directories above files
   -S, --follow-links             Traverse symlink directories and consider their disk usage; disabled by default
   -t, --threads <THREADS>        Number of threads to use [default: 4]
+      --suppress-size            Omit disk usage from output; disabled by default
+      --no-config                Don't read configuration file
   -h, --help                     Print help (see more with '--help')
   -V, --version                  Print version
 ```
@@ -88,7 +92,34 @@ Binaries for common architectures can be downloaded from latest releases.
 
 Other means of installation to come.
 
-## Disambiguations
+## Info
+
+### Configuration file
+
+If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, you can set your own defaults using a configuration file.
+
+To create an `erdtree` configuration file you can either:
+- Create a file located at `ERDTREE_CONFIG_PATH` which you set, or
+- Create `$HOME/.erdtreerc`
+
+The format of a config file is as follows:
+- Every line is an `erdtree` option/argument.
+- Lines starting with `#` are considered comments and are thus ignored.
+
+Arguments passed to `erdtree` take precedence. If you have a config that you would like to ignore without deleting you can use `--no-config`.
+
+Here is an example of a valid config:
+
+```
+$ cat $HOME/.erdtreerc
+--level 2
+--icons
+--scale 3
+
+# You can use the short names too
+-s size
+```
+
 
 ### Binary prefix or SI Prefix
 

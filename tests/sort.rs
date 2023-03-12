@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn sort_name() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "tests/data"]),
+        utils::run_cmd(&["--sort", "name", "--no-config", "tests/data"]),
         indoc!(
             "
             data (1.21 KiB)
@@ -26,7 +26,13 @@ fn sort_name() {
 #[test]
 fn sort_name_dir_first() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--dirs-first", "tests/data"]),
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--dirs-first",
+            "--no-config",
+            "tests/data"
+        ]),
         indoc!(
             "
             data (1.21 KiB)
@@ -47,7 +53,7 @@ fn sort_name_dir_first() {
 #[test]
 fn sort_size() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "size", "tests/data"]),
+        utils::run_cmd(&["--sort", "size", "--no-config", "tests/data"]),
         indoc!(
             "
             data (1.21 KiB)
@@ -68,7 +74,13 @@ fn sort_size() {
 #[test]
 fn sort_size_dir_first() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "size", "--dirs-first", "tests/data"]),
+        utils::run_cmd(&[
+            "--sort",
+            "size",
+            "--dirs-first",
+            "--no-config",
+            "tests/data"
+        ]),
         indoc!(
             "
             data (1.21 KiB)

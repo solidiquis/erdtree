@@ -1,7 +1,8 @@
-use super::{super::inode::Inode, disk_usage::DiskUsage, get_ls_colors};
+use super::get_ls_colors;
 use crate::{
-    fs::erdtree::disk_usage::FileSize,
+    fs::inode::Inode,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
+    render::disk_usage::{DiskUsage, FileSize},
 };
 use ansi_term::Color;
 use ansi_term::Style;

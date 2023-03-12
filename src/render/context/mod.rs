@@ -1,16 +1,20 @@
-use clap::{Parser, ValueEnum};
-use ignore::{
-    overrides::{Override, OverrideBuilder},
-    WalkBuilder, WalkParallel,
-};
+use super::{disk_usage::DiskUsage, order::SortType};
+use clap::{CommandFactory, Error as ClapError, FromArgMatches, Parser};
+use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
     error::Error as StdError,
-    fmt::{self, Display, Formatter},
-    fs, io,
+    fmt::{self, Display},
     path::{Path, PathBuf},
     usize,
 };
+
+/// Operations to load in `.erdtree.toml` defaults.
+pub mod config;
+
+/// Unit tests for [Context]
+#[cfg(test)]
+mod test;
 
 /// Defines the CLI.
 #[derive(Parser, Debug)]
@@ -18,13 +22,13 @@ use std::{
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
 #[command(version = "1.3.0")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
-pub struct Clargs {
+pub struct Context {
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::Logical)]
-    disk_usage: DiskUsage,
+    pub disk_usage: DiskUsage,
 
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
@@ -63,8 +67,8 @@ pub struct Clargs {
     pub scale: usize,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = Order::None)]
-    sort: Order,
+    #[arg(short, long, value_enum)]
+    sort: Option<SortType>,
 
     /// Always sorts directories above files
     #[arg(long)]
@@ -72,45 +76,56 @@ pub struct Clargs {
 
     /// Traverse symlink directories and consider their disk usage; disabled by default
     #[arg(short = 'S', long)]
-    follow_links: bool,
+    pub follow_links: bool,
 
     /// Number of threads to use
     #[arg(short, long, default_value_t = 4)]
     pub threads: usize,
 
-    /// Omit disk usage from output; disabled by default"
+    /// Omit disk usage from output; disabled by default
     #[arg(long)]
     pub suppress_size: bool,
+
+    /// Don't read configuration file
+    #[arg(long)]
+    pub no_config: bool,
 }
 
-/// Order in which to print nodes.
-#[derive(Copy, Clone, Debug, ValueEnum)]
-pub enum Order {
-    /// Sort entries by file name
-    Name,
+impl Context {
+    /// Initializes [Context], optionally reading in the configuration file to override defaults.
+    /// Arguments provided will take precedence over config.
+    pub fn init() -> Result<Self, Error> {
+        let clargs = Context::command().args_override_self(true).get_matches();
 
-    /// Sort entries by size smallest to largest, top to bottom
-    Size,
+        let no_config = clargs
+            .get_one("no_config")
+            .map(bool::clone)
+            .unwrap_or(false);
 
-    /// Sort entries by size largest to smallest, bottom to top
-    SizeRev,
+        let context = {
+            if no_config {
+                Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
+            } else {
+                if let Some(ref config) = config::read_config_to_string::<&str>(None) {
+                    let raw_config_args = config::parse_config(config);
+                    let config_args = Context::command().get_matches_from(raw_config_args);
 
-    /// No sorting
-    None,
-}
+                    let mut ctx =
+                        Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
 
-/// Display disk usage output as either logical size or physical size.
-#[derive(Copy, Clone, Debug, ValueEnum)]
-pub enum DiskUsage {
-    /// How many bytes does a file contain
-    Logical,
+                    ctx.update_from_arg_matches(&clargs)
+                        .map_err(|e| Error::ArgParse(e))?;
 
-    /// How much actual space on disk based on blocks allocated, taking into account sparse files
-    /// and compression.
-    Physical,
-}
+                    ctx
+                } else {
+                    Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
+                }
+            }
+        };
 
-impl Clargs {
+        Ok(context)
+    }
+
     /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
         self.dir
@@ -119,18 +134,13 @@ impl Clargs {
     }
 
     /// The sort-order used for printing.
-    pub fn sort(&self) -> Order {
+    pub fn sort(&self) -> Option<SortType> {
         self.sort
     }
 
     /// Getter for `dirs_first` field.
     pub fn dirs_first(&self) -> bool {
         self.dirs_first
-    }
-
-    /// Getter for `disk_usage` field.
-    pub fn disk_usage(&self) -> &DiskUsage {
-        &self.disk_usage
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
@@ -169,52 +179,19 @@ impl Clargs {
     }
 }
 
-impl TryFrom<&Clargs> for WalkParallel {
-    type Error = Error;
-
-    fn try_from(clargs: &Clargs) -> Result<Self, Self::Error> {
-        let root = fs::canonicalize(clargs.dir())?;
-
-        fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
-
-        Ok(WalkBuilder::new(root)
-            .follow_links(clargs.follow_links)
-            .overrides(clargs.overrides()?)
-            .git_ignore(!clargs.ignore_git_ignore)
-            .hidden(!clargs.hidden)
-            .threads(clargs.threads)
-            .build_parallel())
-    }
-}
-
-/// Errors which may occur during command-line argument parsing.
 #[derive(Debug)]
 pub enum Error {
-    InvalidGlobPatterns(ignore::Error),
-    DirNotFound(String),
-    PathCanonicalizationError(io::Error),
+    ArgParse(ClapError),
+    Config(ClapError),
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::InvalidGlobPatterns(e) => write!(f, "Invalid glob patterns: {e}"),
-            Error::DirNotFound(e) => write!(f, "{e}"),
-            Error::PathCanonicalizationError(e) => write!(f, "{e}"),
+            Self::ArgParse(e) => write!(f, "{e}"),
+            Self::Config(e) => write!(f, "A configuration file was found but failed to parse: {e}"),
         }
     }
 }
 
 impl StdError for Error {}
-
-impl From<ignore::Error> for Error {
-    fn from(value: ignore::Error) -> Self {
-        Self::InvalidGlobPatterns(value)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(value: io::Error) -> Self {
-        Self::PathCanonicalizationError(value)
-    }
-}

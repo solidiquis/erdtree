@@ -20,7 +20,13 @@ mod test {
             .map(|c| c.to_string_lossy().into_owned())?;
 
         assert_eq!(
-            super::utils::run_cmd(&["--sort", "name", "--follow-links", &link_canonical]),
+            super::utils::run_cmd(&[
+                "--sort",
+                "name",
+                "--follow-links",
+                "--no-config",
+                &link_canonical
+            ]),
             indoc!(
                 "
                 the_yellow_king (143 B)
