@@ -6,9 +6,11 @@ use std::{
 pub const CONFIG_ENV_VAR: &str = "ERDTREE_CONFIG_PATH";
 pub const CONFIG_NAME: &str = ".erdtreerc";
 
-pub fn read_config_to_string(path: Option<&Path>) -> Option<String> {
+pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
     if let Some(p) = path {
-        return fs::read_to_string(p).ok();
+        return fs::read_to_string(p)
+            .map(|config| format!("--\n{config}"))
+            .ok();
     }
 
     env::var_os(CONFIG_ENV_VAR)

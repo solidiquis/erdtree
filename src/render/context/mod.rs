@@ -12,6 +12,10 @@ use std::{
 /// Operations to load in `.erdtree.toml` defaults.
 pub mod config;
 
+/// Unit tests for [Context]
+#[cfg(test)]
+mod test;
+
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
@@ -102,13 +106,16 @@ impl Context {
             if no_config {
                 Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
             } else {
-                if let Some(ref config) = config::read_config_to_string(None) {
+                if let Some(ref config) = config::read_config_to_string::<&str>(None) {
                     let raw_config_args = config::parse_config(config);
                     let config_args = Context::command().get_matches_from(raw_config_args);
+
                     let mut ctx =
                         Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
+
                     ctx.update_from_arg_matches(&clargs)
                         .map_err(|e| Error::ArgParse(e))?;
+
                     ctx
                 } else {
                     Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
