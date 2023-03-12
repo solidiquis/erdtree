@@ -1,11 +1,9 @@
-use super::{
-    node::{Node, NodePrecursor},
-    order::Order,
-};
+use super::order::Order;
 use crate::render::{context::Context, disk_usage::FileSize};
 use crossbeam::channel::{self, Sender};
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel, WalkState};
+use node::Node;
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
@@ -18,6 +16,12 @@ use std::{
 
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
+
+/// Contains components of the [`Tree`] data structure that derive from [`DirEntry`].
+///
+/// [`Tree`]: tree::Tree
+/// [`DirEntry`]: ignore::DirEntry
+pub mod node;
 
 /// [ui::LS_COLORS] initialization and ui theme for [Tree].
 pub mod ui;
@@ -117,16 +121,7 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
-                    .map(|entry| {
-                        NodePrecursor::new(
-                            &ctx.disk_usage,
-                            entry,
-                            ctx.icons,
-                            ctx.scale,
-                            ctx.suppress_size,
-                        )
-                    })
-                    .map(Node::from)
+                    .map(|entry| Node::from((&entry, ctx)))
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
                     .unwrap_or(WalkState::Skip)
@@ -153,7 +148,7 @@ impl Tree {
             })
             .unwrap();
 
-        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.scale);
+        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
 
         current_node.children_mut().map(|nodes| {
             nodes.iter_mut().for_each(|node| {

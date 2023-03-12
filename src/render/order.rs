@@ -1,4 +1,4 @@
-use super::node::Node;
+use super::tree::node::Node;
 use clap::ValueEnum;
 use std::{cmp::Ordering, convert::From};
 
