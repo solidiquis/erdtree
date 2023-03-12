@@ -16,7 +16,7 @@ use std::{
     thread,
 };
 
-/// Errors.
+/// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
 
 /// [ui::LS_COLORS] initialization and ui theme for [Tree].

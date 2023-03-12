@@ -6,7 +6,9 @@ use std::{
     io::Error as IoError,
 };
 
-/// Errors that may occur during filesystem traversal.
+/// Errors that may occur while traversing or construction of [`Tree`].
+///
+/// [`Tree`]: super::Tree
 #[derive(Debug)]
 pub enum Error {
     DirNotFound(String),
