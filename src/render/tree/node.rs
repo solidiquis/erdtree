@@ -83,16 +83,19 @@ impl Node {
 
     /// Sorts `children` given comparator.
     pub fn sort_children(&mut self, comparator: Box<NodeComparator<'_>>) {
-        self.children.as_mut().map(|nodes| nodes.sort_by(comparator));
+        self.children
+            .as_mut()
+            .map(|nodes| nodes.sort_by(comparator));
     }
 
     /// Recursively traverse [Node]s, removing any [Node]s that have no children.
     pub fn prune_directories(&mut self) {
         let pruned_nodes = self.children.as_mut().map(|nodes| {
-            nodes.iter_mut()
+            nodes
+                .iter_mut()
                 .filter(|node| {
-                    if !node.is_dir() { return true }
-                    if node.children.is_none() { return false }
+                    if !node.is_dir() { return true; }
+                    if node.children.is_none() { return false; }
 
                     // This allows us to recursively prune as we filter.
                     unsafe {
@@ -101,7 +104,7 @@ impl Node {
                         raw_mut_ptr.as_mut().map(Self::prune_directories);
                     }
 
-                    true 
+                    true
                 })
                 .map(|node| node.clone())
                 .collect::<Vec<Node>>()

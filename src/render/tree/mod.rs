@@ -137,7 +137,9 @@ impl Tree {
 
         Self::assemble_tree(&mut root, &mut branches, ctx);
 
-        if ctx.prune { root.prune_directories() }
+        if ctx.prune {
+            root.prune_directories()
+        }
 
         Ok(root)
     }
