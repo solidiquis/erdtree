@@ -106,6 +106,8 @@ The format of a config file is as follows:
 - Every line is an `erdtree` option/argument.
 - Lines starting with `#` are considered comments and are thus ignored.
 
+Arguments passed to `erdtree` take precedence. If you have a config that you would like to ignore without deleting you can use `--no-config`.
+
 Here is an example of a valid config:
 
 ```
