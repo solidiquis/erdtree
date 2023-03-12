@@ -1,4 +1,4 @@
-use super::get_ls_colors;
+use super::super::get_ls_colors;
 use crate::{
     fs::inode::Inode,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
@@ -221,11 +221,12 @@ impl From<(&DirEntry, &Context)> for Node {
             icons,
             scale,
             suppress_size,
+            prefix,
             ..
         } = ctx;
 
         let scale = scale.clone();
-
+        let prefix = prefix.clone();
         let icons = icons.clone();
 
         let children = None;
@@ -262,8 +263,8 @@ impl From<(&DirEntry, &Context)> for Node {
                 if ft.is_file() {
                     if let Some(ref md) = metadata {
                         file_size = match disk_usage {
-                            DiskUsage::Logical => Some(FileSize::logical(md, scale)),
-                            DiskUsage::Physical => FileSize::physical(path, md, scale),
+                            DiskUsage::Logical => Some(FileSize::logical(md, prefix, scale)),
+                            DiskUsage::Physical => FileSize::physical(path, md, prefix, scale),
                         }
                     }
                 }

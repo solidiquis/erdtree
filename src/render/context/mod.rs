@@ -1,4 +1,7 @@
-use super::{disk_usage::DiskUsage, order::SortType};
+use super::{
+    disk_usage::{DiskUsage, PrefixKind},
+    order::SortType,
+};
 use clap::{CommandFactory, Error as ClapError, FromArgMatches, Parser};
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
@@ -65,6 +68,10 @@ pub struct Context {
     /// Total number of digits after the decimal to display for disk usage
     #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
     pub scale: usize,
+
+    /// Total number of digits after the decimal to display for disk usage
+    #[arg(short, long, value_enum, default_value_t = PrefixKind::Bin)]
+    pub prefix: PrefixKind,
 
     /// Sort-order to display directory content
     #[arg(short, long, value_enum)]
