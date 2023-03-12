@@ -64,6 +64,7 @@ Options:
   -i, --ignore-git-ignore        Ignore .gitignore; disabled by default
   -l, --level <NUM>              Maximum depth to display
   -n, --scale <NUM>              Total number of digits after the decimal to display for disk usage [default: 2]
+  -p, --prefix <PREFIX>          Display disk usage as binary or SI units [default: bin] [possible values: bin, si]
   -s, --sort <SORT>              Sort-order to display directory content [possible values: name, size, size-rev]
       --dirs-first               Always sorts directories above files
   -S, --follow-links             Traverse symlink directories and consider their disk usage; disabled by default
@@ -120,10 +121,9 @@ $ cat $HOME/.erdtreerc
 -s size
 ```
 
-
 ### Binary prefix or SI Prefix
 
-Disk usage is reported using binary prefixes, thus you can expect `1 kebibyte` to equal `1024 bytes` (i.e `1 KiB = 1024 B`).
+Disk usage is reported using binary prefixes by default (e.g. `1 KiB = 1024 B`) as opposed to SI prefixes (`1 KB = 1000 B`). To toggle between the two use the `-p, --prefix` option.
 
 ### Logical or physical disk usage
 

@@ -69,7 +69,7 @@ pub struct Context {
     #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
     pub scale: usize,
 
-    /// Total number of digits after the decimal to display for disk usage
+    /// Display disk usage as binary or SI units
     #[arg(short, long, value_enum, default_value_t = PrefixKind::Bin)]
     pub prefix: PrefixKind,
 
