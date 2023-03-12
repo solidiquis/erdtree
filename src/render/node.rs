@@ -2,7 +2,10 @@ use super::get_ls_colors;
 use crate::{
     fs::inode::Inode,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
-    render::disk_usage::{DiskUsage, FileSize},
+    render::{
+        context::Context,
+        disk_usage::{DiskUsage, FileSize},
+    },
 };
 use ansi_term::Color;
 use ansi_term::Style;
@@ -210,43 +213,20 @@ impl Node {
     }
 }
 
-/// Used to be converted directly into a [Node].
-pub struct NodePrecursor<'a> {
-    disk_usage: &'a DiskUsage,
-    dir_entry: DirEntry,
-    show_icon: bool,
-    scale: usize,
-    suppress_size: bool,
-}
-
-impl<'a> NodePrecursor<'a> {
-    /// Yields a [NodePrecursor] which is used for convenient conversion into a [Node].
-    pub fn new(
-        disk_usage: &'a DiskUsage,
-        dir_entry: DirEntry,
-        show_icon: bool,
-        scale: usize,
-        suppress_size: bool,
-    ) -> Self {
-        Self {
+impl From<(&DirEntry, &Context)> for Node {
+    fn from(data: (&DirEntry, &Context)) -> Self {
+        let (dir_entry, ctx) = data;
+        let Context {
             disk_usage,
-            dir_entry,
-            show_icon,
+            icons,
             scale,
             suppress_size,
-        }
-    }
-}
+            ..
+        } = ctx;
 
-impl From<NodePrecursor<'_>> for Node {
-    fn from(precursor: NodePrecursor) -> Self {
-        let NodePrecursor {
-            disk_usage,
-            dir_entry,
-            show_icon,
-            scale,
-            suppress_size,
-        } = precursor;
+        let scale = scale.clone();
+
+        let icons = icons.clone();
 
         let children = None;
 
@@ -300,7 +280,7 @@ impl From<NodePrecursor<'_>> for Node {
             file_type,
             inode,
             path.into(),
-            show_icon,
+            icons,
             style,
             symlink_target,
         )

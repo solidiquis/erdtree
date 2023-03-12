@@ -1,7 +1,4 @@
-use super::{
-    node::{Node, NodePrecursor},
-    order::Order,
-};
+use super::{node::Node, order::Order};
 use crate::render::{context::Context, disk_usage::FileSize};
 use crossbeam::channel::{self, Sender};
 use error::Error;
@@ -117,16 +114,7 @@ impl Tree {
                 let tx = Sender::clone(&tx);
 
                 entry_res
-                    .map(|entry| {
-                        NodePrecursor::new(
-                            &ctx.disk_usage,
-                            entry,
-                            ctx.icons,
-                            ctx.scale,
-                            ctx.suppress_size,
-                        )
-                    })
-                    .map(Node::from)
+                    .map(|entry| Node::from((&entry, ctx)))
                     .map(|node| tx.send(node).unwrap())
                     .map(|_| WalkState::Continue)
                     .unwrap_or(WalkState::Skip)
