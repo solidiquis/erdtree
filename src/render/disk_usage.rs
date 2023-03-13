@@ -38,7 +38,7 @@ pub enum BinPrefix {
     Tebi,
 }
 
-/// Binary prefixes
+/// SI prefixes.
 #[derive(Debug)]
 pub enum SiPrefix {
     Base,

@@ -26,8 +26,8 @@ use std::{
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
 /// uses ANSI colors determined by the file-type and [`LS_COLORS`].
 ///
-/// [`Tree`]: super::tree::Tree
-/// [`LS_COLORS`]: super::tree::ui::LS_COLORS
+/// [`Tree`]: super::Tree
+/// [`LS_COLORS`]: super::ui::LS_COLORS
 #[derive(Debug)]
 pub struct Node {
     pub depth: usize,
@@ -191,7 +191,7 @@ impl Node {
     /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
     /// [`LS_COLORS`] foreground configuration of the associated file name.
     ///
-    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS
+    /// [`LS_COLORS`]: super::ui::LS_COLORS
     fn get_icon(&self) -> Option<String> {
         if !self.show_icon {
             return None;
@@ -220,7 +220,7 @@ impl Node {
 
     /// Stylizes input, `entity` based on [`LS_COLORS`]
     ///
-    /// [`LS_COLORS`]: super::tree::ui::LS_COLORS
+    /// [`LS_COLORS`]: super::ui::LS_COLORS
     fn stylize(&self, entity: &str) -> String {
         self.style().foreground.map_or_else(
             || entity.to_string(),

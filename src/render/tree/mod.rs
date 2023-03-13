@@ -18,7 +18,7 @@ pub mod error;
 
 /// Contains components of the [`Tree`] data structure that derive from [`DirEntry`].
 ///
-/// [`Tree`]: tree::Tree
+/// [`Tree`]: Tree
 /// [`DirEntry`]: ignore::DirEntry
 pub mod node;
 

@@ -165,7 +165,7 @@ impl Context {
         let mut builder = OverrideBuilder::new(self.dir());
 
         if self.ignore_git {
-            builder.add("!.git/**/*")?;
+            builder.add("!.git")?;
         }
 
         if self.glob.is_empty() && self.iglob.is_empty() {

@@ -1,4 +1,4 @@
-/// CLI rules and definitions and context wherein [Tree] will operate.
+/// CLI rules and definitions and context wherein [`Tree`] will operate.
 ///
 /// [`Tree`]: tree::Tree
 pub mod context;
