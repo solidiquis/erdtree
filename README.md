@@ -234,20 +234,6 @@ _Q: Why did you make this? It's totally unnecessary._
 
 A: Ennui.
 
-_Q: Is it any good?
-
-A: Don't ask me, ask this dude/dudette:
-
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/tarnished_i.png?raw=true" alt="failed to load png" />
-</p>
-
-and this dude/dudette:
-
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/tarnished_ii.png?raw=true" alt="failed to load png" />
-</p>
-
 _Q: Why is it called erdtree?_
 
 A: It's a reference to Elden Ring.
@@ -255,6 +241,16 @@ A: It's a reference to Elden Ring.
 _Q: Is it any good?_
 
 A: Yes.
+
+_Q: Got any testimonials?_
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/tarnished_i.png?raw=true" alt="failed to load png" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/tarnished_ii.png?raw=true" alt="failed to load png" />
+</p>
 
 _Q: Is it blazingly fast?_
 
