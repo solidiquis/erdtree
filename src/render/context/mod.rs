@@ -97,6 +97,10 @@ pub struct Context {
     #[arg(long)]
     pub suppress_size: bool,
 
+    /// Show the size on the left, decimal aligned
+    #[arg(long)]
+    pub size_left: bool,
+
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
