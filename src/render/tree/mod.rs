@@ -198,10 +198,23 @@ impl Display for Tree {
         let root = self.root();
         let level = self.level();
         let theme = ui::get_theme();
-        let _size_left = self.context().size_left;
+        let size_left = self.context().size_left;
 
-        fn extend_output(f: &mut Formatter, node: &Node, prefix: &str) -> fmt::Result {
-            writeln!(f, "{prefix}{node}")
+        fn extend_output(
+            f: &mut Formatter,
+            node: &Node,
+            prefix: &str,
+            size_left: bool,
+        ) -> fmt::Result {
+            if size_left {
+                // write!(f, "{prefix}")?;
+                node.display_size_left(f, prefix)?;
+                writeln!(f, "")
+            } else {
+                // write!(f, "{prefix}")?;
+                node.display_size_right(f, prefix)?;
+                writeln!(f, "")
+            }
         }
 
         fn traverse(
@@ -210,6 +223,7 @@ impl Display for Tree {
             base_prefix: &str,
             level: usize,
             theme: &ui::ThemesMap,
+            size_left: bool,
         ) -> fmt::Result {
             let mut peekable = children.peekable();
 
@@ -222,7 +236,7 @@ impl Display for Tree {
                         theme.get("vtrt").unwrap()
                     };
 
-                extend_output(f, child, &prefix)?;
+                extend_output(f, child, &prefix, size_left)?;
 
                 if !child.is_dir() || child.depth + 1 > level {
                     continue;
@@ -244,14 +258,14 @@ impl Display for Tree {
                             theme.get("vt").unwrap()
                         };
 
-                    traverse(f, children, &new_base, level, new_theme)?;
+                    traverse(f, children, &new_base, level, new_theme, size_left)?;
                 }
             }
             Ok(())
         }
 
-        extend_output(f, root, "")?;
-        traverse(f, root.children(), "", level, theme)?;
+        extend_output(f, root, "", size_left)?;
+        traverse(f, root.children(), "", level, theme, size_left)?;
         Ok(())
     }
 }

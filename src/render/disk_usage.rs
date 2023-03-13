@@ -94,96 +94,99 @@ impl AddAssign<&Self> for FileSize {
     }
 }
 
-impl Display for FileSize {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl FileSize {
+    pub fn format(&self, align: bool) -> String {
         let fbytes = self.bytes as f64;
-
-        let output = match self.prefix_kind {
+        let scale = self.scale;
+        let (color, bytes, base) = match self.prefix_kind {
             PrefixKind::Bin => {
-                let log = fbytes.log(2.0);
-
-                if log < 10.0 {
-                    Color::Cyan.paint(format!("{} {}", self.bytes, BinPrefix::Base))
-                } else if (10.0..20.0).contains(&log) {
-                    Color::Yellow.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 1024.0_f64,
-                        BinPrefix::Kibi,
-                        scale = self.scale
-                    ))
-                } else if (20.0..30.0).contains(&log) {
-                    Color::Green.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 1024.0_f64.powi(2),
-                        BinPrefix::Mebi,
-                        scale = self.scale
-                    ))
-                } else if (30.0..40.0).contains(&log) {
-                    Color::Red.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 1024.0_f64.powi(3),
-                        BinPrefix::Gibi,
-                        scale = self.scale
-                    ))
+                let log = fbytes.log2();
+                if log < 10. {
+                    (
+                        Color::Cyan,
+                        format!("{}", self.bytes),
+                        format!("{}", BinPrefix::Base),
+                    )
+                } else if log < 20. {
+                    (
+                        Color::Yellow,
+                        format!("{:.scale$}", fbytes / 1024.0_f64.powi(1),),
+                        format!("{}", BinPrefix::Kibi),
+                    )
+                } else if log < 30. {
+                    (
+                        Color::Green,
+                        format!("{:.scale$}", fbytes / 1024.0_f64.powi(2),),
+                        format!("{}", BinPrefix::Mebi),
+                    )
+                } else if log < 40. {
+                    (
+                        Color::Red,
+                        format!("{:.scale$}", fbytes / 1024.0_f64.powi(3),),
+                        format!("{}", BinPrefix::Gibi),
+                    )
                 } else {
-                    Color::Blue.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 1024.0_f64.powi(4),
-                        BinPrefix::Tebi,
-                        scale = self.scale
-                    ))
+                    (
+                        Color::Blue,
+                        format!("{:.scale$}", fbytes / 1024.0_f64.powi(4),),
+                        format!("{}", BinPrefix::Tebi),
+                    )
                 }
             }
-
             PrefixKind::Si => {
-                let log = fbytes.log(10.0);
-
-                if log < 3.0 {
-                    Color::Cyan.paint(format!("{} {}", fbytes, SiPrefix::Base))
-                } else if (3.0..6.0).contains(&log) {
-                    Color::Yellow.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 10.0_f64.powi(3),
-                        SiPrefix::Kilo,
-                        scale = self.scale
-                    ))
-                } else if (6.0..9.0).contains(&log) {
-                    Color::Green.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 10.0_f64.powi(6),
-                        SiPrefix::Mega,
-                        scale = self.scale
-                    ))
-                } else if (9.0..12.0).contains(&log) {
-                    Color::Green.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 10.0_f64.powi(9),
-                        SiPrefix::Giga,
-                        scale = self.scale
-                    ))
+                let log = fbytes.log10();
+                if log < 3. {
+                    (
+                        Color::Cyan,
+                        format!("{}", self.bytes),
+                        format!("{}", SiPrefix::Base),
+                    )
+                } else if log < 6. {
+                    (
+                        Color::Yellow,
+                        format!("{:.scale$}", fbytes / 10.0_f64.powi(3),),
+                        format!("{}", SiPrefix::Kilo),
+                    )
+                } else if log < 9. {
+                    (
+                        Color::Green,
+                        format!("{:.scale$}", fbytes / 10.0_f64.powi(6),),
+                        format!("{}", SiPrefix::Mega),
+                    )
+                } else if log < 12. {
+                    (
+                        Color::Red,
+                        format!("{:.scale$}", fbytes / 10.0_f64.powi(9),),
+                        format!("{}", SiPrefix::Giga),
+                    )
                 } else {
-                    Color::Red.paint(format!(
-                        "{:.scale$} {}",
-                        fbytes / 10.0_f64.powi(12),
-                        SiPrefix::Tera,
-                        scale = self.scale
-                    ))
+                    (
+                        Color::Blue,
+                        format!("{:.scale$}", fbytes / 10.0_f64.powi(12),),
+                        format!("{}", SiPrefix::Tera),
+                    )
                 }
             }
         };
-
-        write!(f, "{output}")
+        if align {
+            match self.prefix_kind {
+                PrefixKind::Bin => color.paint(format!("{bytes:>6} {base:>3}")).to_string(),
+                PrefixKind::Si => color.paint(format!("{bytes:>6} {base:>2}")).to_string(),
+            }
+        } else {
+            color.paint(format!("{bytes} {base}")).to_string()
+        }
     }
 }
 
 impl Display for BinPrefix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Base => write!(f, "B"),
-            Self::Kibi => write!(f, "KiB"),
-            Self::Mebi => write!(f, "MiB"),
-            Self::Gibi => write!(f, "GiB"),
-            Self::Tebi => write!(f, "TiB"),
+            Self::Base => f.pad("B"),
+            Self::Kibi => f.pad("KiB"),
+            Self::Mebi => f.pad("MiB"),
+            Self::Gibi => f.pad("GiB"),
+            Self::Tebi => f.pad("TiB"),
         }
     }
 }
@@ -191,11 +194,11 @@ impl Display for BinPrefix {
 impl Display for SiPrefix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Base => write!(f, "B"),
-            Self::Kilo => write!(f, "KB"),
-            Self::Mega => write!(f, "MB"),
-            Self::Giga => write!(f, "GB"),
-            Self::Tera => write!(f, "TB"),
+            Self::Base => f.pad("B"),
+            Self::Kilo => f.pad("KB"),
+            Self::Mega => f.pad("MB"),
+            Self::Giga => f.pad("GB"),
+            Self::Tera => f.pad("TB"),
         }
     }
 }

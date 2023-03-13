@@ -312,36 +312,68 @@ impl From<(&DirEntry, &Context)> for Node {
     }
 }
 
+#[derive(Copy, Clone, Default)]
+enum SizeLocation {
+    #[default]
+    Right,
+    Left,
+}
+
+impl SizeLocation {
+    fn default_string(self) -> String {
+        use SizeLocation::*;
+        match self {
+            Right => "".to_owned(),
+            Left => "          ".to_owned(),
+        }
+    }
+    fn format(self, size: &FileSize) -> String {
+        use SizeLocation::*;
+        match self {
+            Right => format!("({})", size.format(false)),
+            Left => size.format(true),
+        }
+    }
+}
+
 impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.display(f, SizeLocation::default(), "")
+    }
+}
+
+impl Node {
+    fn display(&self, f: &mut Formatter, size_loc: SizeLocation, prefix: &str) -> fmt::Result {
         let size = self
             .file_size()
-            .map(|size| format!("({size})"))
-            .or_else(|| Some("".to_owned()))
-            .unwrap();
+            .map_or_else(|| size_loc.default_string(), |size| size_loc.format(size));
 
-        let icon = self
-            .show_icon
-            .then(|| self.get_icon())
-            .flatten()
-            .unwrap_or("".to_owned());
+        let icon = if self.show_icon {
+            self.get_icon().unwrap()
+        } else {
+            "".to_owned()
+        };
 
         let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
 
-        let (styled_name, name_padding) = self.stylize_link_name().map_or_else(
-            || {
-                let file_name = self.file_name_lossy();
-                let name = self.stylize(&file_name);
-                let padding = name.len() + 1;
+        let styled_name = self.stylize_link_name().unwrap_or_else(|| {
+            let file_name = self.file_name_lossy();
+            self.stylize(&file_name)
+        });
 
-                (name, padding)
-            },
-            |name| {
-                let padding = name.len() - 1;
-                (name, padding)
-            },
-        );
-
-        write!(f, "{icon:<icon_padding$}{styled_name:<name_padding$}{size}",)
+        match size_loc {
+            SizeLocation::Right => {
+                write!(f, "{prefix}{icon:<icon_padding$}{styled_name} {size}",)
+            }
+            SizeLocation::Left => {
+                write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}",)
+            }
+        }
+    }
+    pub fn display_size_right(&self, f: &mut Formatter, prefix: &str) -> fmt::Result {
+        self.display(f, SizeLocation::Right, prefix)
+    }
+    pub fn display_size_left(&self, f: &mut Formatter, prefix: &str) -> fmt::Result {
+        self.display(f, SizeLocation::Left, prefix)
     }
 }
