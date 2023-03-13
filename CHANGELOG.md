@@ -54,3 +54,17 @@ Did a complete rewrite with emphasis on an intuitive interface and performance. 
 ### Special thanks
 
 Thank you to all of the folks from [this Reddit thread](https://www.reddit.com/r/rust/comments/11ioq1n/erdtree_v120_a_modern_multithreaded_alternative/) who helped shape `erdtree` with their very valuable feedback as well as contributors!
+
+## [1.4.0] - 2023-03-12
+
+### Bug Fixes
+- [--ignore-git didn't ignore .git](https://github.com/solidiquis/erdtree/pull/59)
+
+### Additions
+- [sanders41](https://github.com/sanders41): [Added --suppress-size to suppress printing disk usage](https://github.com/solidiquis/erdtree/pull/47)
+- [Added ability to use a config file to override erdtree defaults](https://github.com/solidiquis/erdtree/pull/52)
+- [Added -P, --prune option to prevent printing of empty branches](https://github.com/solidiquis/erdtree/pull/55)
+- [Added -p, --prefix to toggle between binary and SI prefixes when reporting disk usage](https://github.com/solidiquis/erdtree/pull/54)
+
+### Contributors
+- [sanders41](https://github.com/sanders41)
