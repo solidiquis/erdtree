@@ -92,7 +92,7 @@ impl Node {
 
     /// Whether or not a [Node] has children.
     pub fn has_children(&self) -> bool {
-        self.children.len() > 0
+        !self.children.is_empty()
     }
 
     /// Recursively traverse [Node]s, removing any [Node]s that have no children.
@@ -121,7 +121,7 @@ impl Node {
     pub fn file_name_lossy(&self) -> Cow<'_, str> {
         self.file_name()
             .to_str()
-            .map_or_else(|| self.file_name().to_string_lossy(), |s| Cow::from(s))
+            .map_or_else(|| self.file_name().to_string_lossy(), Cow::from)
     }
 
     /// Returns `true` if node is a directory.
@@ -136,14 +136,12 @@ impl Node {
 
     /// Path to symlink target.
     pub fn symlink_target_path(&self) -> Option<&Path> {
-        self.symlink_target.as_ref().map(PathBuf::as_path)
+        self.symlink_target.as_deref()
     }
 
     /// Returns the file name of the symlink target if [Node] represents a symlink.
     pub fn symlink_target_file_name(&self) -> Option<&OsStr> {
-        self.symlink_target_path()
-            .map(|path| path.file_name())
-            .flatten()
+        self.symlink_target_path().and_then(|path| path.file_name())
     }
 
     /// Returns reference to underlying [FileType].
@@ -199,11 +197,11 @@ impl Node {
 
         let path = self.symlink_target_path().unwrap_or_else(|| self.path());
 
-        if let Some(icon) = path.extension().map(icon_from_ext).flatten() {
+        if let Some(icon) = path.extension().and_then(icon_from_ext) {
             return Some(self.stylize(icon));
         }
 
-        if let Some(icon) = self.file_type().map(icon_from_file_type).flatten() {
+        if let Some(icon) = self.file_type().and_then(icon_from_file_type) {
             return Some(self.stylize(icon));
         }
 
@@ -234,7 +232,7 @@ impl Node {
             let file_name = self.file_name_lossy();
             let styled_name = self.stylize(&file_name);
             let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_string_lossy()));
-            format!("{} {}", styled_name, target_name)
+            format!("{styled_name} {target_name}")
         })
     }
 }
@@ -251,9 +249,9 @@ impl From<(&DirEntry, &Context)> for Node {
             ..
         } = ctx;
 
-        let scale = scale.clone();
-        let prefix = prefix.clone();
-        let icons = icons.clone();
+        let scale = *scale;
+        let prefix = *prefix;
+        let icons = *icons;
 
         let children = vec![];
 
@@ -318,7 +316,7 @@ impl Display for Node {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let size = self
             .file_size()
-            .map(|size| format!("({})", size))
+            .map(|size| format!("({size})"))
             .or_else(|| Some("".to_owned()))
             .unwrap();
 
@@ -328,31 +326,22 @@ impl Display for Node {
             .flatten()
             .unwrap_or("".to_owned());
 
-        let icon_padding = (icon.len() > 1).then(|| icon.len() - 1).unwrap_or(0);
+        let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
 
-        let (styled_name, name_padding) = self
-            .stylize_link_name()
-            .map(|name| {
-                let padding = name.len() - 1;
-                (name, padding)
-            })
-            .or_else(|| {
+        let (styled_name, name_padding) = self.stylize_link_name().map_or_else(
+            || {
                 let file_name = self.file_name_lossy();
                 let name = self.stylize(&file_name);
                 let padding = name.len() + 1;
 
-                Some((name, padding))
-            })
-            .unwrap();
-
-        let output = format!(
-            "{:<icon_padding$}{:<name_padding$}{size}",
-            icon,
-            styled_name,
-            icon_padding = icon_padding,
-            name_padding = name_padding
+                (name, padding)
+            },
+            |name| {
+                let padding = name.len() - 1;
+                (name, padding)
+            },
         );
 
-        write!(f, "{output}")
+        write!(f, "{icon:<icon_padding$}{styled_name:<name_padding$}{size}",)
     }
 }

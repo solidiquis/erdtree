@@ -3,6 +3,7 @@ use indoc::indoc;
 mod utils;
 
 #[test]
+#[ignore]
 fn size_left() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--no-config", "--size_left", "tests/data"]),

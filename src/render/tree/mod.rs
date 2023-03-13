@@ -149,9 +149,7 @@ impl Tree {
     fn assemble_tree(current_node: &mut Node, branches: &mut Branches, ctx: &Context) {
         let children = branches.remove(current_node.path()).unwrap();
 
-        if children.len() > 0 {
-            current_node.set_children(children);
-        }
+        current_node.set_children(children);
 
         let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
 
@@ -169,9 +167,10 @@ impl Tree {
             current_node.set_file_size(dir_size)
         }
 
-        if let Some(ordr) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
-            ordr.comparator()
-                .map(|func| current_node.sort_children(func));
+        if let Some(order) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
+            if let Some(func) = order.comparator() {
+                current_node.sort_children(func);
+            }
         }
     }
 }
@@ -199,74 +198,60 @@ impl Display for Tree {
         let root = self.root();
         let level = self.level();
         let theme = ui::get_theme();
-        let prune = self.context().prune;
-        let mut output = String::from("");
+        let _size_left = self.context().size_left;
 
-        #[inline]
-        fn extend_output(output: &mut String, node: &Node, prefix: &str) {
-            output.push_str(&format!("{prefix}{node}\n"));
+        fn extend_output(f: &mut Formatter, node: &Node, prefix: &str) -> fmt::Result {
+            writeln!(f, "{prefix}{node}")
         }
 
-        #[inline]
         fn traverse(
-            output: &mut String,
+            f: &mut Formatter,
             children: Iter<Node>,
             base_prefix: &str,
             level: usize,
             theme: &ui::ThemesMap,
-            prune: bool,
-        ) {
+        ) -> fmt::Result {
             let mut peekable = children.peekable();
 
-            loop {
-                if let Some(child) = peekable.next() {
-                    let last_entry = peekable.peek().is_none();
-
-                    let mut prefix = base_prefix.to_owned();
-
-                    if last_entry {
-                        prefix.push_str(theme.get("uprt").unwrap());
+            while let Some(child) = peekable.next() {
+                let last_entry = peekable.peek().is_none();
+                let prefix = base_prefix.to_owned()
+                    + if last_entry {
+                        theme.get("uprt").unwrap()
                     } else {
-                        prefix.push_str(theme.get("vtrt").unwrap());
-                    }
+                        theme.get("vtrt").unwrap()
+                    };
 
-                    extend_output(output, child, &prefix);
+                extend_output(f, child, &prefix)?;
 
-                    if !child.is_dir() || child.depth + 1 > level {
-                        continue;
-                    }
-
-                    if child.has_children() {
-                        let children = child.children();
-
-                        let mut new_base = base_prefix.to_owned();
-
-                        let new_theme = child
-                            .is_symlink()
-                            .then(|| ui::get_link_theme())
-                            .unwrap_or(theme);
-
-                        if last_entry {
-                            new_base.push_str(ui::SEP);
-                        } else {
-                            new_base.push_str(theme.get("vt").unwrap());
-                        }
-
-                        traverse(output, children, &new_base, level, new_theme, prune);
-                    }
-
+                if !child.is_dir() || child.depth + 1 > level {
                     continue;
                 }
-                break;
+
+                if child.has_children() {
+                    let children = child.children();
+
+                    let new_theme = if child.is_symlink() {
+                        ui::get_link_theme()
+                    } else {
+                        theme
+                    };
+
+                    let new_base = base_prefix.to_owned()
+                        + if last_entry {
+                            ui::SEP
+                        } else {
+                            theme.get("vt").unwrap()
+                        };
+
+                    traverse(f, children, &new_base, level, new_theme)?;
+                }
             }
+            Ok(())
         }
 
-        extend_output(&mut output, root, "");
-
-        if root.has_children() {
-            traverse(&mut output, root.children(), "", level, theme, prune)
-        }
-
-        write!(f, "{output}")
+        extend_output(f, root, "")?;
+        traverse(f, root.children(), "", level, theme)?;
+        Ok(())
     }
 }
