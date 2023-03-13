@@ -2,7 +2,7 @@ use super::{
     disk_usage::{DiskUsage, PrefixKind},
     order::SortType,
 };
-use clap::{CommandFactory, Error as ClapError, FromArgMatches, Parser};
+use clap::{ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser};
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
@@ -106,7 +106,7 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let clargs = Context::command().args_override_self(true).get_matches();
+        let mut clargs = Context::command().args_override_self(true).get_matches();
 
         let no_config = clargs
             .get_one("no_config")
@@ -123,6 +123,8 @@ impl Context {
 
                     let mut ctx =
                         Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
+
+                    Self::remove_bool_opts(&mut clargs);
 
                     ctx.update_from_arg_matches(&clargs)
                         .map_err(|e| Error::ArgParse(e))?;
@@ -187,6 +189,26 @@ impl Context {
         }
 
         builder.build()
+    }
+
+    /// This is an unfortunate hack to remove default boolean arguments that override the config
+    /// defaults. Basically how it works is we parse the os args normally, create a [Context] from
+    /// the config file, then we update the [Context] with the os args; the problem is that the os
+    /// args come with defaults from [clap] which are all false which then overrides the config. A
+    /// problem for later.
+    fn remove_bool_opts(clargs: &mut ArgMatches) {
+        let _ = clargs.try_remove_occurrences::<bool>("icons");
+        let _ = clargs.try_remove_occurrences::<bool>("I");
+        let _ = clargs.try_remove_occurrences::<bool>("glob_case_insensitive");
+        let _ = clargs.try_remove_occurrences::<bool>("hidden");
+        let _ = clargs.try_remove_occurrences::<bool>("ignore-git");
+        let _ = clargs.try_remove_occurrences::<bool>("ignore-git-ignore");
+        let _ = clargs.try_remove_occurrences::<bool>("i");
+        let _ = clargs.try_remove_occurrences::<bool>("prune");
+        let _ = clargs.try_remove_occurrences::<bool>("dirs_first");
+        let _ = clargs.try_remove_occurrences::<bool>("follow_links");
+        let _ = clargs.try_remove_occurrences::<bool>("S");
+        let _ = clargs.try_remove_occurrences::<bool>("suppress_size");
     }
 }
 
