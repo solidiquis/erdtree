@@ -16,7 +16,7 @@ use std::{
     borrow::Cow,
     convert::From,
     ffi::{OsStr, OsString},
-    fmt::{self, Display, Formatter},
+    fmt::{self, Formatter},
     fs::{self, FileType},
     path::{Path, PathBuf},
     slice::{Iter, IterMut},
@@ -320,11 +320,11 @@ enum SizeLocation {
 }
 
 impl SizeLocation {
-    fn default_string(self) -> String {
+    fn default_string(self, ctx: &Context) -> String {
         use SizeLocation::*;
         match self {
             Right => "".to_owned(),
-            Left => "          ".to_owned(),
+            Left => FileSize::empty_string(ctx),
         }
     }
     fn format(self, size: &FileSize) -> String {
@@ -336,17 +336,18 @@ impl SizeLocation {
     }
 }
 
-impl Display for Node {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.display(f, SizeLocation::default(), "")
-    }
-}
-
 impl Node {
-    fn display(&self, f: &mut Formatter, size_loc: SizeLocation, prefix: &str) -> fmt::Result {
-        let size = self
-            .file_size()
-            .map_or_else(|| size_loc.default_string(), |size| size_loc.format(size));
+    fn display(
+        &self,
+        f: &mut Formatter,
+        size_loc: SizeLocation,
+        prefix: &str,
+        ctx: &Context,
+    ) -> fmt::Result {
+        let size = self.file_size().map_or_else(
+            || size_loc.default_string(ctx),
+            |size| size_loc.format(size),
+        );
 
         let icon = if self.show_icon {
             self.get_icon().unwrap()
@@ -370,10 +371,15 @@ impl Node {
             }
         }
     }
-    pub fn display_size_right(&self, f: &mut Formatter, prefix: &str) -> fmt::Result {
-        self.display(f, SizeLocation::Right, prefix)
+    pub fn display_size_right(
+        &self,
+        f: &mut Formatter,
+        prefix: &str,
+        ctx: &Context,
+    ) -> fmt::Result {
+        self.display(f, SizeLocation::Right, prefix, ctx)
     }
-    pub fn display_size_left(&self, f: &mut Formatter, prefix: &str) -> fmt::Result {
-        self.display(f, SizeLocation::Left, prefix)
+    pub fn display_size_left(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
+        self.display(f, SizeLocation::Left, prefix, ctx)
     }
 }

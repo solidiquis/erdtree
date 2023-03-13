@@ -8,6 +8,8 @@ use std::{
     path::Path,
 };
 
+use crate::Context;
+
 /// Determines between logical or physical size for display
 #[derive(Copy, Clone, Debug, ValueEnum)]
 pub enum DiskUsage {
@@ -95,6 +97,17 @@ impl AddAssign<&Self> for FileSize {
 }
 
 impl FileSize {
+    /// Transforms the `FileSize` into a string.
+    ///
+    /// `align` false makes strings such as
+    /// `123.45 KiB`
+    /// `1.23 MiB`
+    /// `12 B`
+    ///
+    /// `align` true makes strings such as
+    /// `123.45 KiB`
+    /// `  1.23 MiB`
+    /// `    12   B`
     pub fn format(&self, align: bool) -> String {
         let fbytes = self.bytes as f64;
         let scale = self.scale;
@@ -170,12 +183,37 @@ impl FileSize {
         };
         if align {
             match self.prefix_kind {
-                PrefixKind::Bin => color.paint(format!("{bytes:>6} {base:>3}")).to_string(),
-                PrefixKind::Si => color.paint(format!("{bytes:>6} {base:>2}")).to_string(),
+                PrefixKind::Bin => color
+                    .paint(format!("{bytes:>len$} {base:>3}", len = self.scale + 4))
+                    .to_string(),
+                PrefixKind::Si => color
+                    .paint(format!("{bytes:>len$} {base:>2}", len = self.scale + 4))
+                    .to_string(),
             }
         } else {
             color.paint(format!("{bytes} {base}")).to_string()
         }
+    }
+
+    /// Returns spaces times the length of a file size, formatted with the given options
+    /// " " * len(123.45 KiB)
+    pub fn empty_string(ctx: &Context) -> String {
+        format!("{:len$}", "", len = Self::empty_string_len(ctx))
+    }
+
+    fn empty_string_len(ctx: &Context) -> usize {
+        // 3 places before the decimal
+        // 1 for the decimal
+        // ctx.scale after the decimal
+        // 1 space before unit
+        // 2/3 spaces per unit, depending
+        3 + 1
+            + ctx.scale
+            + 1
+            + match ctx.prefix {
+                PrefixKind::Bin => 3,
+                PrefixKind::Si => 2,
+            }
     }
 }
 

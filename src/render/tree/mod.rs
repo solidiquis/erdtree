@@ -198,21 +198,19 @@ impl Display for Tree {
         let root = self.root();
         let level = self.level();
         let theme = ui::get_theme();
-        let size_left = self.context().size_left;
 
+        let ctx = self.context();
         fn extend_output(
             f: &mut Formatter,
             node: &Node,
             prefix: &str,
-            size_left: bool,
+            ctx: &Context,
         ) -> fmt::Result {
-            if size_left {
-                // write!(f, "{prefix}")?;
-                node.display_size_left(f, prefix)?;
+            if ctx.size_left && !ctx.suppress_size {
+                node.display_size_left(f, prefix, ctx)?;
                 writeln!(f, "")
             } else {
-                // write!(f, "{prefix}")?;
-                node.display_size_right(f, prefix)?;
+                node.display_size_right(f, prefix, ctx)?;
                 writeln!(f, "")
             }
         }
@@ -223,7 +221,7 @@ impl Display for Tree {
             base_prefix: &str,
             level: usize,
             theme: &ui::ThemesMap,
-            size_left: bool,
+            ctx: &Context,
         ) -> fmt::Result {
             let mut peekable = children.peekable();
 
@@ -236,7 +234,7 @@ impl Display for Tree {
                         theme.get("vtrt").unwrap()
                     };
 
-                extend_output(f, child, &prefix, size_left)?;
+                extend_output(f, child, &prefix, ctx)?;
 
                 if !child.is_dir() || child.depth + 1 > level {
                     continue;
@@ -258,14 +256,14 @@ impl Display for Tree {
                             theme.get("vt").unwrap()
                         };
 
-                    traverse(f, children, &new_base, level, new_theme, size_left)?;
+                    traverse(f, children, &new_base, level, new_theme, ctx)?;
                 }
             }
             Ok(())
         }
 
-        extend_output(f, root, "", size_left)?;
-        traverse(f, root.children(), "", level, theme, size_left)?;
+        extend_output(f, root, "", ctx)?;
+        traverse(f, root.children(), "", level, theme, ctx)?;
         Ok(())
     }
 }
