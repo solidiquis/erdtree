@@ -19,7 +19,6 @@ use std::{
     fmt::{self, Display, Formatter},
     fs::{self, FileType},
     path::{Path, PathBuf},
-    ptr::addr_of,
     slice::{Iter, IterMut},
 };
 
@@ -90,27 +89,16 @@ impl Node {
 
     /// Recursively traverse [Node]s, removing any [Node]s that have no children.
     pub fn prune_directories(&mut self) {
-        let pruned_nodes = self.children.as_mut().map(|nodes| {
-            nodes
-                .iter_mut()
-                .filter(|node| {
-                    if !node.is_dir() { return true; }
-                    if node.children.is_none() { return false; }
+        self.children.as_mut().map(|nodes| {
+            nodes.retain_mut(|node| {
+                if !node.is_dir() { return true; }
+                if node.children.is_none() { return false; }
 
-                    // This allows us to recursively prune as we filter.
-                    unsafe {
-                        let raw_node_ptr = addr_of!(**node);
-                        let raw_mut_ptr = raw_node_ptr as *mut Node;
-                        raw_mut_ptr.as_mut().map(Self::prune_directories);
-                    }
+                node.prune_directories();
 
-                    true
-                })
-                .map(|node| node.clone())
-                .collect::<Vec<Node>>()
+                true
+            })
         });
-
-        self.children = pruned_nodes;
     }
 
     /// Returns a reference to `file_name`. If file is a symlink then `file_name` is the name of
