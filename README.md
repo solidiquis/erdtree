@@ -254,6 +254,6 @@ _Q: Got any testimonials?_
 
 _Q: Is it blazingly fast?_
 
-A: Should be. I wrote it in Rust.
+A: I wrote it in Rust so it should be blazingly fast.
 
 <img src="https://i.redd.it/t7ns9qtb5gh81.jpg">
