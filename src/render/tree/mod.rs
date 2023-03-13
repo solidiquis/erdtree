@@ -184,8 +184,6 @@ impl TryFrom<&Context> for WalkParallel {
 
         fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
-        println!("{:?}", clargs.overrides()?);
-
         Ok(WalkBuilder::new(root)
             .follow_links(clargs.follow_links)
             .git_ignore(!clargs.ignore_git_ignore)
