@@ -91,11 +91,14 @@ impl Node {
     pub fn prune_directories(&mut self) {
         self.children.as_mut().map(|nodes| {
             nodes.retain_mut(|node| {
-                if !node.is_dir() { return true; }
-                if node.children.is_none() { return false; }
-
-                node.prune_directories();
-
+                if node.is_dir() {
+                    if node.children.is_some() {
+                        node.prune_directories();
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
                 true
             })
         });
