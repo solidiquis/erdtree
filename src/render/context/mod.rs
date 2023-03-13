@@ -23,7 +23,7 @@ mod test;
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "1.4.0")]
+#[command(version = "1.4.1")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Context {
     /// Root directory to traverse; defaults to current working directory
@@ -196,19 +196,32 @@ impl Context {
     /// the config file, then we update the [Context] with the os args; the problem is that the os
     /// args come with defaults from [clap] which are all false which then overrides the config. A
     /// problem for later.
-    fn remove_bool_opts(clargs: &mut ArgMatches) {
-        let _ = clargs.try_remove_occurrences::<bool>("icons");
-        let _ = clargs.try_remove_occurrences::<bool>("I");
-        let _ = clargs.try_remove_occurrences::<bool>("glob_case_insensitive");
-        let _ = clargs.try_remove_occurrences::<bool>("hidden");
-        let _ = clargs.try_remove_occurrences::<bool>("ignore-git");
-        let _ = clargs.try_remove_occurrences::<bool>("ignore-git-ignore");
-        let _ = clargs.try_remove_occurrences::<bool>("i");
-        let _ = clargs.try_remove_occurrences::<bool>("prune");
-        let _ = clargs.try_remove_occurrences::<bool>("dirs_first");
-        let _ = clargs.try_remove_occurrences::<bool>("follow_links");
-        let _ = clargs.try_remove_occurrences::<bool>("S");
-        let _ = clargs.try_remove_occurrences::<bool>("suppress_size");
+    fn remove_bool_opts(args: &mut ArgMatches) {
+        let mut remove_if_default = |arg| {
+            let enabled = args
+                .try_get_one::<bool>(arg)
+                .ok()
+                .flatten()
+                .map(bool::clone)
+                .unwrap_or(true);
+
+            if !enabled {
+                let _ = args.try_remove_occurrences::<bool>(arg);
+            }
+        };
+
+        remove_if_default("icons");
+        remove_if_default("I");
+        remove_if_default("glob_case_insensitive");
+        remove_if_default("hidden");
+        remove_if_default("ignore-git");
+        remove_if_default("ignore-git-ignore");
+        remove_if_default("i");
+        remove_if_default("prune");
+        remove_if_default("dirs_first");
+        remove_if_default("follow_links");
+        remove_if_default("S");
+        remove_if_default("suppress_size");
     }
 }
 
