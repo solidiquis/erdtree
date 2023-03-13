@@ -32,7 +32,7 @@ use std::{
 pub struct Node {
     pub depth: usize,
     pub file_size: Option<FileSize>,
-    children: Option<Vec<Node>>,
+    children: Vec<Node>,
     file_name: OsString,
     file_type: Option<FileType>,
     inode: Option<Inode>,
@@ -47,7 +47,7 @@ impl Node {
     pub fn new(
         depth: usize,
         file_size: Option<FileSize>,
-        children: Option<Vec<Node>>,
+        children: Vec<Node>,
         file_name: OsString,
         file_type: Option<FileType>,
         inode: Option<Inode>,
@@ -71,36 +71,42 @@ impl Node {
     }
 
     /// Returns a mutable reference to `children` if any.
-    pub fn children_mut(&mut self) -> Option<IterMut<Node>> {
-        self.children.as_mut().map(|children| children.iter_mut())
+    pub fn children_mut(&mut self) -> IterMut<Node> {
+        self.children.iter_mut()
     }
 
     /// Returns an iter over a `children` slice if any.
-    pub fn children(&self) -> Option<Iter<Node>> {
-        self.children.as_ref().map(|children| children.iter())
+    pub fn children(&self) -> Iter<Node> {
+        self.children.iter()
+    }
+
+    /// Setter for `children`.
+    pub fn set_children(&mut self, children: Vec<Node>) {
+        self.children = children;
     }
 
     /// Sorts `children` given comparator.
     pub fn sort_children(&mut self, comparator: Box<NodeComparator<'_>>) {
-        self.children
-            .as_mut()
-            .map(|nodes| nodes.sort_by(comparator));
+        self.children.sort_by(comparator)
+    }
+
+    /// Whether or not a [Node] has children.
+    pub fn has_children(&self) -> bool {
+        self.children.len() > 0
     }
 
     /// Recursively traverse [Node]s, removing any [Node]s that have no children.
     pub fn prune_directories(&mut self) {
-        self.children.as_mut().map(|nodes| {
-            nodes.retain_mut(|node| {
-                if node.is_dir() {
-                    if node.children.is_some() {
-                        node.prune_directories();
-                        return true;
-                    } else {
-                        return false;
-                    }
+        self.children.retain_mut(|node| {
+            if node.is_dir() {
+                if node.has_children() {
+                    node.prune_directories();
+                    return true;
+                } else {
+                    return false;
                 }
-                true
-            })
+            }
+            true
         });
     }
 
@@ -160,11 +166,6 @@ impl Node {
     /// Returns a reference to `path`.
     pub fn path(&self) -> &Path {
         &self.path
-    }
-
-    /// Sets `children`.
-    pub fn set_children(&mut self, children: Vec<Node>) {
-        self.children = Some(children);
     }
 
     /// Gets 'file_size'.
@@ -254,7 +255,7 @@ impl From<(&DirEntry, &Context)> for Node {
         let prefix = prefix.clone();
         let icons = icons.clone();
 
-        let children = None;
+        let children = vec![];
 
         let depth = dir_entry.depth();
 

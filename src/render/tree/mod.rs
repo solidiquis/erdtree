@@ -155,16 +155,14 @@ impl Tree {
 
         let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
 
-        current_node.children_mut().map(|nodes| {
-            nodes.for_each(|node| {
-                if node.is_dir() {
-                    Self::assemble_tree(node, branches, ctx);
-                }
+        current_node.children_mut().for_each(|node| {
+            if node.is_dir() {
+                Self::assemble_tree(node, branches, ctx);
+            }
 
-                if let Some(fs) = node.file_size() {
-                    dir_size += fs
-                }
-            })
+            if let Some(fs) = node.file_size() {
+                dir_size += fs
+            }
         });
 
         if dir_size.bytes > 0 {
@@ -238,7 +236,9 @@ impl Display for Tree {
                         continue;
                     }
 
-                    if let Some(iter_children) = child.children() {
+                    if child.has_children() {
+                        let children = child.children();
+
                         let mut new_base = base_prefix.to_owned();
 
                         let new_theme = child
@@ -252,7 +252,7 @@ impl Display for Tree {
                             new_base.push_str(theme.get("vt").unwrap());
                         }
 
-                        traverse(output, iter_children, &new_base, level, new_theme, prune);
+                        traverse(output, children, &new_base, level, new_theme, prune);
                     }
 
                     continue;
@@ -263,8 +263,8 @@ impl Display for Tree {
 
         extend_output(&mut output, root, "");
 
-        if let Some(iter_children) = root.children() {
-            traverse(&mut output, iter_children, "", level, theme, prune)
+        if root.has_children() {
+            traverse(&mut output, root.children(), "", level, theme, prune)
         }
 
         write!(f, "{output}")
