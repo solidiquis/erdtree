@@ -49,7 +49,7 @@ pub enum SiPrefix {
 }
 
 /// Represents either logical or physical size and handles presentation.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct FileSize {
     pub bytes: u64,
     #[allow(dead_code)]

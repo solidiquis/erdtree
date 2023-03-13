@@ -28,7 +28,7 @@ use std::{
 ///
 /// [`Tree`]: super::tree::Tree
 /// [`LS_COLORS`]: super::tree::ui::LS_COLORS
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Node {
     pub depth: usize,
     pub file_size: Option<FileSize>,
