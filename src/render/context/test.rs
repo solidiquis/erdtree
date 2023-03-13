@@ -22,6 +22,10 @@ fn config() {
         SortType::Size,
         "Failed to properly read 'sort' from config"
     );
+
+    let icons = context.icons;
+
+    assert!(icons, "Failed to propertly read 'icons' from config")
 }
 
 fn context_from_config() -> Option<Context> {

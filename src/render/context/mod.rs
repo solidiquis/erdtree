@@ -2,7 +2,7 @@ use super::{
     disk_usage::{DiskUsage, PrefixKind},
     order::SortType,
 };
-use clap::{CommandFactory, Error as ClapError, FromArgMatches, Parser};
+use clap::{ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser};
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
@@ -23,7 +23,7 @@ mod test;
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "1.4.0")]
+#[command(version = "1.4.1")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Context {
     /// Root directory to traverse; defaults to current working directory
@@ -106,7 +106,7 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let clargs = Context::command().args_override_self(true).get_matches();
+        let mut clargs = Context::command().args_override_self(true).get_matches();
 
         let no_config = clargs
             .get_one("no_config")
@@ -123,6 +123,8 @@ impl Context {
 
                     let mut ctx =
                         Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
+
+                    Self::remove_bool_opts(&mut clargs);
 
                     ctx.update_from_arg_matches(&clargs)
                         .map_err(|e| Error::ArgParse(e))?;
@@ -187,6 +189,39 @@ impl Context {
         }
 
         builder.build()
+    }
+
+    /// This is an unfortunate hack to remove default boolean arguments that override the config
+    /// defaults. Basically how it works is we parse the os args normally, create a [Context] from
+    /// the config file, then we update the [Context] with the os args; the problem is that the os
+    /// args come with defaults from [clap] which are all false which then overrides the config. A
+    /// problem for later.
+    fn remove_bool_opts(args: &mut ArgMatches) {
+        let mut remove_if_default = |arg| {
+            let enabled = args
+                .try_get_one::<bool>(arg)
+                .ok()
+                .flatten()
+                .map(bool::clone)
+                .unwrap_or(true);
+
+            if !enabled {
+                let _ = args.try_remove_occurrences::<bool>(arg);
+            }
+        };
+
+        remove_if_default("icons");
+        remove_if_default("I");
+        remove_if_default("glob_case_insensitive");
+        remove_if_default("hidden");
+        remove_if_default("ignore-git");
+        remove_if_default("ignore-git-ignore");
+        remove_if_default("i");
+        remove_if_default("prune");
+        remove_if_default("dirs_first");
+        remove_if_default("follow_links");
+        remove_if_default("S");
+        remove_if_default("suppress_size");
     }
 }
 
