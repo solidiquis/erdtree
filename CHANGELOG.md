@@ -2,38 +2,20 @@
 All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
- 
-## [0.1.0] - 2022-05-08
 
-First release.
+## [1.4.0] - 2023-03-12
 
-## [1.0.0] - 2023-02-07
+### Bug Fixes
+- [--ignore-git didn't ignore .git](https://github.com/solidiquis/erdtree/pull/59)
 
-Did a complete rewrite with emphasis on an intuitive interface and performance. Notable changes:
-- Binary renamed to `et` for brevity.
-- Respects `.gitignore` and hidden file rules.
-- Parallel filesystem traversal.
-- Completely new CLI. `$ erdtree -h` for usage info.
-- Uses `LS_COLORS` environment variable for file coloring.
-
-## [1.1.0] - 2023-02-14
-
-### What changed
-- `-S, --follow-links` added to give option to traverse symlinks to directories. If enabled the disk usage of the target directory is considered; additionally, descendents of symlink target directory have different color branches.
-- CLI options in help text alphabetized with the exception of `-h, --help` and `-V, --version`.
-- Minor refactors for clarity and organization.
-- More comprehensive test coverage.
+### Additions
+- [sanders41](https://github.com/sanders41): [Added --suppress-size to suppress printing disk usage](https://github.com/solidiquis/erdtree/pull/47)
+- [Added ability to use a config file to override erdtree defaults](https://github.com/solidiquis/erdtree/pull/52)
+- [Added -P, --prune option to prevent printing of empty branches](https://github.com/solidiquis/erdtree/pull/55)
+- [Added -p, --prefix to toggle between binary and SI prefixes when reporting disk usage](https://github.com/solidiquis/erdtree/pull/54)
 
 ### Contributors
-- [jprochazk](https://github.com/jprochazk): [Filtering functionality via glob options](https://github.com/solidiquis/erdtree/pull/12)
-- [tintin](https://github.com/Tlntin): [Cross-compilation and CI](https://github.com/solidiquis/erdtree/pull/18)
-
-## [1.2.0] - 2023-03-04
-
-### What changed
-- [Icon support](https://github.com/solidiquis/erdtree/pull/24)
-- [--ignore-git](https://github.com/solidiquis/erdtree/pull/25)
-- [Better UI for symlinks](https://github.com/solidiquis/erdtree/pull/26)
+- [sanders41](https://github.com/sanders41)
 
 ## [1.3.0] - 2023-03-04
 
@@ -55,16 +37,35 @@ Did a complete rewrite with emphasis on an intuitive interface and performance. 
 
 Thank you to all of the folks from [this Reddit thread](https://www.reddit.com/r/rust/comments/11ioq1n/erdtree_v120_a_modern_multithreaded_alternative/) who helped shape `erdtree` with their very valuable feedback as well as contributors!
 
-## [1.4.0] - 2023-03-12
 
-### Bug Fixes
-- [--ignore-git didn't ignore .git](https://github.com/solidiquis/erdtree/pull/59)
+## [1.2.0] - 2023-03-04
 
-### Additions
-- [sanders41](https://github.com/sanders41): [Added --suppress-size to suppress printing disk usage](https://github.com/solidiquis/erdtree/pull/47)
-- [Added ability to use a config file to override erdtree defaults](https://github.com/solidiquis/erdtree/pull/52)
-- [Added -P, --prune option to prevent printing of empty branches](https://github.com/solidiquis/erdtree/pull/55)
-- [Added -p, --prefix to toggle between binary and SI prefixes when reporting disk usage](https://github.com/solidiquis/erdtree/pull/54)
+### What changed
+- [Icon support](https://github.com/solidiquis/erdtree/pull/24)
+- [--ignore-git](https://github.com/solidiquis/erdtree/pull/25)
+- [Better UI for symlinks](https://github.com/solidiquis/erdtree/pull/26)
+
+## [1.1.0] - 2023-02-14
+
+### What changed
+- `-S, --follow-links` added to give option to traverse symlinks to directories. If enabled the disk usage of the target directory is considered; additionally, descendents of symlink target directory have different color branches.
+- CLI options in help text alphabetized with the exception of `-h, --help` and `-V, --version`.
+- Minor refactors for clarity and organization.
+- More comprehensive test coverage.
 
 ### Contributors
-- [sanders41](https://github.com/sanders41)
+- [jprochazk](https://github.com/jprochazk): [Filtering functionality via glob options](https://github.com/solidiquis/erdtree/pull/12)
+- [tintin](https://github.com/Tlntin): [Cross-compilation and CI](https://github.com/solidiquis/erdtree/pull/18)
+
+## [1.0.0] - 2023-02-07
+
+Did a complete rewrite with emphasis on an intuitive interface and performance. Notable changes:
+- Binary renamed to `et` for brevity.
+- Respects `.gitignore` and hidden file rules.
+- Parallel filesystem traversal.
+- Completely new CLI. `$ erdtree -h` for usage info.
+- Uses `LS_COLORS` environment variable for file coloring.
+
+## [0.1.0] - 2022-05-08
+
+First release.
