@@ -101,7 +101,7 @@ impl Node {
             if node.is_dir() {
                 if node.has_children() {
                     node.prune_directories();
-                    return true;
+                    return node.has_children();
                 } else {
                     return false;
                 }

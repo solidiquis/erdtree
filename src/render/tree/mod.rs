@@ -186,10 +186,10 @@ impl TryFrom<&Context> for WalkParallel {
 
         Ok(WalkBuilder::new(root)
             .follow_links(clargs.follow_links)
-            .overrides(clargs.overrides()?)
             .git_ignore(!clargs.ignore_git_ignore)
             .hidden(!clargs.hidden)
             .threads(clargs.threads)
+            .overrides(clargs.overrides()?)
             .build_parallel())
     }
 }
