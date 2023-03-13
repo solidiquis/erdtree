@@ -73,6 +73,10 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = PrefixKind::Bin)]
     pub prefix: PrefixKind,
 
+    /// Disable printing of empty branches
+    #[arg(short = 'P', long)]
+    pub prune: bool,
+
     /// Sort-order to display directory content
     #[arg(short, long, value_enum)]
     sort: Option<SortType>,

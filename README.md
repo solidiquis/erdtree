@@ -65,6 +65,7 @@ Options:
   -l, --level <NUM>              Maximum depth to display
   -n, --scale <NUM>              Total number of digits after the decimal to display for disk usage [default: 2]
   -p, --prefix <PREFIX>          Display disk usage as binary or SI units [default: bin] [possible values: bin, si]
+  -P, --prune                    Disable printing of empty branches
   -s, --sort <SORT>              Sort-order to display directory content [possible values: name, size, size-rev]
       --dirs-first               Always sorts directories above files
   -S, --follow-links             Traverse symlink directories and consider their disk usage; disabled by default

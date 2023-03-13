@@ -1,5 +1,4 @@
-use super::order::Order;
-use crate::render::{context::Context, disk_usage::FileSize};
+use crate::render::{context::Context, disk_usage::FileSize, order::Order};
 use crossbeam::channel::{self, Sender};
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel, WalkState};
@@ -52,13 +51,17 @@ impl Tree {
     }
 
     /// Returns a reference to the root [Node].
-    pub fn root(&self) -> &Node {
+    fn root(&self) -> &Node {
         &self.root
     }
 
     /// Maximum depth to display
-    pub fn level(&self) -> usize {
+    fn level(&self) -> usize {
         self.ctx.level.unwrap_or(usize::MAX)
+    }
+
+    fn context(&self) -> &Context {
+        &self.ctx
     }
 
     /// Parallel traversal of the root directory and its contents taking `.gitignore` into
@@ -134,41 +137,41 @@ impl Tree {
 
         Self::assemble_tree(&mut root, &mut branches, ctx);
 
+        if ctx.prune {
+            root.prune_directories()
+        }
+
         Ok(root)
     }
 
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
     /// structure. Sorting occurs if specified.
-    fn assemble_tree(current_dir: &mut Node, branches: &mut Branches, ctx: &Context) {
-        let current_node = branches
-            .remove(current_dir.path())
-            .map(|children| {
-                current_dir.set_children(children);
-                current_dir
-            })
-            .unwrap();
+    fn assemble_tree(current_node: &mut Node, branches: &mut Branches, ctx: &Context) {
+        let children = branches.remove(current_node.path()).unwrap();
+
+        if children.len() > 0 {
+            current_node.set_children(children);
+        }
 
         let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
 
-        current_node.children_mut().map(|nodes| {
-            nodes.iter_mut().for_each(|node| {
-                if node.is_dir() {
-                    Self::assemble_tree(node, branches, ctx);
-                }
+        current_node.children_mut().for_each(|node| {
+            if node.is_dir() {
+                Self::assemble_tree(node, branches, ctx);
+            }
 
-                if let Some(fs) = node.file_size() {
-                    dir_size += fs
-                }
-            })
+            if let Some(fs) = node.file_size() {
+                dir_size += fs
+            }
         });
 
         if dir_size.bytes > 0 {
             current_node.set_file_size(dir_size)
         }
 
-        if let Some(ord) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
-            ord.comparator()
-                .map(|func| current_node.children_mut().map(|nodes| nodes.sort_by(func)));
+        if let Some(ordr) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
+            ordr.comparator()
+                .map(|func| current_node.sort_children(func));
         }
     }
 }
@@ -196,6 +199,7 @@ impl Display for Tree {
         let root = self.root();
         let level = self.level();
         let theme = ui::get_theme();
+        let prune = self.context().prune;
         let mut output = String::from("");
 
         #[inline]
@@ -210,6 +214,7 @@ impl Display for Tree {
             base_prefix: &str,
             level: usize,
             theme: &ui::ThemesMap,
+            prune: bool,
         ) {
             let mut peekable = children.peekable();
 
@@ -231,7 +236,9 @@ impl Display for Tree {
                         continue;
                     }
 
-                    if let Some(iter_children) = child.children() {
+                    if child.has_children() {
+                        let children = child.children();
+
                         let mut new_base = base_prefix.to_owned();
 
                         let new_theme = child
@@ -245,7 +252,7 @@ impl Display for Tree {
                             new_base.push_str(theme.get("vt").unwrap());
                         }
 
-                        traverse(output, iter_children, &new_base, level, new_theme);
+                        traverse(output, children, &new_base, level, new_theme, prune);
                     }
 
                     continue;
@@ -256,8 +263,8 @@ impl Display for Tree {
 
         extend_output(&mut output, root, "");
 
-        if let Some(iter_children) = root.children() {
-            traverse(&mut output, iter_children, "", level, theme)
+        if root.has_children() {
+            traverse(&mut output, root.children(), "", level, theme, prune)
         }
 
         write!(f, "{output}")
