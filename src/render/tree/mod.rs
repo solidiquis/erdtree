@@ -17,6 +17,8 @@ use std::{
     thread,
 };
 
+use super::order::DirectoryOrdering;
+
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
 
@@ -173,14 +175,10 @@ impl Tree {
             current_node.set_file_size(dir_size)
         }
 
-        if let Some(ordr) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
-            ordr.comparator()
-                .map(|func| current_node.sort_children(func));
-        } else if ctx.dirs_first() {
-            Order::from((SortType::None, true))
-                .comparator()
-                .map(|func| current_node.sort_children(func));
-        }
+        let apply_comparator = |comparator| current_node.sort_children(comparator);
+        Order::from((ctx.sort(), ctx.dir_ordering()))
+            .comparators()
+            .for_each(apply_comparator);
     }
 }
 

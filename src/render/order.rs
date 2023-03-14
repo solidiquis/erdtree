@@ -1,4 +1,4 @@
-use super::tree::node::Node;
+use super::{context::Context, tree::node::Node};
 use clap::ValueEnum;
 use std::{cmp::Ordering, convert::From};
 
@@ -13,54 +13,51 @@ pub enum SortType {
 
     /// Sort entries by size largest to smallest, bottom to top
     SizeRev,
+}
 
-    /// Do not sort entries
-    None,
+/// Order in which to print directories.
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
+pub enum DirectoryOrdering {
+    /// Order directories before files
+    First,
+
+    /// Order directories after files
+    Last,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Order {
-    sort: SortType,
-    dir_first: bool,
+    sort: Option<SortType>,
+    dir: Option<DirectoryOrdering>,
 }
 
 /// Comparator type used to sort [Node]s.
-pub type NodeComparator<'a> = dyn Fn(&Node, &Node) -> Ordering + 'a;
+pub type NodeComparator = dyn Fn(&Node, &Node) -> Ordering;
 
 impl Order {
     /// Yields function pointer to the appropriate `Node` comparator.
-    pub fn comparator(&self) -> Option<Box<NodeComparator<'_>>> {
-        if self.dir_first {
-            return Some(Box::new(|a, b| {
-                Self::dir_comparator(a, b, self.sort.comparator())
-            }));
-        }
-
-        self.sort.comparator()
-    }
-
-    fn dir_comparator(
-        a: &Node,
-        b: &Node,
-        fallback: Option<impl Fn(&Node, &Node) -> Ordering>,
-    ) -> Ordering {
-        match (a.is_dir(), b.is_dir()) {
-            (true, false) => Ordering::Less,
-            (false, true) => Ordering::Greater,
-            _ => fallback.map_or_else(|| Ordering::Equal, |sort| sort(a, b)),
-        }
+    pub fn comparators(&self) -> impl Iterator<Item = Box<NodeComparator>> {
+        [
+            self.sort.as_ref().map(SortType::comparator),
+            self.dir.as_ref().map(DirectoryOrdering::comparator),
+        ]
+        .into_iter()
+        .filter(|comparator| comparator.is_some())
+        // UNWRAP: we just filtered Nones out
+        .map(|comparator| comparator.unwrap())
     }
 }
 
 impl SortType {
     /// Yields function pointer to the appropriate `Node` comparator.
-    pub fn comparator(&self) -> Option<Box<dyn Fn(&Node, &Node) -> Ordering>> {
-        match self {
-            Self::Name => Some(Box::new(Self::name_comparator)),
-            Self::Size => Some(Box::new(Self::size_comparator)),
-            Self::SizeRev => Some(Box::new(Self::size_rev_comparator)),
-            Self::None => None,
-        }
+    pub fn comparator(&self) -> Box<dyn Fn(&Node, &Node) -> Ordering> {
+        let comparator = match self {
+            Self::Name => Self::name_comparator,
+            Self::Size => Self::size_comparator,
+            Self::SizeRev => Self::size_rev_comparator,
+        };
+
+        Box::new(comparator)
     }
 
     /// Comparator based on `Node` file names.
@@ -84,8 +81,47 @@ impl SortType {
     }
 }
 
-impl From<(SortType, bool)> for Order {
-    fn from((sort, dir_first): (SortType, bool)) -> Self {
-        Order { sort, dir_first }
+impl DirectoryOrdering {
+    /// Yields function pointer to the appropriate directory comparator.
+    pub fn comparator(&self) -> Box<NodeComparator> {
+        let comparator = match self {
+            Self::First => Self::first_comparator,
+            Self::Last => Self::last_comparator,
+        };
+
+        Box::new(comparator)
+    }
+
+    /// Comparator based on directory presedence.
+    fn first_comparator(a: &Node, b: &Node) -> Ordering {
+        match (a.is_dir(), b.is_dir()) {
+            (true, false) => Ordering::Less,
+            (false, true) => Ordering::Greater,
+            _ => Ordering::Equal,
+        }
+    }
+
+    /// Comparator based on non-directory presedence.
+    fn last_comparator(a: &Node, b: &Node) -> Ordering {
+        match (a.is_dir(), b.is_dir()) {
+            (false, true) => Ordering::Less,
+            (true, false) => Ordering::Greater,
+            _ => Ordering::Equal,
+        }
+    }
+}
+
+impl<'a> From<&'a Context> for Order {
+    fn from(ctx: &'a Context) -> Self {
+        Self {
+            sort: ctx.sort(),
+            dir: ctx.dir_ordering(),
+        }
+    }
+}
+
+impl From<(Option<SortType>, Option<DirectoryOrdering>)> for Order {
+    fn from((sort, dir): (Option<SortType>, Option<DirectoryOrdering>)) -> Self {
+        Self { sort, dir }
     }
 }
