@@ -13,6 +13,9 @@ pub enum SortType {
 
     /// Sort entries by size largest to smallest, bottom to top
     SizeRev,
+
+    /// Do not sort entries
+    None,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -56,6 +59,7 @@ impl SortType {
             Self::Name => Some(Box::new(Self::name_comparator)),
             Self::Size => Some(Box::new(Self::size_comparator)),
             Self::SizeRev => Some(Box::new(Self::size_rev_comparator)),
+            Self::None => None,
         }
     }
 

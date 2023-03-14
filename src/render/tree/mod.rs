@@ -1,4 +1,8 @@
-use crate::render::{context::Context, disk_usage::FileSize, order::Order};
+use crate::render::{
+    context::Context,
+    disk_usage::FileSize,
+    order::{Order, SortType},
+};
 use crossbeam::channel::{self, Sender};
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel, WalkState};
@@ -171,6 +175,10 @@ impl Tree {
 
         if let Some(ordr) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
             ordr.comparator()
+                .map(|func| current_node.sort_children(func));
+        } else if ctx.dirs_first() {
+            Order::from((SortType::None, true))
+                .comparator()
                 .map(|func| current_node.sort_children(func));
         }
     }
