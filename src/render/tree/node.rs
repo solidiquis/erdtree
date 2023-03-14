@@ -312,6 +312,7 @@ impl From<(&DirEntry, &Context)> for Node {
     }
 }
 
+/// Simple struct to define location to put the `FileSize` while printing a `Node`
 #[derive(Copy, Clone, Default)]
 enum SizeLocation {
     #[default]
@@ -320,6 +321,7 @@ enum SizeLocation {
 }
 
 impl SizeLocation {
+    /// Returns a string to use when a node has no filesize, such as empty directories
     fn default_string(self, ctx: &Context) -> String {
         use SizeLocation::*;
         match self {
@@ -327,6 +329,8 @@ impl SizeLocation {
             Left => FileSize::empty_string(ctx),
         }
     }
+
+    /// Given a [`FileSize`], style it in the expected way for its printing location
     fn format(self, size: &FileSize) -> String {
         use SizeLocation::*;
         match self {
@@ -337,6 +341,10 @@ impl SizeLocation {
 }
 
 impl Node {
+    /// General method for printing a `Node`. The `Display` (and `ToString`) traits are not used,
+    /// to give more control over the output.
+    ///
+    /// See [`Node::display_size_left`] and [`Node::display_size_right`] for examples of formatted output.
     fn display(
         &self,
         f: &mut Formatter,
@@ -371,6 +379,11 @@ impl Node {
             }
         }
     }
+
+    /// Format a node for display with size on the right.
+    ///
+    /// Example:
+    /// `| Some Directory (12.3 KiB)`
     pub fn display_size_right(
         &self,
         f: &mut Formatter,
@@ -379,6 +392,14 @@ impl Node {
     ) -> fmt::Result {
         self.display(f, SizeLocation::Right, prefix, ctx)
     }
+
+    /// Format a node for display with size on the left.
+    ///
+    /// Example:
+    /// `  1.23 MiB | Some File`
+    ///
+    /// Note the two spaces to the left of the first character of the number -- even if never used,
+    /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
     pub fn display_size_left(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
         self.display(f, SizeLocation::Left, prefix, ctx)
     }

@@ -98,6 +98,7 @@ impl AddAssign<&Self> for FileSize {
 
 impl FileSize {
     /// Transforms the `FileSize` into a string.
+    /// `Display` / `ToString` traits not used in order to have control over alignment.
     ///
     /// `align` false makes strings such as
     /// `123.45 KiB`
