@@ -226,7 +226,7 @@ impl Context {
         remove_if_default("follow_links");
         remove_if_default("S");
         remove_if_default("suppress_size");
-        remove_if_default("size-left");
+        remove_if_default("size_left");
     }
 }
 
