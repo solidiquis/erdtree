@@ -9,6 +9,10 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo.png?raw=true" alt="failed to load picture" />
 </p>
 
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/left_aligned.png?raw=true" alt="failed to load picture" />
+</p>
+
 ## Table of Contents
 
 * [Description](#description)
@@ -71,6 +75,7 @@ Options:
   -S, --follow-links             Traverse symlink directories and consider their disk usage; disabled by default
   -t, --threads <THREADS>        Number of threads to use [default: 4]
       --suppress-size            Omit disk usage from output; disabled by default
+      --size-left                Show the size on the left, decimal aligned
       --no-config                Don't read configuration file
   -h, --help                     Print help (see more with '--help')
   -V, --version                  Print version
@@ -90,7 +95,16 @@ $ brew install erdtree
 ```
 
 ### Releases
+
 Binaries for common architectures can be downloaded from latest releases.
+
+### Latest non-release
+
+If you'd like the latest features that are on `master` but aren't yet included as part of a release:
+
+```
+$ cargo install --git https://github.com/solidiquis/erdtree --branch master
+```
 
 Other means of installation to come.
 
