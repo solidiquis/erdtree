@@ -167,9 +167,9 @@ impl Tree {
             current_node.set_file_size(dir_size)
         }
 
-        Order::from((ctx.sort(), ctx.dirs_first()))
-            .comparator()
-            .map(|func| current_node.sort_children(func));
+        if let Some(func) = Order::from((ctx.sort(), ctx.dirs_first())).comparator() {
+            current_node.sort_children(func)
+        }
     }
 }
 
