@@ -218,8 +218,8 @@ impl Context {
         remove_if_default("I");
         remove_if_default("glob_case_insensitive");
         remove_if_default("hidden");
-        remove_if_default("ignore-git");
-        remove_if_default("ignore-git-ignore");
+        remove_if_default("ignore_git");
+        remove_if_default("ignore_git_ignore");
         remove_if_default("i");
         remove_if_default("prune");
         remove_if_default("dirs_first");
