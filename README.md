@@ -95,7 +95,16 @@ $ brew install erdtree
 ```
 
 ### Releases
+
 Binaries for common architectures can be downloaded from latest releases.
+
+### Latest non-release
+
+If you'd like the latest features that are on `master` but aren't yet included as part of a release:
+
+```
+$ cargo install --git https://github.com/solidiquis/erdtree --branch master
+```
 
 Other means of installation to come.
 
