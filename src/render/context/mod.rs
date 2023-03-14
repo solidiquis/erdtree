@@ -78,8 +78,8 @@ pub struct Context {
     pub prune: bool,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum)]
-    sort: Option<SortType>,
+    #[arg(short, long, value_enum, default_value_t = SortType::None)]
+    sort: SortType,
 
     /// Always sorts directories above files
     #[arg(long)]
@@ -151,7 +151,7 @@ impl Context {
     }
 
     /// The sort-order used for printing.
-    pub fn sort(&self) -> Option<SortType> {
+    pub fn sort(&self) -> SortType {
         self.sort
     }
 
