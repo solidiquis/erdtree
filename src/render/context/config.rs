@@ -3,12 +3,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub const ERDTREE_CONFIG_NAME: &str = ".erdtreerc";
-pub const ERDTREE_CONFIG_PATH: &str = "ERDTREE_CONFIG_PATH";
-pub const ERDTREE_DIR: &str = "erdtree";
-pub const CONFIG_DIR: &str = ".config";
-pub const HOME: &str = "HOME";
-pub const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
+const ERDTREE_CONFIG_NAME: &str = ".erdtreerc";
+const ERDTREE_CONFIG_PATH: &str = "ERDTREE_CONFIG_PATH";
+const ERDTREE_DIR: &str = "erdtree";
+const CONFIG_DIR: &str = ".config";
+const HOME: &str = "HOME";
+const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 
 /// Reads the config file into a `String` if there is one. When `None` is provided then the config
 /// is looked for in the following locations in order:
