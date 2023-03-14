@@ -13,7 +13,7 @@ pub const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 /// Reads the config file into a `String` if there is one. When `None` is provided then the config
 /// is looked for in the following locations in order:
 ///
-/// - `$ERDTREE_CONFIG_NAME`
+/// - `$ERDTREE_CONFIG_PATH`
 /// - `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
 /// - `$XDG_CONFIG_HOME/.erdtreerc`
 /// - `$HOME/.config/erdtree/.erdtreerc`
