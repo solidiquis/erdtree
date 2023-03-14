@@ -1,4 +1,8 @@
-use crate::render::{context::Context, disk_usage::FileSize, order::Order};
+use crate::render::{
+    context::Context,
+    disk_usage::FileSize,
+    order::{Order, SortType},
+};
 use crossbeam::channel::{self, Sender};
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel, WalkState};
@@ -12,6 +16,8 @@ use std::{
     slice::Iter,
     thread,
 };
+
+use super::order::DirectoryOrdering;
 
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
@@ -169,10 +175,10 @@ impl Tree {
             current_node.set_file_size(dir_size)
         }
 
-        if let Some(ordr) = ctx.sort().map(|s| Order::from((s, ctx.dirs_first()))) {
-            ordr.comparator()
-                .map(|func| current_node.sort_children(func));
-        }
+        let apply_comparator = |comparator| current_node.sort_children(comparator);
+        Order::from((ctx.sort(), ctx.dir_ordering()))
+            .comparators()
+            .for_each(apply_comparator);
     }
 }
 

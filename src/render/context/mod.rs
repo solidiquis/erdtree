@@ -1,6 +1,6 @@
 use super::{
     disk_usage::{DiskUsage, PrefixKind},
-    order::SortType,
+    order::{DirectoryOrdering, SortType},
 };
 use clap::{ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser};
 use ignore::overrides::{Override, OverrideBuilder};
@@ -81,9 +81,9 @@ pub struct Context {
     #[arg(short, long, value_enum)]
     sort: Option<SortType>,
 
-    /// Always sorts directories above files
-    #[arg(long)]
-    dirs_first: bool,
+    /// Orders directories within branch arms
+    #[arg(short = 'D', long, value_name = "ORDER")]
+    dir_order: Option<DirectoryOrdering>,
 
     /// Traverse symlink directories and consider their disk usage; disabled by default
     #[arg(short = 'S', long)]
@@ -151,9 +151,9 @@ impl Context {
         self.sort
     }
 
-    /// Getter for `dirs_first` field.
-    pub fn dirs_first(&self) -> bool {
-        self.dirs_first
+    /// Getter for `dir_order` field.
+    pub fn dir_ordering(&self) -> Option<DirectoryOrdering> {
+        self.dir_order
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file

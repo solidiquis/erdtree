@@ -86,7 +86,7 @@ impl Node {
     }
 
     /// Sorts `children` given comparator.
-    pub fn sort_children(&mut self, comparator: Box<NodeComparator<'_>>) {
+    pub fn sort_children(&mut self, comparator: Box<NodeComparator>) {
         self.children.sort_by(comparator)
     }
 
