@@ -9,6 +9,10 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo.png?raw=true" alt="failed to load picture" />
 </p>
 
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/left_aligned.png?raw=true" alt="failed to load picture" />
+</p>
+
 ## Table of Contents
 
 * [Description](#description)
