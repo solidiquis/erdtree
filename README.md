@@ -71,6 +71,7 @@ Options:
   -S, --follow-links             Traverse symlink directories and consider their disk usage; disabled by default
   -t, --threads <THREADS>        Number of threads to use [default: 4]
       --suppress-size            Omit disk usage from output; disabled by default
+      --size-left                Show the size on the left, decimal aligned
       --no-config                Don't read configuration file
   -h, --help                     Print help (see more with '--help')
   -V, --version                  Print version
