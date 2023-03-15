@@ -162,11 +162,6 @@ impl Context {
                     continue;
                 }
 
-                match config_args.value_source(id_str) {
-                    Some(arg) => arg,
-                    _ => continue,
-                };
-
                 if let Some(user_arg) = user_args.value_source(id_str) {
                     match user_arg {
                         // prioritize the user arg if user provided a command line argument
@@ -177,6 +172,8 @@ impl Context {
                     }
                 }
             }
+
+            println!("{:?}", args);
 
             let clargs = Context::command().get_matches_from(args);
             return Context::from_arg_matches(&clargs).map_err(|e| Error::Config(e));
