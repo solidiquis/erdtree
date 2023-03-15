@@ -89,6 +89,14 @@ Options:
 1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
 2. `$ cargo install erdtree`
 
+### NetBSD
+
+A package is available from the official repositories. To install it, simply run:
+
+```
+pkgin install erdtree
+```
+
 ### Homebrew-core
 
 ```
