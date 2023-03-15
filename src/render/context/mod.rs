@@ -3,7 +3,7 @@ use super::{
     order::SortType,
 };
 use clap::{
-    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser,
+    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser, Id,
 };
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
@@ -154,22 +154,36 @@ impl Context {
                 }
             };
 
-            for id in user_args.ids() {
-                let id_str = id.as_str();
+            let mut ids = user_args
+                .ids()
+                .map(Id::as_str)
+                .collect::<Vec<&str>>();
 
+            ids.extend(
+                config_args
+                    .ids()
+                    .map(Id::as_str)
+                    .collect::<Vec<&str>>()
+            );
+
+            ids = crate::utils::uniq(ids);
+
+            for id in ids {
                 // Don't look at me... my shame..
-                if id_str == "Context" {
+                if id == "Context" {
                     continue;
                 }
 
-                if let Some(user_arg) = user_args.value_source(id_str) {
+                if let Some(user_arg) = user_args.value_source(id) {
                     match user_arg {
                         // prioritize the user arg if user provided a command line argument
-                        ValueSource::CommandLine => pick_args_from(id_str, &user_args),
+                        ValueSource::CommandLine => pick_args_from(id, &user_args),
 
                         // otherwise prioritize argument from the config
-                        _ => pick_args_from(id_str, &config_args),
+                        _ => pick_args_from(id, &config_args),
                     }
+                } else {
+                    pick_args_from(id, &config_args)
                 }
             }
 

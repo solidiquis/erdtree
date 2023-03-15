@@ -1,4 +1,7 @@
+use std::{borrow::ToOwned, cmp::Eq, collections::HashSet, hash::Hash};
+
 #[macro_export]
+/// Ruby-like way to crate a hashmap.
 macro_rules! hash {
     ( $( $k:expr => $v:expr ),* ) => {
         {
@@ -7,4 +10,15 @@ macro_rules! hash {
             hash
         }
     };
+}
+
+/// Ensure every item in a `Vec` is unique.
+pub fn uniq<T: Eq + Hash + ToOwned>(items: Vec<T>) -> Vec<T>
+where
+    T: Eq + Hash + ToOwned,
+    <T as ToOwned>::Owned: Hash + Eq,
+{
+    let mut set = HashSet::new();
+
+    items.into_iter().filter(|item| set.insert(item.to_owned())).collect::<Vec<T>>()
 }
