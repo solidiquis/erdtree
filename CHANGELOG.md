@@ -3,6 +3,21 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.5.0] - 2023-03-14
+
+### Additions
+- Added `--size-left` to print disk usage to the left of the tree https://github.com/solidiquis/erdtree/pull/61
+- Added more paths the `erdtree` config could be placed at https://github.com/solidiquis/erdtree/pull/70
+
+### Bug Fixes
+- Fixed issue where `--dirs-first` wouldn't work unless `-s, --sort` was specified https://github.com/solidiquis/erdtree/pull/67
+- Fixed isse where arguments from the `erdtree` config were being completely disregarded https://github.com/solidiquis/erdtree/pull/74
+
+### Contributors
+
+- [bryceberger](https://github.com/bryceberger)
+- [fawni](https://github.com/fawni)
+
 ## [1.4.1] - 2023-03-12
 
 ### Bug Fixes
