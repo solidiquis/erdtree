@@ -3,6 +3,7 @@
 [![Build status](https://github.com/solidiquis/erdtree/actions/workflows/ci.yml/badge.svg)](https://github.com/solidiquis/erdtree/actions)
 [![Crates.io](https://img.shields.io/crates/v/erdtree.svg)](https://crates.io/crates/erdtree)
 [![Packaging status](https://repology.org/badge/tiny-repos/erdtree.svg)](https://repology.org/project/erdtree/versions)
+[![Crates.io](https://img.shields.io/crates/d/erdtree)](https://crates.io/crates/erdtree)
 
 A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules by default i.e. the secret love child of [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)).
 
@@ -88,6 +89,14 @@ Options:
 
 1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
 2. `$ cargo install erdtree`
+
+### NetBSD
+
+A package is available from the official repositories. To install it, simply run:
+
+```
+pkgin install erdtree
+```
 
 ### Homebrew-core
 
