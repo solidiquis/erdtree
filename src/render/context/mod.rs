@@ -2,11 +2,14 @@ use super::{
     disk_usage::{DiskUsage, PrefixKind},
     order::SortType,
 };
-use clap::{ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser};
+use clap::{
+    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser,
+};
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
     error::Error as StdError,
+    ffi::{OsStr, OsString},
     fmt::{self, Display},
     path::{Path, PathBuf},
     usize,
@@ -30,7 +33,7 @@ pub struct Context {
     dir: Option<PathBuf>,
 
     /// Print physical or logical file size
-    #[arg(short, long, value_enum, default_value_t = DiskUsage::Logical)]
+    #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
 
     /// Include or exclude files using glob patterns
@@ -70,7 +73,7 @@ pub struct Context {
     pub scale: usize,
 
     /// Display disk usage as binary or SI units
-    #[arg(short, long, value_enum, default_value_t = PrefixKind::Bin)]
+    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
     pub prefix: PrefixKind,
 
     /// Disable printing of empty branches
@@ -78,7 +81,7 @@ pub struct Context {
     pub prune: bool,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = SortType::None)]
+    #[arg(short, long, value_enum, default_value_t = SortType::default())]
     sort: SortType,
 
     /// Always sorts directories above files
@@ -110,37 +113,78 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let mut clargs = Context::command().args_override_self(true).get_matches();
+        let user_args = Context::command().args_override_self(true).get_matches();
 
-        let no_config = clargs
+        let no_config = user_args
             .get_one("no_config")
             .map(bool::clone)
             .unwrap_or(false);
 
-        let context = {
-            if no_config {
-                Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
-            } else {
-                if let Some(ref config) = config::read_config_to_string::<&str>(None) {
-                    let raw_config_args = config::parse_config(config);
-                    let config_args = Context::command().get_matches_from(raw_config_args);
+        if no_config {
+            return Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e));
+        }
 
-                    let mut ctx =
-                        Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
+        if let Some(ref config) = config::read_config_to_string::<&str>(None) {
+            let raw_config_args = config::parse_config(config);
+            let config_args = Context::command().get_matches_from(raw_config_args);
 
-                    Self::remove_bool_opts(&mut clargs);
+            // If the user did not provide any arguments just read from config.
+            if !user_args.args_present() {
+                return Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e));
+            }
 
-                    ctx.update_from_arg_matches(&clargs)
-                        .map_err(|e| Error::ArgParse(e))?;
+            // If the user did provide arguments we need to reconcile between config and
+            // user arguments.
+            let mut args = vec![OsString::from("--")];
 
-                    ctx
-                } else {
-                    Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
+            // Used to pick either from config or user args.
+            let mut pick_args_from = |id: &str, matches: &ArgMatches| {
+                if let Ok(Some(raw)) = matches.try_get_raw(id) {
+                    let kebap = id.replace("_", "-");
+
+                    let raw_args = raw
+                        .map(OsStr::to_owned)
+                        .map(|s| vec![OsString::from(format!("--{}", kebap)), s])
+                        .filter(|pair| pair[1] != "false")
+                        .flatten()
+                        .filter(|s| s != "true")
+                        .collect::<Vec<OsString>>();
+
+                    args.extend(raw_args);
+                }
+            };
+
+            for id in user_args.ids() {
+                let id_str = id.as_str();
+
+                // Don't look at me... my shame..
+                if id_str == "Context" {
+                    continue;
+                }
+
+                let config_arg = match config_args.value_source(id_str) {
+                    Some(arg) => arg,
+                    _ => continue,
+                };
+
+                let user_arg = user_args.value_source(id_str).unwrap();
+
+                match (config_arg, user_arg) {
+                    // prioritize the user arg if argument was provided
+                    (ValueSource::CommandLine, ValueSource::CommandLine) => {
+                        pick_args_from(id_str, &user_args)
+                    }
+
+                    // otherwise priotize the config
+                    _ => pick_args_from(id_str, &config_args),
                 }
             }
-        };
 
-        Ok(context)
+            let clargs = Context::command().get_matches_from(args);
+            return Context::from_arg_matches(&clargs).map_err(|e| Error::Config(e));
+        }
+
+        Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))
     }
 
     /// Returns reference to the path of the root directory to be traversed.
@@ -193,40 +237,6 @@ impl Context {
         }
 
         builder.build()
-    }
-
-    /// This is an unfortunate hack to remove default boolean arguments that override the config
-    /// defaults. Basically how it works is we parse the os args normally, create a [Context] from
-    /// the config file, then we update the [Context] with the os args; the problem is that the os
-    /// args come with defaults from [clap] which are all false which then overrides the config. A
-    /// problem for later.
-    fn remove_bool_opts(args: &mut ArgMatches) {
-        let mut remove_if_default = |arg| {
-            let enabled = args
-                .try_get_one::<bool>(arg)
-                .ok()
-                .flatten()
-                .map(bool::clone)
-                .unwrap_or(true);
-
-            if !enabled {
-                let _ = args.try_remove_occurrences::<bool>(arg);
-            }
-        };
-
-        remove_if_default("icons");
-        remove_if_default("I");
-        remove_if_default("glob_case_insensitive");
-        remove_if_default("hidden");
-        remove_if_default("ignore_git");
-        remove_if_default("ignore_git_ignore");
-        remove_if_default("i");
-        remove_if_default("prune");
-        remove_if_default("dirs_first");
-        remove_if_default("follow_links");
-        remove_if_default("S");
-        remove_if_default("suppress_size");
-        remove_if_default("size_left");
     }
 }
 
