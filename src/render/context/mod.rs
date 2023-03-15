@@ -173,8 +173,6 @@ impl Context {
                 }
             }
 
-            println!("{:?}", args);
-
             let clargs = Context::command().get_matches_from(args);
             return Context::from_arg_matches(&clargs).map_err(|e| Error::Config(e));
         }
