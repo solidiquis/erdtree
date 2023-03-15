@@ -162,21 +162,19 @@ impl Context {
                     continue;
                 }
 
-                let config_arg = match config_args.value_source(id_str) {
+                match config_args.value_source(id_str) {
                     Some(arg) => arg,
                     _ => continue,
                 };
 
-                let user_arg = user_args.value_source(id_str).unwrap();
+                if let Some(user_arg) = user_args.value_source(id_str) {
+                    match user_arg {
+                        // prioritize the user arg if user provided a command line argument
+                        ValueSource::CommandLine => pick_args_from(id_str, &user_args),
 
-                match (config_arg, user_arg) {
-                    // prioritize the user arg if argument was provided
-                    (ValueSource::CommandLine, ValueSource::CommandLine) => {
-                        pick_args_from(id_str, &user_args)
+                        // otherwise prioritize argument from the config
+                        _ => pick_args_from(id_str, &config_args),
                     }
-
-                    // otherwise priotize the config
-                    _ => pick_args_from(id_str, &config_args),
                 }
             }
 
