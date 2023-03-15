@@ -11,9 +11,10 @@ use std::{
 use crate::Context;
 
 /// Determines between logical or physical size for display
-#[derive(Copy, Clone, Debug, ValueEnum)]
+#[derive(Copy, Clone, Debug, ValueEnum, Default)]
 pub enum DiskUsage {
     /// How many bytes does a file contain
+    #[default]
     Logical,
 
     /// How much actual space on disk, taking into account sparse files and compression.
@@ -21,9 +22,10 @@ pub enum DiskUsage {
 }
 
 /// Determines whether to use SI prefixes or binary prefixes.
-#[derive(Copy, Clone, Debug, ValueEnum)]
+#[derive(Copy, Clone, Debug, ValueEnum, Default)]
 pub enum PrefixKind {
     /// Displays disk usage using binary prefixes.
+    #[default]
     Bin,
 
     /// Displays disk usage using SI prefixes.

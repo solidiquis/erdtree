@@ -3,7 +3,7 @@ use clap::ValueEnum;
 use std::{cmp::Ordering, convert::From};
 
 /// Order in which to print nodes.
-#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum SortType {
     /// Sort entries by file name
     Name,
@@ -15,6 +15,7 @@ pub enum SortType {
     SizeRev,
 
     /// Do not sort entries
+    #[default]
     None,
 }
 

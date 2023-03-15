@@ -2,11 +2,12 @@ use super::{
     disk_usage::{DiskUsage, PrefixKind},
     order::SortType,
 };
-use clap::{ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser};
+use clap::{parser::ValueSource, CommandFactory, Error as ClapError, FromArgMatches, Parser};
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
     error::Error as StdError,
+    ffi::{OsStr, OsString},
     fmt::{self, Display},
     path::{Path, PathBuf},
     usize,
@@ -30,7 +31,7 @@ pub struct Context {
     dir: Option<PathBuf>,
 
     /// Print physical or logical file size
-    #[arg(short, long, value_enum, default_value_t = DiskUsage::Logical)]
+    #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
 
     /// Include or exclude files using glob patterns
@@ -70,7 +71,7 @@ pub struct Context {
     pub scale: usize,
 
     /// Display disk usage as binary or SI units
-    #[arg(short, long, value_enum, default_value_t = PrefixKind::Bin)]
+    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
     pub prefix: PrefixKind,
 
     /// Disable printing of empty branches
@@ -78,7 +79,7 @@ pub struct Context {
     pub prune: bool,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = SortType::None)]
+    #[arg(short, long, value_enum, default_value_t = SortType::default())]
     sort: SortType,
 
     /// Always sorts directories above files
@@ -110,16 +111,16 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let mut clargs = Context::command().args_override_self(true).get_matches();
+        let clargs_with_defaults = Context::command().args_override_self(true).get_matches();
 
-        let no_config = clargs
+        let no_config = clargs_with_defaults
             .get_one("no_config")
             .map(bool::clone)
             .unwrap_or(false);
 
         let context = {
             if no_config {
-                Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
+                Context::from_arg_matches(&clargs_with_defaults).map_err(|e| Error::ArgParse(e))?
             } else {
                 if let Some(ref config) = config::read_config_to_string::<&str>(None) {
                     let raw_config_args = config::parse_config(config);
@@ -128,14 +129,38 @@ impl Context {
                     let mut ctx =
                         Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
 
-                    Self::remove_bool_opts(&mut clargs);
+                    // These args/opts come from the command-line and will override the args/opts
+                    // from the configuration file.
+                    let mut raw_clargs = vec![];
 
-                    ctx.update_from_arg_matches(&clargs)
-                        .map_err(|e| Error::ArgParse(e))?;
+                    clargs_with_defaults.ids().for_each(|id| {
+                        if let Some(source) = clargs_with_defaults.value_source(id.as_str()) {
+                            if let ValueSource::CommandLine = source {
+                                if let Some(raw) = clargs_with_defaults.get_raw(id.as_str()) {
+                                    raw_clargs.push(raw.collect::<Vec<&OsStr>>())
+                                }
+                            }
+                        }
+                    });
+
+                    // Update the original [Context] built with arguments from the config file
+                    // with args/opts from the command-line.
+                    if !raw_clargs.is_empty() {
+                        let prefix = OsString::from("--");
+                        let mut processed = vec![prefix.as_os_str()];
+                        let raw_clargs = raw_clargs.into_iter().flatten().collect::<Vec<&OsStr>>();
+                        processed.extend_from_slice(&raw_clargs);
+
+                        let clargs = Context::command().get_matches_from(processed);
+
+                        ctx.update_from_arg_matches(&clargs)
+                            .map_err(|e| Error::ArgParse(e))?;
+                    }
 
                     ctx
                 } else {
-                    Context::from_arg_matches(&clargs).map_err(|e| Error::ArgParse(e))?
+                    Context::from_arg_matches(&clargs_with_defaults)
+                        .map_err(|e| Error::ArgParse(e))?
                 }
             }
         };
@@ -193,40 +218,6 @@ impl Context {
         }
 
         builder.build()
-    }
-
-    /// This is an unfortunate hack to remove default boolean arguments that override the config
-    /// defaults. Basically how it works is we parse the os args normally, create a [Context] from
-    /// the config file, then we update the [Context] with the os args; the problem is that the os
-    /// args come with defaults from [clap] which are all false which then overrides the config. A
-    /// problem for later.
-    fn remove_bool_opts(args: &mut ArgMatches) {
-        let mut remove_if_default = |arg| {
-            let enabled = args
-                .try_get_one::<bool>(arg)
-                .ok()
-                .flatten()
-                .map(bool::clone)
-                .unwrap_or(true);
-
-            if !enabled {
-                let _ = args.try_remove_occurrences::<bool>(arg);
-            }
-        };
-
-        remove_if_default("icons");
-        remove_if_default("I");
-        remove_if_default("glob_case_insensitive");
-        remove_if_default("hidden");
-        remove_if_default("ignore-git");
-        remove_if_default("ignore-git-ignore");
-        remove_if_default("i");
-        remove_if_default("prune");
-        remove_if_default("dirs_first");
-        remove_if_default("follow_links");
-        remove_if_default("S");
-        remove_if_default("suppress_size");
-        remove_if_default("size_left");
     }
 }
 
