@@ -120,75 +120,71 @@ impl Context {
             .map(bool::clone)
             .unwrap_or(false);
 
-        let context = {
-            if no_config {
-                Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))?
-            } else {
-                if let Some(ref config) = config::read_config_to_string::<&str>(None) {
-                    let raw_config_args = config::parse_config(config);
-                    let config_args = Context::command().get_matches_from(raw_config_args);
+        if no_config {
+            return Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e));
+        }
 
-                    // If the user did not provide any arguments just read from config.
-                    if !user_args.args_present() {
-                        Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?
+        if let Some(ref config) = config::read_config_to_string::<&str>(None) {
+            let raw_config_args = config::parse_config(config);
+            let config_args = Context::command().get_matches_from(raw_config_args);
 
-                    // If the user did provide arguments we need to reconcile between config and
-                    // user arguments.
-                    } else {
-                        let mut args = vec![OsString::from("--")];
+            // If the user did not provide any arguments just read from config.
+            if !user_args.args_present() {
+                return Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e));
+            }
 
-                        // To pick either from config or user args.
-                        let mut pick_args_from = |id: &str, matches: &ArgMatches| {
-                            if let Ok(Some(raw)) = matches.try_get_raw(id) {
-                                let kebap = id.replace("_", "-");
+            // If the user did provide arguments we need to reconcile between config and
+            // user arguments.
+            let mut args = vec![OsString::from("--")];
 
-                                let raw_args = raw
-                                    .map(OsStr::to_owned)
-                                    .map(|s| vec![OsString::from(format!("--{}", kebap)), s])
-                                    .filter(|pair| pair[1] != "false")
-                                    .flatten()
-                                    .filter(|s| s != "true")
-                                    .collect::<Vec<OsString>>();
+            // Used to pick either from config or user args.
+            let mut pick_args_from = |id: &str, matches: &ArgMatches| {
+                if let Ok(Some(raw)) = matches.try_get_raw(id) {
+                    let kebap = id.replace("_", "-");
 
-                                args.extend(raw_args);
-                            }
-                        };
+                    let raw_args = raw
+                        .map(OsStr::to_owned)
+                        .map(|s| vec![OsString::from(format!("--{}", kebap)), s])
+                        .filter(|pair| pair[1] != "false")
+                        .flatten()
+                        .filter(|s| s != "true")
+                        .collect::<Vec<OsString>>();
 
-                        for id in user_args.ids() {
-                            let id_str = id.as_str();
+                    args.extend(raw_args);
+                }
+            };
 
-                            if id_str == "Context" {
-                                continue;
-                            } // hackity hack
+            for id in user_args.ids() {
+                let id_str = id.as_str();
 
-                            let config_arg = match config_args.value_source(id_str) {
-                                Some(arg) => arg,
-                                _ => continue,
-                            };
+                // Don't look at me... my shame..
+                if id_str == "Context" {
+                    continue;
+                }
 
-                            let user_arg = user_args.value_source(id_str).unwrap();
+                let config_arg = match config_args.value_source(id_str) {
+                    Some(arg) => arg,
+                    _ => continue,
+                };
 
-                            match (config_arg, user_arg) {
-                                // prioritize the user arg if argument was provided
-                                (ValueSource::CommandLine, ValueSource::CommandLine) => {
-                                    pick_args_from(id_str, &user_args)
-                                }
+                let user_arg = user_args.value_source(id_str).unwrap();
 
-                                // otherwise priotize the config
-                                _ => pick_args_from(id_str, &config_args),
-                            }
-                        }
-
-                        let clargs = Context::command().get_matches_from(args);
-                        Context::from_arg_matches(&clargs).map_err(|e| Error::Config(e))?
+                match (config_arg, user_arg) {
+                    // prioritize the user arg if argument was provided
+                    (ValueSource::CommandLine, ValueSource::CommandLine) => {
+                        pick_args_from(id_str, &user_args)
                     }
-                } else {
-                    Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))?
+
+                    // otherwise priotize the config
+                    _ => pick_args_from(id_str, &config_args),
                 }
             }
-        };
 
-        Ok(context)
+            let clargs = Context::command().get_matches_from(args);
+            return Context::from_arg_matches(&clargs).map_err(|e| Error::Config(e));
+        }
+
+        Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))
     }
 
     /// Returns reference to the path of the root directory to be traversed.
