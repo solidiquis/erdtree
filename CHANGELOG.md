@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.5.1] - 2023-03-15
+
+### Bug Fixes
+- Fixed issue where globbing didn't work when user uses a config file https://github.com/solidiquis/erdtree/pull/75
+
 ## [1.5.0] - 2023-03-14
 
 ### Additions
