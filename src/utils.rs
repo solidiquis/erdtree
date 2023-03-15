@@ -20,5 +20,8 @@ where
 {
     let mut set = HashSet::new();
 
-    items.into_iter().filter(|item| set.insert(item.to_owned())).collect::<Vec<T>>()
+    items
+        .into_iter()
+        .filter(|item| set.insert(item.to_owned()))
+        .collect::<Vec<T>>()
 }

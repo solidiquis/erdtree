@@ -3,7 +3,7 @@ use super::{
     order::SortType,
 };
 use clap::{
-    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser, Id,
+    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
 };
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
@@ -154,17 +154,9 @@ impl Context {
                 }
             };
 
-            let mut ids = user_args
-                .ids()
-                .map(Id::as_str)
-                .collect::<Vec<&str>>();
+            let mut ids = user_args.ids().map(Id::as_str).collect::<Vec<&str>>();
 
-            ids.extend(
-                config_args
-                    .ids()
-                    .map(Id::as_str)
-                    .collect::<Vec<&str>>()
-            );
+            ids.extend(config_args.ids().map(Id::as_str).collect::<Vec<&str>>());
 
             ids = crate::utils::uniq(ids);
 
