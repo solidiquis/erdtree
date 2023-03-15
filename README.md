@@ -114,9 +114,12 @@ Other means of installation to come.
 
 If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, you can set your own defaults using a configuration file.
 
-To create an `erdtree` configuration file you can either:
-- Create a file located at `ERDTREE_CONFIG_PATH` which you set, or
-- Create `$HOME/.erdtreerc`
+`erdtree` will look for a configuration file in any of these locations:
+- `$ERDTREE_CONFIG_PATH`
+- `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
+- `$XDG_CONFIG_HOME/.erdtreerc`
+- `$HOME/.config/erdtree/.erdtreerc`
+- `$HOME/.erdtreerc`
 
 The format of a config file is as follows:
 - Every line is an `erdtree` option/argument.
