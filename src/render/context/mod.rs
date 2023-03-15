@@ -2,7 +2,9 @@ use super::{
     disk_usage::{DiskUsage, PrefixKind},
     order::SortType,
 };
-use clap::{parser::ValueSource, CommandFactory, Error as ClapError, FromArgMatches, Parser};
+use clap::{
+    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Parser,
+};
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
@@ -111,56 +113,77 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let clargs_with_defaults = Context::command().args_override_self(true).get_matches();
+        let user_args = Context::command().args_override_self(true).get_matches();
 
-        let no_config = clargs_with_defaults
+        let no_config = user_args
             .get_one("no_config")
             .map(bool::clone)
             .unwrap_or(false);
 
         let context = {
             if no_config {
-                Context::from_arg_matches(&clargs_with_defaults).map_err(|e| Error::ArgParse(e))?
+                Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))?
             } else {
                 if let Some(ref config) = config::read_config_to_string::<&str>(None) {
                     let raw_config_args = config::parse_config(config);
                     let config_args = Context::command().get_matches_from(raw_config_args);
 
-                    let mut ctx =
-                        Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?;
+                    // If the user did not provide any arguments just read from config.
+                    if !user_args.args_present() {
+                        Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e))?
 
-                    // These args/opts come from the command-line and will override the args/opts
-                    // from the configuration file.
-                    let mut raw_clargs = vec![];
+                    // If the user did provide arguments we need to reconcile between config and
+                    // user arguments.
+                    } else {
+                        let mut args = vec![OsString::from("--")];
 
-                    clargs_with_defaults.ids().for_each(|id| {
-                        if let Some(source) = clargs_with_defaults.value_source(id.as_str()) {
-                            if let ValueSource::CommandLine = source {
-                                if let Some(raw) = clargs_with_defaults.get_raw(id.as_str()) {
-                                    raw_clargs.push(raw.collect::<Vec<&OsStr>>())
+                        // To pick either from config or user args.
+                        let mut pick_args_from = |id: &str, matches: &ArgMatches| {
+                            if let Ok(Some(raw)) = matches.try_get_raw(id) {
+                                let kebap = id.replace("_", "-");
+
+                                let raw_args = raw
+                                    .map(OsStr::to_owned)
+                                    .map(|s| vec![OsString::from(format!("--{}", kebap)), s])
+                                    .filter(|pair| pair[1] != "false")
+                                    .flatten()
+                                    .filter(|s| s != "true")
+                                    .collect::<Vec<OsString>>();
+
+                                args.extend(raw_args);
+                            }
+                        };
+
+                        for id in user_args.ids() {
+                            let id_str = id.as_str();
+
+                            if id_str == "Context" {
+                                continue;
+                            } // hackity hack
+
+                            let config_arg = match config_args.value_source(id_str) {
+                                Some(arg) => arg,
+                                _ => continue,
+                            };
+
+                            let user_arg = user_args.value_source(id_str).unwrap();
+
+                            match (config_arg, user_arg) {
+                                // prioritize the user arg if argument was provided
+                                (ValueSource::CommandLine, ValueSource::CommandLine) => {
+                                    pick_args_from(id_str, &user_args)
                                 }
+
+                                // otherwise priotize the config
+                                _ => pick_args_from(id_str, &config_args),
                             }
                         }
-                    });
 
-                    // Update the original [Context] built with arguments from the config file
-                    // with args/opts from the command-line.
-                    if !raw_clargs.is_empty() {
-                        let prefix = OsString::from("--");
-                        let mut processed = vec![prefix.as_os_str()];
-                        let raw_clargs = raw_clargs.into_iter().flatten().collect::<Vec<&OsStr>>();
-                        processed.extend_from_slice(&raw_clargs);
-
-                        let clargs = Context::command().get_matches_from(processed);
-
-                        ctx.update_from_arg_matches(&clargs)
-                            .map_err(|e| Error::ArgParse(e))?;
+                        let clargs = Context::command().get_matches_from(args);
+                        Context::from_arg_matches(&clargs).map_err(|e| Error::Config(e))?
                     }
-
-                    ctx
                 } else {
-                    Context::from_arg_matches(&clargs_with_defaults)
-                        .map_err(|e| Error::ArgParse(e))?
+                    Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))?
                 }
             }
         };
