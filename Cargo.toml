@@ -1,6 +1,6 @@
 [package]
 name = "erdtree"
-version = "1.4.1"
+version = "1.5.0"
 edition = "2021"
 authors = ["Benjamin Nguyen <benjamin.van.nguyen@gmail.com>"]
 description = """
@@ -10,7 +10,7 @@ that respects .gitignore and hidden file rules by default.
 documentation = "https://github.com/solidiquis/erdtree"
 homepage = "https://github.com/solidiquis/erdtree"
 repository = "https://github.com/solidiquis/erdtree"
-keywords = ["tree", "commandline", "command-line", "du"]
+keywords = ["tree", "commandline", "command-line", "du", "dua", "dust", "ncdu"]
 exclude = ["assets/*"]
 readme = "README.md"
 license = "MIT"
