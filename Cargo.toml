@@ -10,7 +10,7 @@ that respects .gitignore and hidden file rules by default.
 documentation = "https://github.com/solidiquis/erdtree"
 homepage = "https://github.com/solidiquis/erdtree"
 repository = "https://github.com/solidiquis/erdtree"
-keywords = ["tree", "commandline", "command-line", "du", "dua", "dust", "ncdu"]
+keywords = ["tree", "commandline", "command-line", "du", "disk-usage"]
 exclude = ["assets/*"]
 readme = "README.md"
 license = "MIT"
