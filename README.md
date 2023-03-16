@@ -239,7 +239,7 @@ On the topic of performance you'll find that there is negligible difference betw
 
 #### erdtree
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/erdtree_benchmark.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_benchmark.png?raw=true" alt="failed to load png" />
 </p>
 
 ## Rules for Contributing and Feature Requests
