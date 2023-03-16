@@ -175,7 +175,7 @@ Logical sizes are reported by default but you can toggle the reporting to physic
 - The parts of the file-tree that branch from the symlink that's followed are printed in a different color.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/follow_links.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/follow_links_demo.png?raw=true" alt="failed to load png" />
 </p>
 
 ### Hardlinks
