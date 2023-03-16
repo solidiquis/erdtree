@@ -242,6 +242,8 @@ On the topic of performance you'll find that there is negligible difference betw
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_benchmark.png?raw=true" alt="failed to load png" />
 </p>
 
+Ultimately you should give both tools a try and see which one best suits you :]
+
 ## Rules for Contributing and Feature Requests
 
 Happy to accept contributions but please keep the following in mind:
