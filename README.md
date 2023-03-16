@@ -228,12 +228,19 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 ### dust
 
-[dust](https://github.com/bootandy/dust) is another fantastic tool that heavily overlaps with `erdtree` in functionality. The biggest differences between the two:
-- `erdtree` defaults to respecting hidden file and `.gitignore` rules.
-- `dust` only shows a limited set of files in the file-tree by default, but also defaults to showing the largest files first.
-- `erdtree` keeps the spirit of `tree` with respect to the output while `dust` has a horizontal bar graph.
+[dust](https://github.com/bootandy/dust) is another fantastic tool that heavily overlaps with `erdtree` in functionality. On the surface you'll find that the biggest differences are the out-of-the-box defaults - but of course you can override `erdtree`'s defaults with a [config file](#configuration-file) if you so choose - as well as the UI.
 
-I haven't used `dust` substantially so these are the immediate differences I came across. Try `dust` and `erdtree` and see which best suits you.
+On the topic of performance you'll find that there is negligible difference between the two. In the following crude benchmark the options supplied `erdtree` make it mirror `dust` as closely as possible in behavior with the exception of icons. Additionally, whereas `dust` uses an internal threadpool whose size equals the total number of logical CPU cores in a given system `erdtree` defaults to using 4 so for the following benchmark `-t 8` is used to leverage all 8 logical cores available on my local macchine.
+
+#### dust
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/dust_benchmark.png?raw=true" alt="failed to load png" />
+</p>
+
+#### erdtree
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_benchmark.png?raw=true" alt="failed to load png" />
+</p>
 
 ## Rules for Contributing and Feature Requests
 
