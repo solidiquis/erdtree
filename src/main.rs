@@ -1,8 +1,9 @@
+use clap::CommandFactory;
 use render::{
     context::Context,
     tree::{self, Tree},
 };
-use std::process::ExitCode;
+use std::{io::stdout, process::ExitCode};
 
 /// Filesystem operations.
 mod fs;
@@ -26,8 +27,14 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    tree::ui::init();
     let ctx = Context::init()?;
+
+    if let Some(shell) = ctx.completions {
+        clap_complete::generate(shell, &mut Context::command(), "et", &mut stdout().lock());
+        return Ok(());
+    }
+
+    tree::ui::init();
     let tree = Tree::init(ctx)?;
 
     println!("{tree}");

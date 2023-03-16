@@ -107,6 +107,10 @@ pub struct Context {
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
+
+    #[arg(long)]
+    /// Print completions for a given shell to stdout
+    pub completions: Option<clap_complete::Shell>,
 }
 
 impl Context {
