@@ -90,8 +90,11 @@ Options:
 
 ### crates.io
 
-1. Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
-2. `$ cargo install erdtree`
+Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
+
+```
+$ cargo install erdtree
+```
 
 ### Homebrew-core
 
@@ -237,16 +240,16 @@ This is not a rewrite of the `tree` command thus it should not be considered a 1
 
 [dust](https://github.com/bootandy/dust) is another fantastic tool, but it's one that heavily overlaps with `erdtree` in functionality. On the surface you'll find that the biggest differences are the out-of-the-box defaults - but of course you can override `erdtree`'s defaults with a [config file](#configuration-file) if you so choose - as well as the UI.
 
-On the topic of performance you'll find that there is negligible difference between the two. In the following crude benchmark the options supplied to `erdtree` make it mirror `dust` as closely as possible in behavior with the exception of icons. Additionally, whereas `dust` uses an internal threadpool whose size equals the total number of logical CPU cores in a given system `erdtree` defaults to using 4 so for the following benchmark `-t 8` is used to leverage all 8 logical cores available on my local macchine.
+On the topic of performance you'll find that there is negligible difference between the two. In the following crude benchmark the options supplied to `erdtree` make it mirror `dust` as closely as possible in behavior with the exception of icons.
 
 #### dust
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/dust_benchmark.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/dust_benchmark_v2.png?raw=true" alt="failed to load png" />
 </p>
 
 #### erdtree
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_benchmark.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_benchmark_v2.png?raw=true" alt="failed to load png" />
 </p>
 
 Ultimately you should give both tools a try and see which one best suits you :]
