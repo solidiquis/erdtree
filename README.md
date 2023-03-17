@@ -51,6 +51,9 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 If the chosen defaults don't meet your requirements and you don't want to bloat your shell configs with aliases, you can use a [configuration file](#configuration-file) instead.
 
 ## Usage
+
+**Note**: The amount of threads used by default is dependent upon how many logical CPUs available in your system.
+
 ```
 erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.
 
@@ -75,7 +78,7 @@ Options:
   -s, --sort <SORT>              Sort-order to display directory content [possible values: name, size, size-rev]
       --dirs-first               Always sorts directories above files
   -S, --follow-links             Traverse symlink directories and consider their disk usage; disabled by default
-  -t, --threads <THREADS>        Number of threads to use [default: 4]
+  -t, --threads <THREADS>        Number of threads to use [default: 10]
       --suppress-size            Omit disk usage from output; disabled by default
       --size-left                Show the size on the left, decimal aligned
       --no-config                Don't read configuration file
