@@ -92,8 +92,8 @@ pub struct Context {
     #[arg(short = 'S', long)]
     pub follow_links: bool,
 
-    /// Number of threads to use
-    #[arg(short, long, default_value_t = 4)]
+    /// Number of threads to use; defaults to number of logical cores available
+    #[arg(short, long, default_value_t = num_cpus::get())]
     pub threads: usize,
 
     /// Omit disk usage from output; disabled by default
