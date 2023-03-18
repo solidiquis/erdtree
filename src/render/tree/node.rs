@@ -197,11 +197,11 @@ impl Node {
 
         let path = self.symlink_target_path().unwrap_or_else(|| self.path());
 
-        if let Some(icon) = path.extension().and_then(icon_from_ext) {
+        if let Some(icon) = self.file_type().and_then(icon_from_file_type) {
             return Some(self.stylize(icon));
         }
 
-        if let Some(icon) = self.file_type().and_then(icon_from_file_type) {
+        if let Some(icon) = path.extension().and_then(icon_from_ext) {
             return Some(self.stylize(icon));
         }
 
