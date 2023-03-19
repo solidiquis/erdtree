@@ -1,7 +1,7 @@
 use crate::render::{context::Context, disk_usage::FileSize, order::Order};
 use crossbeam::channel::{self, Sender};
 use error::Error;
-use ignore::{WalkBuilder, WalkParallel, WalkState};
+use ignore::{WalkBuilder, WalkParallel};
 use node::Node;
 use std::{
     collections::{HashMap, HashSet},
@@ -12,6 +12,7 @@ use std::{
     slice::Iter,
     thread,
 };
+use visitor::{BranchVisitorBuilder, TraversalState};
 
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
@@ -24,6 +25,13 @@ pub mod node;
 
 /// [ui::LS_COLORS] initialization and ui theme for [Tree].
 pub mod ui;
+
+/// Operations to construct a [`ParallelVisitor`] which operates on [`DirEntry`]s during parallel
+/// filesystem traversal.
+///
+/// [`ParallelVisitor`]: ignore::ParallelVisitor
+/// [`DirEntry`]: ignore::DirEntry
+ mod visitor;
 
 /// In-memory representation of the root-directory and its contents which respects `.gitignore` and
 /// hidden file rules depending on [WalkParallel] config.
@@ -64,84 +72,74 @@ impl Tree {
         &self.ctx
     }
 
-    /// Parallel traversal of the root directory and its contents taking `.gitignore` into
-    /// consideration. Parallel traversal relies on `WalkParallel`. Any filesystem I/O or related
-    /// system calls are expected to occur during parallel traversal; thus post-processing of all
-    /// directory entries should be completely CPU-bound. If filesystem I/O or system calls occur
-    /// outside of the parallel traversal step please report an issue.
+    /// Parallel traversal of the root directory and its contents. Parallel traversal relies on
+    /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
+    /// parallel traversal; post-processing post-processing of all directory entries should
+    /// be completely CPU-bound.
     fn traverse(ctx: &Context) -> TreeResult<Node> {
         let walker = WalkParallel::try_from(ctx)?;
-        let (tx, rx) = channel::unbounded::<Node>();
 
-        // Receives directory entries from the workers used for parallel traversal to construct the
-        // components needed to assemble a `Tree`.
-        let tree_components = thread::spawn(move || -> TreeResult<TreeComponents> {
-            let mut branches: Branches = HashMap::new();
-            let mut inodes = HashSet::new();
-            let mut root = None;
+        thread::scope(move |s| {
+            let (tx, rx) = channel::unbounded::<TraversalState>();
 
-            while let Ok(node) = rx.recv() {
-                if node.is_dir() {
-                    let node_path = node.path();
+            let tree_components = s.spawn(move || -> TreeResult<Node> {
+                let mut branches: Branches = HashMap::new();
+                let mut inodes = HashSet::new();
+                let mut root = None;
 
-                    if !branches.contains_key(node_path) {
-                        branches.insert(node_path.to_owned(), vec![]);
-                    }
+                while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
+                    if node.is_dir() {
+                        let node_path = node.path();
 
-                    if node.depth == 0 {
-                        root = Some(node);
-                        continue;
-                    }
-                }
+                        if !branches.contains_key(node_path) {
+                            branches.insert(node_path.to_owned(), vec![]);
+                        }
 
-                if let Some(inode) = node.inode() {
-                    if inode.nlink > 1 {
-                        // If a hard-link is already accounted for skip the subsequent one.
-                        if !inodes.insert(inode.properties()) {
+                        if node.depth == 0 {
+                            root = Some(node);
                             continue;
                         }
                     }
+
+                    if let Some(inode) = node.inode() {
+                        if inode.nlink > 1 {
+                            // If a hard-link is already accounted for skip the subsequent one.
+                            if !inodes.insert(inode.properties()) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    let parent = node.parent_path().ok_or(Error::ExpectedParent)?.to_owned();
+
+                    let update = branches.get_mut(&parent).map(|mut_ref| mut_ref.push(node));
+
+                    if update.is_none() {
+                        branches.insert(parent, vec![]);
+                    }
                 }
 
-                let parent = node.parent_path_buf().ok_or(Error::ExpectedParent)?;
+                let mut root_node = root.ok_or(Error::MissingRoot)?;
 
-                let update = branches.get_mut(&parent).map(|mut_ref| mut_ref.push(node));
+                Self::assemble_tree(&mut root_node, &mut branches, ctx);
 
-                if update.is_none() {
-                    branches.insert(parent, vec![]);
+                if ctx.prune {
+                    root_node.prune_directories()
                 }
-            }
 
-            let root_node = root.ok_or(Error::MissingRoot)?;
+                Ok(root_node)
+            });
 
-            Ok((root_node, branches))
-        });
+            let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
 
-        // All filesystem I/O and related system-calls should be relegated to this. Directory
-        // entries that are encountered are sent to the above thread for processing.
-        walker.run(|| {
-            Box::new(|entry_res| {
-                let tx = Sender::clone(&tx);
+            // All filesystem I/O and related system-calls should be relegated to this. Directory
+            // entries that are encountered are sent to the above thread for processing.
+            walker.visit(&mut visitor_builder);
 
-                entry_res
-                    .map(|entry| Node::from((&entry, ctx)))
-                    .map(|node| tx.send(node).unwrap())
-                    .map(|_| WalkState::Continue)
-                    .unwrap_or(WalkState::Skip)
-            })
-        });
+            tx.send(TraversalState::Done).unwrap();
 
-        drop(tx);
-
-        let (mut root, mut branches) = tree_components.join().unwrap()?;
-
-        Self::assemble_tree(&mut root, &mut branches, ctx);
-
-        if ctx.prune {
-            root.prune_directories()
-        }
-
-        Ok(root)
+            tree_components.join().unwrap()
+        })
     }
 
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data

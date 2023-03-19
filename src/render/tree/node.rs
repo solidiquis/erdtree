@@ -149,16 +149,9 @@ impl Node {
         self.file_type.as_ref()
     }
 
-    /// Returns the path to the [Node]'s parent, if any. This is a pretty expensive operation used
-    /// during parallel traversal. Perhaps an area for optimization.
-    pub fn parent_path_buf(&self) -> Option<PathBuf> {
-        let mut path_buf = self.path.clone();
-
-        if path_buf.pop() {
-            Some(path_buf)
-        } else {
-            None
-        }
+    /// Returns the path to the [Node]'s parent, if any.
+    pub fn parent_path(&self) -> Option<&Path> {
+        self.path.parent()
     }
 
     /// Returns a reference to `path`.
