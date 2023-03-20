@@ -183,6 +183,7 @@ dependencies = [
  "crossbeam",
  "filesize",
  "ignore",
+ "indextree",
  "indoc",
  "lscolors",
  "num_cpus",
@@ -283,6 +284,12 @@ dependencies = [
  "walkdir",
  "winapi-util",
 ]
+
+[[package]]
+name = "indextree"
+version = "4.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c40411d0e5c63ef1323c3d09ce5ec6d84d71531e18daed0743fccea279d7deb6"
 
 [[package]]
 name = "indoc"

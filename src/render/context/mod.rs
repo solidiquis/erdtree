@@ -141,23 +141,6 @@ impl Context {
             // user arguments.
             let mut args = vec![OsString::from("--")];
 
-            // Used to pick either from config or user args.
-            let mut pick_args_from = |id: &str, matches: &ArgMatches| {
-                if let Ok(Some(raw)) = matches.try_get_raw(id) {
-                    let kebap = id.replace("_", "-");
-
-                    let raw_args = raw
-                        .map(OsStr::to_owned)
-                        .map(|s| vec![OsString::from(format!("--{}", kebap)), s])
-                        .filter(|pair| pair[1] != "false")
-                        .flatten()
-                        .filter(|s| s != "true")
-                        .collect::<Vec<OsString>>();
-
-                    args.extend(raw_args);
-                }
-            };
-
             let mut ids = user_args.ids().map(Id::as_str).collect::<Vec<&str>>();
 
             ids.extend(config_args.ids().map(Id::as_str).collect::<Vec<&str>>());
@@ -165,21 +148,27 @@ impl Context {
             ids = crate::utils::uniq(ids);
 
             for id in ids {
-                // Don't look at me... my shame..
                 if id == "Context" {
                     continue;
+                } else if id == "dir" {
+                    if let Ok(Some(raw)) = user_args.try_get_raw(id) {
+                        let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
+
+                        args.extend(raw_args);
+                        continue;
+                    }
                 }
 
                 if let Some(user_arg) = user_args.value_source(id) {
                     match user_arg {
                         // prioritize the user arg if user provided a command line argument
-                        ValueSource::CommandLine => pick_args_from(id, &user_args),
+                        ValueSource::CommandLine => Self::pick_args_from(id, &user_args, &mut args),
 
                         // otherwise prioritize argument from the config
-                        _ => pick_args_from(id, &config_args),
+                        _ => Self::pick_args_from(id, &config_args, &mut args),
                     }
                 } else {
-                    pick_args_from(id, &config_args)
+                    Self::pick_args_from(id, &config_args, &mut args)
                 }
             }
 
@@ -240,6 +229,23 @@ impl Context {
         }
 
         builder.build()
+    }
+
+    /// Used to pick either from config or user args when constructing [Context].
+    fn pick_args_from(id: &str, matches: &ArgMatches, args: &mut Vec<OsString>) {
+        if let Ok(Some(raw)) = matches.try_get_raw(id) {
+            let kebap = id.replace("_", "-");
+
+            let raw_args = raw
+                .map(OsStr::to_owned)
+                .map(|s| vec![OsString::from(format!("--{}", kebap)), s])
+                .filter(|pair| pair[1] != "false")
+                .flatten()
+                .filter(|s| s != "true")
+                .collect::<Vec<OsString>>();
+
+            args.extend(raw_args);
+        }
     }
 }
 

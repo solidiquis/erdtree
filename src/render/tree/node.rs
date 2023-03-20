@@ -5,12 +5,12 @@ use crate::{
     render::{
         context::Context,
         disk_usage::{DiskUsage, FileSize},
-        order::NodeComparator,
     },
 };
 use ansi_term::Color;
 use ansi_term::Style;
 use ignore::DirEntry;
+use indextree::{Arena, Node as NodeWrapper, NodeId};
 use lscolors::Style as LS_Style;
 use std::{
     borrow::Cow,
@@ -19,7 +19,6 @@ use std::{
     fmt::{self, Formatter},
     fs::{self, FileType},
     path::{Path, PathBuf},
-    slice::{Iter, IterMut},
 };
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
@@ -32,7 +31,6 @@ use std::{
 pub struct Node {
     pub depth: usize,
     pub file_size: Option<FileSize>,
-    children: Vec<Node>,
     file_name: OsString,
     file_type: Option<FileType>,
     inode: Option<Inode>,
@@ -47,7 +45,6 @@ impl Node {
     pub fn new(
         depth: usize,
         file_size: Option<FileSize>,
-        children: Vec<Node>,
         file_name: OsString,
         file_type: Option<FileType>,
         inode: Option<Inode>,
@@ -57,7 +54,6 @@ impl Node {
         symlink_target: Option<PathBuf>,
     ) -> Self {
         Self {
-            children,
             depth,
             file_name,
             file_size,
@@ -70,44 +66,9 @@ impl Node {
         }
     }
 
-    /// Returns a mutable reference to `children` if any.
-    pub fn children_mut(&mut self) -> IterMut<Node> {
-        self.children.iter_mut()
-    }
-
-    /// Returns an iter over a `children` slice if any.
-    pub fn children(&self) -> Iter<Node> {
-        self.children.iter()
-    }
-
-    /// Setter for `children`.
-    pub fn set_children(&mut self, children: Vec<Node>) {
-        self.children = children;
-    }
-
-    /// Sorts `children` given comparator.
-    pub fn sort_children(&mut self, comparator: Box<NodeComparator<'_>>) {
-        self.children.sort_by(comparator)
-    }
-
-    /// Whether or not a [Node] has children.
-    pub fn has_children(&self) -> bool {
-        !self.children.is_empty()
-    }
-
     /// Recursively traverse [Node]s, removing any [Node]s that have no children.
     pub fn prune_directories(&mut self) {
-        self.children.retain_mut(|node| {
-            if node.is_dir() {
-                if node.has_children() {
-                    node.prune_directories();
-                    return node.has_children();
-                } else {
-                    return false;
-                }
-            }
-            true
-        });
+        todo!();
     }
 
     /// Returns a reference to `file_name`. If file is a symlink then `file_name` is the name of
@@ -149,16 +110,9 @@ impl Node {
         self.file_type.as_ref()
     }
 
-    /// Returns the path to the [Node]'s parent, if any. This is a pretty expensive operation used
-    /// during parallel traversal. Perhaps an area for optimization.
-    pub fn parent_path_buf(&self) -> Option<PathBuf> {
-        let mut path_buf = self.path.clone();
-
-        if path_buf.pop() {
-            Some(path_buf)
-        } else {
-            None
-        }
+    /// Returns the path to the [Node]'s parent, if any.
+    pub fn parent_path(&self) -> Option<&Path> {
+        self.path.parent()
     }
 
     /// Returns a reference to `path`.
@@ -184,6 +138,20 @@ impl Node {
     /// Returns reference to underlying [Inode] if any.
     pub fn inode(&self) -> Option<&Inode> {
         self.inode.as_ref()
+    }
+
+    /// Get a reference to [Node] from `inner` field of [`Tree`].
+    ///
+    /// [`Tree`]: super::Tree
+    pub fn get(node_id: NodeId, tree: &Arena<Node>) -> Option<&Self> {
+        tree.get(node_id).map(NodeWrapper::get)
+    }
+
+    /// Get a mutable reference to [Node] from `inner` field of [`Tree`].
+    ///
+    /// [`Tree`]: super::Tree
+    pub fn get_mut(node_id: NodeId, tree: &mut Arena<Node>) -> Option<&mut Self> {
+        tree.get_mut(node_id).map(NodeWrapper::get_mut)
     }
 
     /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
@@ -253,8 +221,6 @@ impl From<(&DirEntry, &Context)> for Node {
         let prefix = *prefix;
         let icons = *icons;
 
-        let children = vec![];
-
         let depth = dir_entry.depth();
 
         let file_type = dir_entry.file_type();
@@ -300,7 +266,6 @@ impl From<(&DirEntry, &Context)> for Node {
         Self::new(
             depth,
             file_size,
-            children,
             file_name,
             file_type,
             inode,
@@ -309,6 +274,12 @@ impl From<(&DirEntry, &Context)> for Node {
             style,
             symlink_target,
         )
+    }
+}
+
+impl From<(NodeId, &mut Arena<Self>)> for &Node {
+    fn from((node_id, tree): (NodeId, &mut Arena<Self>)) -> Self {
+        tree.get(node_id).map(NodeWrapper::get).unwrap()
     }
 }
 
