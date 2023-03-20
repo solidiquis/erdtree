@@ -5,11 +5,11 @@ mod test {
     use indoc::indoc;
     use std::os::unix::fs::symlink;
     use std::path::Path;
-    use tempdir::TempDir;
+    use tempfile::TempDir;
 
     #[test]
     fn link() -> Result<(), Box<dyn std::error::Error>> {
-        let tmp = TempDir::new("hastur")?;
+        let tmp = TempDir::new()?;
         let target = Path::new("./tests/data/the_yellow_king").canonicalize()?;
         let link = tmp.path().join("the_yellow_link");
 
