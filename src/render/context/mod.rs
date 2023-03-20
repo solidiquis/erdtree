@@ -15,7 +15,7 @@ use std::{
     usize,
 };
 
-/// Operations to load in `.erdtree.toml` defaults.
+/// Operations to load in defaults from configuration file.
 pub mod config;
 
 /// Unit tests for [Context]
@@ -26,7 +26,7 @@ mod test;
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "1.5.2")]
+#[command(version = "1.6.0")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Context {
     /// Root directory to traverse; defaults to current working directory

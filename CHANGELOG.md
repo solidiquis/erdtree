@@ -3,6 +3,27 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.6.0] - 2023-03-20
+
+### What's Changed
+* Add NetBSD instructions by @0323pin in https://github.com/solidiquis/erdtree/pull/77
+* Add repology badge by @jubalh in https://github.com/solidiquis/erdtree/pull/76
+* fix issue where level wasn't being read from config by @solidiquis in https://github.com/solidiquis/erdtree/pull/78
+* add scoop manifest by @fawni in https://github.com/solidiquis/erdtree/pull/80
+* default to num logical cpus rather than 4 threads by @solidiquis in https://github.com/solidiquis/erdtree/pull/81
+* Add support for generating shell completions by @Brezak in https://github.com/solidiquis/erdtree/pull/82
+* Fix miscoloration of directories that have extension by @fawni in https://github.com/solidiquis/erdtree/pull/83
+* [Optimization] - Upgraded heap-based tree data structure to an index-tree by @solidiquis in https://github.com/solidiquis/erdtree/pull/86
+* Replace tempdir crate with tempfile crate by @Brezak in https://github.com/solidiquis/erdtree/pull/87
+* fix issue where ansi escapes were being printed raw on windows by @solidiquis in https://github.com/solidiquis/erdtree/pull/90
+
+### New Contributors
+* @0323pin made their first contribution in https://github.com/solidiquis/erdtree/pull/77
+* @jubalh made their first contribution in https://github.com/solidiquis/erdtree/pull/76
+* @Brezak made their first contribution in https://github.com/solidiquis/erdtree/pull/82
+
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/v1.5.2...1.6.0
+
 ## [1.5.2] - 2023-03-15
 
 ### Bug Fixes
