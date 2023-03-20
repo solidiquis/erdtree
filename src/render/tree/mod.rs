@@ -155,13 +155,15 @@ impl Tree {
             .unwrap();
 
         // Sort if sorting specified
-        if let Some(cmp) = Order::from((ctx.sort(), ctx.dirs_first())).comparator() {
+        if let Some(func) = Order::from((ctx.sort(), ctx.dirs_first())).comparator() {
             children.sort_by(|id_a, id_b| {
                 let node_a = Node::get(*id_a, tree).unwrap();
                 let node_b = Node::get(*id_b, tree).unwrap();
-                cmp(node_a, node_b)
+                func(node_a, node_b)
             });
         }
+
+        //dbg!("{}", children.iter().map(|id| Node::get(*id, tree).unwrap()).collect::<Vec<&Node>>());
 
         // Append children to current node.
         for child_id in children.iter() {
