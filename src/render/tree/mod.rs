@@ -10,7 +10,7 @@ use std::{
     fmt::{self, Display, Formatter},
     fs,
     path::PathBuf,
-    thread, 
+    thread,
 };
 use visitor::{BranchVisitorBuilder, TraversalState};
 
@@ -26,12 +26,8 @@ pub mod node;
 /// [ui::LS_COLORS] initialization and ui theme for [Tree].
 pub mod ui;
 
-/// Operations to construct a [`ParallelVisitor`] which operates on [`DirEntry`]s during parallel
-/// filesystem traversal.
-///
-/// [`ParallelVisitor`]: ignore::ParallelVisitor
-/// [`DirEntry`]: ignore::DirEntry
- mod visitor;
+/// Custom visitor that operates on each thread during filesystem traversal.
+mod visitor;
 
 /// In-memory representation of the root-directory and its contents which respects `.gitignore` and
 /// hidden file rules depending on [WalkParallel] config.
@@ -84,7 +80,6 @@ impl Tree {
             let mut tree = Arena::new();
 
             let res = s.spawn(|| {
-
                 // Key represents path of parent directory and values represent children.
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
 
@@ -120,7 +115,10 @@ impl Tree {
 
                     let node_id = tree.new_node(node);
 
-                    if let None = branches.get_mut(&parent).map(|mut_ref| mut_ref.push(node_id)) {
+                    if let None = branches
+                        .get_mut(&parent)
+                        .map(|mut_ref| mut_ref.push(node_id))
+                    {
                         branches.insert(parent, vec![]);
                     }
                 }
@@ -142,7 +140,7 @@ impl Tree {
 
             tx.send(TraversalState::Done).unwrap();
 
-            res.join().unwrap() 
+            res.join().unwrap()
         })
     }
 
@@ -196,6 +194,7 @@ impl Tree {
         }
     }
 
+    /// Function to remove empty directories.
     fn prune_directories(root_id: NodeId, tree: &mut Arena<Node>) {
         let mut to_prune = vec![];
 
@@ -208,7 +207,7 @@ impl Tree {
                 }
             }
         }
-        
+
         for node_id in to_prune {
             node_id.remove_subtree(tree)
         }
@@ -248,7 +247,7 @@ impl Display for Tree {
             node: &Node,
             base_prefix: &str,
             ctx: &Context,
-            f: &mut Formatter<'_>
+            f: &mut Formatter<'_>,
         ) -> fmt::Result {
             if ctx.size_left && !ctx.suppress_size {
                 node.display_size_left(f, base_prefix, ctx)?;
@@ -285,7 +284,6 @@ impl Display for Tree {
             }
 
             let prefix = current_prefix_components.join("");
-
 
             if current_node.depth <= level {
                 display_node(&current_node, &prefix, ctx, f)?;

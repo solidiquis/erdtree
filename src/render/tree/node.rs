@@ -9,8 +9,8 @@ use crate::{
 };
 use ansi_term::Color;
 use ansi_term::Style;
-use indextree::{Arena, Node as NodeWrapper, NodeId};
 use ignore::DirEntry;
+use indextree::{Arena, Node as NodeWrapper, NodeId};
 use lscolors::Style as LS_Style;
 use std::{
     borrow::Cow,
@@ -140,12 +140,16 @@ impl Node {
         self.inode.as_ref()
     }
 
-    /// Get a reference to [Node] from arena.
+    /// Get a reference to [Node] from `inner` field of [`Tree`].
+    ///
+    /// [`Tree`]: super::Tree
     pub fn get(node_id: NodeId, tree: &Arena<Node>) -> Option<&Self> {
         tree.get(node_id).map(NodeWrapper::get)
     }
 
-    /// Get a mutable reference to [Node] from arena.
+    /// Get a mutable reference to [Node] from `inner` field of [`Tree`].
+    ///
+    /// [`Tree`]: super::Tree
     pub fn get_mut(node_id: NodeId, tree: &mut Arena<Node>) -> Option<&mut Self> {
         tree.get_mut(node_id).map(NodeWrapper::get_mut)
     }

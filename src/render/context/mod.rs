@@ -152,9 +152,7 @@ impl Context {
                     continue;
                 } else if id == "dir" {
                     if let Ok(Some(raw)) = user_args.try_get_raw(id) {
-                        let raw_args = raw
-                            .map(OsStr::to_owned)
-                            .collect::<Vec<OsString>>();
+                        let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
 
                         args.extend(raw_args);
                         continue;

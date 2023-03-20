@@ -1,16 +1,10 @@
-use crossbeam::channel::Sender;
-use ignore::{
-    DirEntry,
-    Error as IgnoreError,
-    ParallelVisitor,
-    ParallelVisitorBuilder,
-    WalkState,
-};
 use super::{Context, Node};
+use crossbeam::channel::Sender;
+use ignore::{DirEntry, Error as IgnoreError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 
 pub enum TraversalState {
     Ongoing(Node),
-    Done
+    Done,
 }
 
 pub struct BranchVisitor<'a> {
