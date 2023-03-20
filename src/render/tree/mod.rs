@@ -154,6 +154,29 @@ impl Tree {
             .map(|n| branches.remove(n.path()).unwrap())
             .unwrap();
 
+        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
+
+        for child_id in children.iter() {
+            let is_dir = {
+                let inner = Node::get(*child_id, tree).unwrap();
+                inner.is_dir()
+            };
+
+            if is_dir {
+                Self::assemble_tree(tree, *child_id, branches, ctx);
+            }
+
+            let inner = Node::get(*child_id, tree).unwrap();
+            let file_size = inner.file_size().map(|fs| fs.bytes).unwrap_or(0);
+
+            dir_size += file_size;
+        }
+
+        if dir_size.bytes > 0 {
+            let current_node = Node::get_mut(current_node_id, tree).unwrap();
+            current_node.set_file_size(dir_size);
+        }
+
         // Sort if sorting specified
         if let Some(func) = Order::from((ctx.sort(), ctx.dirs_first())).comparator() {
             children.sort_by(|id_a, id_b| {
@@ -163,33 +186,9 @@ impl Tree {
             });
         }
 
-        //dbg!("{}", children.iter().map(|id| Node::get(*id, tree).unwrap()).collect::<Vec<&Node>>());
-
         // Append children to current node.
-        for child_id in children.iter() {
-            current_node_id.append(child_id.clone(), tree);
-        }
-
-        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
-
-        for child_id in children.into_iter() {
-            let (is_dir, file_size) = {
-                let inner = Node::get(child_id, tree).unwrap();
-                let is_dir = inner.is_dir();
-                let file_size = inner.file_size().map(|fs| fs.bytes).unwrap_or(0);
-                (is_dir, file_size)
-            };
-
-            if is_dir {
-                Self::assemble_tree(tree, child_id, branches, ctx);
-            }
-
-            dir_size += file_size;
-        }
-
-        if dir_size.bytes > 0 {
-            let current_node = Node::get_mut(current_node_id, tree).unwrap();
-            current_node.set_file_size(dir_size);
+        for child_id in children {
+            current_node_id.append(child_id, tree);
         }
     }
 }
