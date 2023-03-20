@@ -268,21 +268,20 @@ Ultimately you should give both tools a try and see which one best suits you :]
 ## Rules for Contributing and Feature Requests
 
 Happy to accept contributions but please keep the following in mind:
-- If you're doing some minor refactoring and/or code cleanup feel free to just submit a PR.
 - If you'd like to add a feature please open up an issue and receive approval first unless you've previously contributed. You can also start a [discussion](https://github.com/solidiquis/erdtree/discussions/49).
-- If new arguments/options are added please do your best to keep them sensibly alphabetized.
+- If new arguments/options are added please do your best to keep them sensibly alphabetized. Also be sure to update the [Usage][#usage] section of the README.
 - The code is heavily documented so please follow suit. `cargo doc --open` can be extremely helpful.
 - Feature adds generally require tests.
+- If no one is assigned to an `up for grabs` issue feel free to pick it up yourself :]
 
 Feature requests in the form of issues in general are welcome.
 
 ## Special thanks
 
-- to Reddit user `/u/johnm` for suggesting that different binary prefixes be colored differently for better visual feedback.
-- to Reddit user `/u/Freeky` for suggestions on how to handle hardlinks and physical disk sizes.
-- to Reddit user `/u/lucca_huguet` (can be found as [luccahuguet](https://github.com/luccahuguet) on Github) for suggesting that the compiled `erdtree` binary be shorted to `et`.
-- to all of the lovely people on [this](https://www.reddit.com/r/rust/comments/11ioq1n/erdtree_v120_a_modern_multithreaded_alternative/) Reddit thread who helped shaped `erdtree` with their very valuable feedback.
+- to [luccahuguet](https://github.com/luccahuguet) on Github) for suggesting that the compiled `erdtree` binary be shorted to `et`.
 - to [messense](https://github.com/messense) for getting this on Homebrew-core!
+- to [fawni](https://github.com/fawni) for getting this on Scoop!
+- to [0323pin](https://github.com/0323pin) for getting this on NetBSD!
 - to all contributors :]
 
 ## Questions you might have
