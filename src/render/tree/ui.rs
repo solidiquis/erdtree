@@ -38,6 +38,9 @@ pub type ThemesMap = HashMap<&'static str, String>;
 
 /// Initializes both [LS_COLORS] and [THEME].
 pub fn init() {
+    #[cfg(windows)]
+    ansi_term::enable_ansi_support();
+
     init_ls_colors();
     init_themes();
 }
