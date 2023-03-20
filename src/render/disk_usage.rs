@@ -53,7 +53,7 @@ pub enum SiPrefix {
 }
 
 /// Represents either logical or physical size and handles presentation.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FileSize {
     pub bytes: u64,
     #[allow(dead_code)]
@@ -92,9 +92,9 @@ impl FileSize {
     }
 }
 
-impl AddAssign<&Self> for FileSize {
-    fn add_assign(&mut self, rhs: &Self) {
-        self.bytes += rhs.bytes;
+impl AddAssign<u64> for FileSize {
+    fn add_assign(&mut self, rhs: u64) {
+        self.bytes += rhs;
     }
 }
 
