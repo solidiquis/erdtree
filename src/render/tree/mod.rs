@@ -129,6 +129,10 @@ impl Tree {
 
                 Self::assemble_tree(&mut tree, root, &mut branches, ctx);
 
+                if ctx.prune {
+                    Self::prune_directories(root, &mut tree);
+                }
+
                 Ok::<(Arena<Node>, NodeId), Error>((tree, root))
             });
 
@@ -189,6 +193,24 @@ impl Tree {
         // Append children to current node.
         for child_id in children {
             current_node_id.append(child_id, tree);
+        }
+    }
+
+    fn prune_directories(root_id: NodeId, tree: &mut Arena<Node>) {
+        let mut to_prune = vec![];
+
+        for node_id in root_id.descendants(tree) {
+            let node = Node::get(node_id, tree).unwrap();
+
+            if node.is_dir() {
+                if node_id.children(tree).peekable().peek().is_none() {
+                    to_prune.push(node_id);
+                }
+            }
+        }
+        
+        for node_id in to_prune {
+            node_id.remove_subtree(tree)
         }
     }
 }
