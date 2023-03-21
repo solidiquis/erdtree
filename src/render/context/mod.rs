@@ -11,7 +11,9 @@ use std::{
     error::Error as StdError,
     ffi::{OsStr, OsString},
     fmt::{self, Display},
+    num::NonZeroUsize,
     path::{Path, PathBuf},
+    thread::available_parallelism,
     usize,
 };
 
@@ -21,6 +23,12 @@ pub mod config;
 /// Unit tests for [Context]
 #[cfg(test)]
 mod test;
+
+fn default_threads() -> usize {
+    available_parallelism()
+        .unwrap_or_else(|_| NonZeroUsize::new(1).unwrap())
+        .get()
+}
 
 /// Defines the CLI.
 #[derive(Parser, Debug)]
@@ -93,7 +101,7 @@ pub struct Context {
     pub follow_links: bool,
 
     /// Number of threads to use; defaults to number of logical cores available
-    #[arg(short, long, default_value_t = num_cpus::get())]
+    #[arg(short, long, default_value_t = { default_threads() })]
     pub threads: usize,
 
     /// Omit disk usage from output; disabled by default
