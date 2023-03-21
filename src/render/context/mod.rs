@@ -11,7 +11,9 @@ use std::{
     error::Error as StdError,
     ffi::{OsStr, OsString},
     fmt::{self, Display},
+    num::NonZeroUsize,
     path::{Path, PathBuf},
+    thread::available_parallelism,
     usize,
 };
 
@@ -93,7 +95,7 @@ pub struct Context {
     pub follow_links: bool,
 
     /// Number of threads to use; defaults to number of logical cores available
-    #[arg(short, long, default_value_t = num_cpus::get())]
+    #[arg(short, long, default_value_t = Context::default_threads())]
     pub threads: usize,
 
     /// Omit disk usage from output; disabled by default
@@ -177,6 +179,12 @@ impl Context {
         }
 
         Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))
+    }
+
+    fn default_threads() -> usize {
+        available_parallelism()
+            .unwrap_or_else(|_| NonZeroUsize::new(1).unwrap())
+            .get()
     }
 
     /// Returns reference to the path of the root directory to be traversed.
