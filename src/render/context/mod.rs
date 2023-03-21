@@ -113,6 +113,10 @@ pub struct Context {
     #[arg(long)]
     /// Print completions for a given shell to stdout
     pub completions: Option<clap_complete::Shell>,
+
+    #[arg(short = 'D', long)]
+    /// Only show directories
+    pub dirs_only: bool,
 }
 
 impl Context {

@@ -89,6 +89,9 @@ impl Tree {
                 let mut root_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
+                    if ctx.dirs_only && !node.is_dir() {
+                        continue
+                    }
                     if node.is_dir() {
                         let node_path = node.path();
 
