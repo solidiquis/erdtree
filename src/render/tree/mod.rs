@@ -89,9 +89,6 @@ impl Tree {
                 let mut root_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
-                    if ctx.dirs_only && !node.is_dir() {
-                        continue
-                    }
                     if node.is_dir() {
                         let node_path = node.path();
 
@@ -252,6 +249,9 @@ impl Display for Tree {
             ctx: &Context,
             f: &mut Formatter<'_>,
         ) -> fmt::Result {
+            if ctx.dirs_only && !node.is_dir() {
+                return Ok(());
+            }
             if ctx.size_left && !ctx.suppress_size {
                 node.display_size_left(f, base_prefix, ctx)?;
             } else {
