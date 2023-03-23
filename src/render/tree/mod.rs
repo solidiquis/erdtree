@@ -89,9 +89,6 @@ impl Tree {
                 let mut root_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
-                    if ctx.dirs_only && !node.is_dir() {
-                        continue
-                    }
                     if node.is_dir() {
                         let node_path = node.path();
 
@@ -132,6 +129,10 @@ impl Tree {
 
                 if ctx.prune {
                     Self::prune_directories(root, &mut tree);
+                }
+
+                if ctx.dirs_only {
+                    Self::prune_files(root, &mut tree);
                 }
 
                 Ok::<(Arena<Node>, NodeId), Error>((tree, root))
@@ -205,6 +206,25 @@ impl Tree {
             let node = Node::get(node_id, tree).unwrap();
 
             if node.is_dir() {
+                if node_id.children(tree).peekable().peek().is_none() {
+                    to_prune.push(node_id);
+                }
+            }
+        }
+
+        for node_id in to_prune {
+            node_id.remove_subtree(tree)
+        }
+    }
+
+    /// Function to remove files.
+    fn prune_files(root_id: NodeId, tree: &mut Arena<Node>) {
+        let mut to_prune = vec![];
+
+        for node_id in root_id.descendants(tree) {
+            let node = Node::get(node_id, tree).unwrap();
+
+            if !node.is_dir() {
                 if node_id.children(tree).peekable().peek().is_none() {
                     to_prune.push(node_id);
                 }
