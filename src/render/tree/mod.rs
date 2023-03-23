@@ -29,8 +29,7 @@ pub mod ui;
 /// Custom visitor that operates on each thread during filesystem traversal.
 mod visitor;
 
-/// In-memory representation of the root-directory and its contents which respects `.gitignore` and
-/// hidden file rules depending on [WalkParallel] config.
+/// Virtual data structure that represents local file-system hierarchy.
 #[derive(Debug)]
 pub struct Tree {
     inner: Arena<Node>,
@@ -152,38 +151,38 @@ impl Tree {
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
         ctx: &Context,
     ) {
-        let mut children = Node::get(current_node_id, tree)
-            .map(|n| branches.remove(n.path()).unwrap())
-            .unwrap();
+        let current_node = tree[current_node_id].get_mut();
+
+        let mut children = branches.remove(current_node.path()).unwrap();
 
         let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
 
         for child_id in children.iter() {
+            let index = *child_id;
+
             let is_dir = {
-                let inner = Node::get(*child_id, tree).unwrap();
+                let inner = tree[index].get();
                 inner.is_dir()
             };
 
             if is_dir {
-                Self::assemble_tree(tree, *child_id, branches, ctx);
+                Self::assemble_tree(tree, index, branches, ctx);
             }
 
-            let inner = Node::get(*child_id, tree).unwrap();
-            let file_size = inner.file_size().map(|fs| fs.bytes).unwrap_or(0);
-
-            dir_size += file_size;
+            if let Some(file_size) = tree[index].get().file_size() {
+                dir_size += file_size.bytes
+            }
         }
 
         if dir_size.bytes > 0 {
-            let current_node = Node::get_mut(current_node_id, tree).unwrap();
-            current_node.set_file_size(dir_size);
+            tree[current_node_id].get_mut().set_file_size(dir_size);
         }
 
         // Sort if sorting specified
         if let Some(func) = Order::from((ctx.sort(), ctx.dirs_first())).comparator() {
             children.sort_by(|id_a, id_b| {
-                let node_a = Node::get(*id_a, tree).unwrap();
-                let node_b = Node::get(*id_b, tree).unwrap();
+                let node_a = tree[*id_a].get();
+                let node_b = tree[*id_b].get();
                 func(node_a, node_b)
             });
         }
@@ -199,7 +198,7 @@ impl Tree {
         let mut to_prune = vec![];
 
         for node_id in root_id.descendants(tree) {
-            let node = Node::get(node_id, tree).unwrap();
+            let node = tree[node_id].get();
 
             if node.is_dir() {
                 if node_id.children(tree).peekable().peek().is_none() {
@@ -239,9 +238,9 @@ impl Display for Tree {
         let level = self.level();
         let ctx = self.context();
 
-        let mut descendants = root.descendants(self.inner()).skip(1).peekable();
+        let mut descendants = root.descendants(inner).skip(1).peekable();
 
-        let root_node = Node::get(root, inner).unwrap();
+        let root_node = inner[root].get();
 
         fn display_node(
             node: &Node,
@@ -260,12 +259,12 @@ impl Display for Tree {
 
         display_node(&root_node, "", ctx, f)?;
 
-        let mut prefix_components = vec!["".to_owned()];
+        let mut prefix_components = vec![""];
 
         while let Some(current_node_id) = descendants.next() {
             let mut current_prefix_components = prefix_components.clone();
 
-            let current_node = Node::get(current_node_id, inner).unwrap();
+            let current_node = inner[current_node_id].get();
 
             let theme = if current_node.is_symlink() {
                 ui::get_link_theme()
@@ -278,9 +277,9 @@ impl Display for Tree {
             let last_sibling = siblings.peek().is_none();
 
             if last_sibling {
-                current_prefix_components.push(theme.get("uprt").unwrap().to_owned());
+                current_prefix_components.push(theme.get("uprt").unwrap());
             } else {
-                current_prefix_components.push(theme.get("vtrt").unwrap().to_owned());
+                current_prefix_components.push(theme.get("vtrt").unwrap());
             }
 
             let prefix = current_prefix_components.join("");
@@ -290,19 +289,18 @@ impl Display for Tree {
             }
 
             if let Some(next_id) = descendants.peek() {
-                let next_node = Node::get(*next_id, inner).unwrap();
+                let next_node = inner[*next_id].get();
 
                 if next_node.depth == current_node.depth + 1 {
                     if last_sibling {
-                        prefix_components.push(ui::SEP.to_owned());
+                        prefix_components.push(ui::SEP);
                     } else {
-                        prefix_components.push(theme.get("vt").unwrap().to_owned());
+                        prefix_components.push(theme.get("vt").unwrap());
                     }
                 } else if next_node.depth < current_node.depth {
                     let depth_delta = current_node.depth - next_node.depth;
-                    for _ in 0..depth_delta {
-                        prefix_components.pop();
-                    }
+
+                    prefix_components.truncate(prefix_components.len() - depth_delta);
                 }
             }
         }

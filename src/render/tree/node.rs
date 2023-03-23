@@ -140,20 +140,6 @@ impl Node {
         self.inode.as_ref()
     }
 
-    /// Get a reference to [Node] from `inner` field of [`Tree`].
-    ///
-    /// [`Tree`]: super::Tree
-    pub fn get(node_id: NodeId, tree: &Arena<Node>) -> Option<&Self> {
-        tree.get(node_id).map(NodeWrapper::get)
-    }
-
-    /// Get a mutable reference to [Node] from `inner` field of [`Tree`].
-    ///
-    /// [`Tree`]: super::Tree
-    pub fn get_mut(node_id: NodeId, tree: &mut Arena<Node>) -> Option<&mut Self> {
-        tree.get_mut(node_id).map(NodeWrapper::get_mut)
-    }
-
     /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
     /// [`LS_COLORS`] foreground configuration of the associated file name.
     ///
@@ -202,6 +188,69 @@ impl Node {
             let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_string_lossy()));
             format!("{styled_name} {target_name}")
         })
+    }
+
+    /// General method for printing a `Node`. The `Display` (and `ToString`) traits are not used,
+    /// to give more control over the output.
+    ///
+    /// See [`Node::display_size_left`] and [`Node::display_size_right`] for examples of formatted output.
+    fn display(
+        &self,
+        f: &mut Formatter,
+        size_loc: SizeLocation,
+        prefix: &str,
+        ctx: &Context,
+    ) -> fmt::Result {
+        let size = self.file_size().map_or_else(
+            || size_loc.default_string(ctx),
+            |size| size_loc.format(size),
+        );
+
+        let icon = if self.show_icon {
+            self.get_icon().unwrap()
+        } else {
+            "".to_owned()
+        };
+
+        let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
+
+        let styled_name = self.stylize_link_name().unwrap_or_else(|| {
+            let file_name = self.file_name_lossy();
+            self.stylize(&file_name)
+        });
+
+        match size_loc {
+            SizeLocation::Right => {
+                write!(f, "{prefix}{icon:<icon_padding$}{styled_name} {size}",)
+            }
+            SizeLocation::Left => {
+                write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}",)
+            }
+        }
+    }
+
+    /// Format a node for display with size on the right.
+    ///
+    /// Example:
+    /// `| Some Directory (12.3 KiB)`
+    pub fn display_size_right(
+        &self,
+        f: &mut Formatter,
+        prefix: &str,
+        ctx: &Context,
+    ) -> fmt::Result {
+        self.display(f, SizeLocation::Right, prefix, ctx)
+    }
+
+    /// Format a node for display with size on the left.
+    ///
+    /// Example:
+    /// `  1.23 MiB | Some File`
+    ///
+    /// Note the two spaces to the left of the first character of the number -- even if never used,
+    /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
+    pub fn display_size_left(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
+        self.display(f, SizeLocation::Left, prefix, ctx)
     }
 }
 
@@ -308,70 +357,5 @@ impl SizeLocation {
             Right => format!("({})", size.format(false)),
             Left => size.format(true),
         }
-    }
-}
-
-impl Node {
-    /// General method for printing a `Node`. The `Display` (and `ToString`) traits are not used,
-    /// to give more control over the output.
-    ///
-    /// See [`Node::display_size_left`] and [`Node::display_size_right`] for examples of formatted output.
-    fn display(
-        &self,
-        f: &mut Formatter,
-        size_loc: SizeLocation,
-        prefix: &str,
-        ctx: &Context,
-    ) -> fmt::Result {
-        let size = self.file_size().map_or_else(
-            || size_loc.default_string(ctx),
-            |size| size_loc.format(size),
-        );
-
-        let icon = if self.show_icon {
-            self.get_icon().unwrap()
-        } else {
-            "".to_owned()
-        };
-
-        let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
-
-        let styled_name = self.stylize_link_name().unwrap_or_else(|| {
-            let file_name = self.file_name_lossy();
-            self.stylize(&file_name)
-        });
-
-        match size_loc {
-            SizeLocation::Right => {
-                write!(f, "{prefix}{icon:<icon_padding$}{styled_name} {size}",)
-            }
-            SizeLocation::Left => {
-                write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}",)
-            }
-        }
-    }
-
-    /// Format a node for display with size on the right.
-    ///
-    /// Example:
-    /// `| Some Directory (12.3 KiB)`
-    pub fn display_size_right(
-        &self,
-        f: &mut Formatter,
-        prefix: &str,
-        ctx: &Context,
-    ) -> fmt::Result {
-        self.display(f, SizeLocation::Right, prefix, ctx)
-    }
-
-    /// Format a node for display with size on the left.
-    ///
-    /// Example:
-    /// `  1.23 MiB | Some File`
-    ///
-    /// Note the two spaces to the left of the first character of the number -- even if never used,
-    /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
-    pub fn display_size_left(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
-        self.display(f, SizeLocation::Left, prefix, ctx)
     }
 }
