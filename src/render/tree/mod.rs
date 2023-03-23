@@ -70,7 +70,7 @@ impl Tree {
 
     /// Parallel traversal of the root directory and its contents. Parallel traversal relies on
     /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
-    /// parallel traversal; post-processing post-processing of all directory entries should
+    /// parallel traversal; post-processing of all directory entries should
     /// be completely CPU-bound.
     fn traverse(ctx: &Context) -> TreeResult<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
@@ -83,7 +83,7 @@ impl Tree {
                 // Key represents path of parent directory and values represent children.
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
 
-                // Set used to prevent double counting hard-links in the same file-tree hiearchy.
+                // Set used to prevent double counting hard-links in the same file-tree hierarchy.
                 let mut inodes = HashSet::new();
 
                 let mut root_id = None;
