@@ -72,17 +72,12 @@ impl Tree {
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
     fn traverse(ctx: &Context) -> TreeResult<(Arena<Node>, NodeId)> {
-        let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = channel::unbounded::<TraversalState>();
 
         thread::scope(|s| {
-            let mut tree = Arena::new();
-
             let res = s.spawn(|| {
-                // Key represents path of parent directory and values represent children.
+                let mut tree = Arena::new();
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
-
-                // Set used to prevent double counting hard-links in the same file-tree hiearchy.
                 let mut inodes = HashSet::new();
 
                 let mut root_id = None;
@@ -134,6 +129,8 @@ impl Tree {
             });
 
             let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
+
+            let walker = WalkParallel::try_from(ctx)?;
 
             walker.visit(&mut visitor_builder);
 

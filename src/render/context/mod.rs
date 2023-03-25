@@ -94,8 +94,8 @@ pub struct Context {
     #[arg(short = 'S', long)]
     pub follow_links: bool,
 
-    /// Number of threads to use; defaults to number of logical cores available
-    #[arg(short, long, default_value_t = Context::default_threads())]
+    /// Number of threads to use
+    #[arg(short, long, default_value_t = 3)]
     pub threads: usize,
 
     /// Omit disk usage from output; disabled by default
@@ -179,12 +179,6 @@ impl Context {
         }
 
         Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))
-    }
-
-    fn default_threads() -> usize {
-        available_parallelism()
-            .unwrap_or_else(|_| NonZeroUsize::new(1).unwrap())
-            .get()
     }
 
     /// Returns reference to the path of the root directory to be traversed.
