@@ -1,5 +1,6 @@
+use std::sync::mpsc::Sender;
+
 use super::{Context, Node};
-use crossbeam::channel::Sender;
 use ignore::{DirEntry, Error as IgnoreError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 
 pub enum TraversalState {

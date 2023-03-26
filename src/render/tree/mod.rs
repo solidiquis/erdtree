@@ -1,5 +1,4 @@
 use crate::render::{context::Context, disk_usage::FileSize, order::Order};
-use crossbeam::channel::{self, Sender};
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
 use indextree::{Arena, NodeId};
@@ -11,6 +10,7 @@ use std::{
     fs,
     path::PathBuf,
     result::Result as StdResult,
+    sync::mpsc::{self, Sender},
     thread,
 };
 use visitor::{BranchVisitorBuilder, TraversalState};
@@ -73,10 +73,10 @@ impl Tree {
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
     fn traverse(ctx: &Context) -> Result<(Arena<Node>, NodeId)> {
-        let (tx, rx) = channel::unbounded::<TraversalState>();
+        let (tx, rx) = mpsc::channel();
 
         thread::scope(|s| {
-            let res = s.spawn(|| {
+            let res = s.spawn(move || {
                 let mut tree = Arena::new();
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
                 let mut inodes = HashSet::new();
