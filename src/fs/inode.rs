@@ -15,12 +15,12 @@ pub struct Inode {
 
 impl Inode {
     /// Initializer for an inode given all the properties that make it unique.
-    pub fn new(ino: u64, dev: u64, nlink: u64) -> Self {
+    pub const fn new(ino: u64, dev: u64, nlink: u64) -> Self {
         Self { ino, dev, nlink }
     }
 
     /// Returns a tuple fields of the [Inode] that mark is unique.
-    pub fn properties(&self) -> (u64, u64) {
+    pub const fn properties(&self) -> (u64, u64) {
         (self.ino, self.dev)
     }
 }

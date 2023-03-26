@@ -189,18 +189,18 @@ impl Context {
     }
 
     /// The sort-order used for printing.
-    pub fn sort(&self) -> SortType {
+    pub const fn sort(&self) -> SortType {
         self.sort
     }
 
     /// Getter for `dirs_first` field.
-    pub fn dirs_first(&self) -> bool {
+    pub const fn dirs_first(&self) -> bool {
         self.dirs_first
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
     /// sizes; this just determines how much to print.
-    pub fn level(&self) -> Option<usize> {
+    pub const fn level(&self) -> Option<usize> {
         self.level
     }
 

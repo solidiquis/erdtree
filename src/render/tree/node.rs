@@ -42,7 +42,7 @@ pub struct Node {
 
 impl Node {
     /// Initializes a new [Node].
-    pub fn new(
+    pub const fn new(
         depth: usize,
         file_size: Option<FileSize>,
         file_name: OsString,
@@ -91,7 +91,7 @@ impl Node {
     }
 
     /// Is the Node a symlink.
-    pub fn is_symlink(&self) -> bool {
+    pub const fn is_symlink(&self) -> bool {
         self.symlink_target.is_some()
     }
 
@@ -106,7 +106,7 @@ impl Node {
     }
 
     /// Returns reference to underlying [FileType].
-    pub fn file_type(&self) -> Option<&FileType> {
+    pub const fn file_type(&self) -> Option<&FileType> {
         self.file_type.as_ref()
     }
 
@@ -121,7 +121,7 @@ impl Node {
     }
 
     /// Gets 'file_size'.
-    pub fn file_size(&self) -> Option<&FileSize> {
+    pub const fn file_size(&self) -> Option<&FileSize> {
         self.file_size.as_ref()
     }
 
@@ -131,12 +131,12 @@ impl Node {
     }
 
     /// Sets 'style'.
-    pub fn style(&self) -> &Style {
+    pub const fn style(&self) -> &Style {
         &self.style
     }
 
     /// Returns reference to underlying [Inode] if any.
-    pub fn inode(&self) -> Option<&Inode> {
+    pub const fn inode(&self) -> Option<&Inode> {
         self.inode.as_ref()
     }
 

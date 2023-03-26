@@ -41,7 +41,7 @@ pub type TreeResult<T> = Result<T, Error>;
 
 impl Tree {
     /// Constructor for [Tree].
-    pub fn new(inner: Arena<Node>, root: NodeId, ctx: Context) -> Self {
+    pub const fn new(inner: Arena<Node>, root: NodeId, ctx: Context) -> Self {
         Self { inner, root, ctx }
     }
 
@@ -58,12 +58,12 @@ impl Tree {
     }
 
     /// Grab a reference to [Context].
-    fn context(&self) -> &Context {
+    const fn context(&self) -> &Context {
         &self.ctx
     }
 
     /// Grabs a reference to `inner`.
-    fn inner(&self) -> &Arena<Node> {
+    const fn inner(&self) -> &Arena<Node> {
         &self.inner
     }
 
