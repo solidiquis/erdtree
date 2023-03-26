@@ -8,9 +8,7 @@ use clap::{
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
-    error::Error as StdError,
     ffi::{OsStr, OsString},
-    fmt::{self, Display},
     path::{Path, PathBuf},
 };
 
@@ -246,19 +244,10 @@ impl Context {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    ArgParse(ClapError),
-    Config(ClapError),
+    #[error("{0}")]
+    ArgParse(#[source] ClapError),
+    #[error("A configuration file was found but failed to parse: {0}")]
+    Config(#[source] ClapError),
 }
-
-impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ArgParse(e) => write!(f, "{e}"),
-            Self::Config(e) => write!(f, "A configuration file was found but failed to parse: {e}"),
-        }
-    }
-}
-
-impl StdError for Error {}

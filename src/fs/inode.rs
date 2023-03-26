@@ -1,9 +1,4 @@
-use std::{
-    convert::TryFrom,
-    error::Error as StdError,
-    fmt::{self, Display},
-    fs::Metadata,
-};
+use std::{convert::TryFrom, fs::Metadata};
 
 /// Represents a file's underlying inode.
 #[derive(Debug)]
@@ -25,16 +20,9 @@ impl Inode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
+#[error("Insufficient information to compute inode")]
 pub struct Error;
-
-impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Insufficient information to compute inode")
-    }
-}
-
-impl StdError for Error {}
 
 impl TryFrom<Metadata> for Inode {
     type Error = Error;
