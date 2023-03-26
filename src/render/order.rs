@@ -55,7 +55,7 @@ impl Order {
 
 impl SortType {
     /// Yields function pointer to the appropriate `Node` comparator.
-    pub fn comparator(&self) -> Option<Box<dyn Fn(&Node, &Node) -> Ordering>> {
+    pub fn comparator(self) -> Option<Box<dyn Fn(&Node, &Node) -> Ordering>> {
         match self {
             Self::Name => Some(Box::new(Self::name_comparator)),
             Self::Size => Some(Box::new(Self::size_comparator)),
@@ -71,22 +71,22 @@ impl SortType {
 
     /// Comparator that sorts [Node]s by size smallest to largest.
     fn size_comparator(a: &Node, b: &Node) -> Ordering {
-        let a_size = a.file_size().map(|fs| fs.bytes).unwrap_or(0);
-        let b_size = b.file_size().map(|fs| fs.bytes).unwrap_or(0);
+        let a_size = a.file_size().map_or(0, |fs| fs.bytes);
+        let b_size = b.file_size().map_or(0, |fs| fs.bytes);
 
         a_size.cmp(&b_size)
     }
 
     /// Comparator that sorts [Node]s by size largest to smallest.
     fn size_rev_comparator(a: &Node, b: &Node) -> Ordering {
-        let a_size = a.file_size().map(|fs| fs.bytes).unwrap_or(0);
-        let b_size = b.file_size().map(|fs| fs.bytes).unwrap_or(0);
+        let a_size = a.file_size().map_or(0, |fs| fs.bytes);
+        let b_size = b.file_size().map_or(0, |fs| fs.bytes);
         b_size.cmp(&a_size)
     }
 }
 
 impl From<(SortType, bool)> for Order {
     fn from((sort, dir_first): (SortType, bool)) -> Self {
-        Order { sort, dir_first }
+        Self { sort, dir_first }
     }
 }

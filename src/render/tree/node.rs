@@ -13,7 +13,7 @@ use ignore::DirEntry;
 use indextree::{Arena, Node as NodeWrapper, NodeId};
 use lscolors::Style as LS_Style;
 use std::{
-    borrow::Cow,
+    borrow::{Cow, ToOwned},
     convert::From,
     ffi::{OsStr, OsString},
     fmt::{self, Formatter},
@@ -55,8 +55,8 @@ impl Node {
     ) -> Self {
         Self {
             depth,
-            file_name,
             file_size,
+            file_name,
             file_type,
             inode,
             path,
@@ -87,7 +87,7 @@ impl Node {
 
     /// Returns `true` if node is a directory.
     pub fn is_dir(&self) -> bool {
-        self.file_type().map(|ft| ft.is_dir()).unwrap_or(false)
+        self.file_type().map_or(false, FileType::is_dir)
     }
 
     /// Is the Node a symlink.
@@ -102,7 +102,7 @@ impl Node {
 
     /// Returns the file name of the symlink target if [Node] represents a symlink.
     pub fn symlink_target_file_name(&self) -> Option<&OsStr> {
-        self.symlink_target_path().and_then(|path| path.file_name())
+        self.symlink_target_path().and_then(Path::file_name)
     }
 
     /// Returns reference to underlying [FileType].
@@ -209,7 +209,7 @@ impl Node {
         let icon = if self.show_icon {
             self.get_icon().unwrap()
         } else {
-            "".to_owned()
+            String::new()
         };
 
         let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
@@ -285,7 +285,7 @@ impl From<(&DirEntry, &Context)> for Node {
 
         let file_name = path.file_name().map_or_else(
             || OsString::from(path.display().to_string()),
-            |os_str| os_str.to_owned(),
+            ToOwned::to_owned,
         );
 
         let metadata = dir_entry.metadata().ok();
@@ -343,19 +343,17 @@ enum SizeLocation {
 impl SizeLocation {
     /// Returns a string to use when a node has no filesize, such as empty directories
     fn default_string(self, ctx: &Context) -> String {
-        use SizeLocation::*;
         match self {
-            Right => "".to_owned(),
-            Left => FileSize::empty_string(ctx),
+            Self::Right => String::new(),
+            Self::Left => FileSize::empty_string(ctx),
         }
     }
 
     /// Given a [`FileSize`], style it in the expected way for its printing location
     fn format(self, size: &FileSize) -> String {
-        use SizeLocation::*;
         match self {
-            Right => format!("({})", size.format(false)),
-            Left => size.format(true),
+            Self::Right => format!("({})", size.format(false)),
+            Self::Left => size.format(true),
         }
     }
 }
