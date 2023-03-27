@@ -20,31 +20,29 @@ const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 /// - `$HOME/.erdtreerc`
 pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
     if let Some(p) = path {
-        return fs::read_to_string(p).ok().map(prepend_arg_prefix);
+        return fs::read_to_string(p).ok().map(|l| prepend_arg_prefix(&l));
     }
 
     config_from_config_path()
         .or_else(config_from_xdg_path)
         .or_else(config_from_home)
-        .map(prepend_arg_prefix)
+        .map(|e| prepend_arg_prefix(&e))
 }
 
 /// Parses the config `str`, removing comments and preparing it as a format understood by
 /// [`get_matches_from`].
 ///
 /// [`get_matches_from`]: clap::builder::Command::get_matches_from
-pub fn parse_config<'a>(config: &'a str) -> Vec<&'a str> {
+pub fn parse<'a>(config: &'a str) -> Vec<&'a str> {
     config
         .lines()
         .filter(|line| {
             line.trim_start()
                 .chars()
-                .nth(0)
-                .map(|ch| ch != '#')
-                .unwrap_or(true)
+                .next()
+                .map_or(true, |ch| ch != '#')
         })
-        .map(str::split_ascii_whitespace)
-        .flatten()
+        .flat_map(str::split_ascii_whitespace)
         .collect::<Vec<&'a str>>()
 }
 
@@ -53,8 +51,7 @@ fn config_from_config_path() -> Option<String> {
     env::var_os(ERDTREE_CONFIG_PATH)
         .map(PathBuf::from)
         .map(fs::read_to_string)
-        .map(Result::ok)
-        .flatten()
+        .and_then(Result::ok)
 }
 
 /// Try to read in config from either one of the following locations:
@@ -92,6 +89,6 @@ fn config_from_xdg_path() -> Option<String> {
 /// [`get_matches_from`].
 ///
 /// [`get_matches_from`]: clap::builder::Command::get_matches_from
-fn prepend_arg_prefix(config: String) -> String {
+fn prepend_arg_prefix(config: &str) -> String {
     format!("--\n{config}")
 }

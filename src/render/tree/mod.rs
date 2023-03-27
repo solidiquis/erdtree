@@ -1,5 +1,4 @@
 use crate::render::{context::Context, disk_usage::FileSize, order::Order};
-use crossbeam::channel::{self, Sender};
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
 use indextree::{Arena, NodeId};
@@ -10,6 +9,8 @@ use std::{
     fmt::{self, Display, Formatter},
     fs,
     path::PathBuf,
+    result::Result as StdResult,
+    sync::mpsc::{self, Sender},
     thread,
 };
 use visitor::{BranchVisitorBuilder, TraversalState};
@@ -37,16 +38,16 @@ pub struct Tree {
     ctx: Context,
 }
 
-pub type TreeResult<T> = Result<T, Error>;
+pub type Result<T> = StdResult<T, Error>;
 
 impl Tree {
     /// Constructor for [Tree].
-    pub fn new(inner: Arena<Node>, root: NodeId, ctx: Context) -> Self {
+    pub const fn new(inner: Arena<Node>, root: NodeId, ctx: Context) -> Self {
         Self { inner, root, ctx }
     }
 
     /// Initiates file-system traversal and [Tree construction].
-    pub fn init(ctx: Context) -> TreeResult<Self> {
+    pub fn init(ctx: Context) -> Result<Self> {
         let (inner, root) = Self::traverse(&ctx)?;
 
         Ok(Self::new(inner, root, ctx))
@@ -58,12 +59,12 @@ impl Tree {
     }
 
     /// Grab a reference to [Context].
-    fn context(&self) -> &Context {
+    const fn context(&self) -> &Context {
         &self.ctx
     }
 
     /// Grabs a reference to `inner`.
-    fn inner(&self) -> &Arena<Node> {
+    const fn inner(&self) -> &Arena<Node> {
         &self.inner
     }
 
@@ -71,11 +72,11 @@ impl Tree {
     /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
-    fn traverse(ctx: &Context) -> TreeResult<(Arena<Node>, NodeId)> {
-        let (tx, rx) = channel::unbounded::<TraversalState>();
+    fn traverse(ctx: &Context) -> Result<(Arena<Node>, NodeId)> {
+        let (tx, rx) = mpsc::channel();
 
         thread::scope(|s| {
-            let res = s.spawn(|| {
+            let res = s.spawn(move || {
                 let mut tree = Arena::new();
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
                 let mut inodes = HashSet::new();
@@ -98,10 +99,8 @@ impl Tree {
 
                     // If a hard-link is already accounted for, skip all subsequent ones.
                     if let Some(inode) = node.inode() {
-                        if inode.nlink > 1 {
-                            if !inodes.insert(inode.properties()) {
-                                continue;
-                            }
+                        if inode.nlink > 1 && !inodes.insert(inode.properties()) {
+                            continue;
                         }
                     }
 
@@ -109,9 +108,10 @@ impl Tree {
 
                     let node_id = tree.new_node(node);
 
-                    if let None = branches
+                    if branches
                         .get_mut(&parent)
                         .map(|mut_ref| mut_ref.push(node_id))
+                        .is_none()
                     {
                         branches.insert(parent, vec![]);
                     }
@@ -154,7 +154,7 @@ impl Tree {
 
         let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
 
-        for child_id in children.iter() {
+        for child_id in &children {
             let index = *child_id;
 
             let is_dir = {
@@ -167,7 +167,7 @@ impl Tree {
             }
 
             if let Some(file_size) = tree[index].get().file_size() {
-                dir_size += file_size.bytes
+                dir_size += file_size.bytes;
             }
         }
 
@@ -197,15 +197,13 @@ impl Tree {
         for node_id in root_id.descendants(tree) {
             let node = tree[node_id].get();
 
-            if node.is_dir() {
-                if node_id.children(tree).peekable().peek().is_none() {
-                    to_prune.push(node_id);
-                }
+            if node.is_dir() && node_id.children(tree).peekable().peek().is_none() {
+                to_prune.push(node_id);
             }
         }
 
         for node_id in to_prune {
-            node_id.remove_subtree(tree)
+            node_id.remove_subtree(tree);
         }
     }
 }
@@ -213,7 +211,7 @@ impl Tree {
 impl TryFrom<&Context> for WalkParallel {
     type Error = Error;
 
-    fn try_from(clargs: &Context) -> Result<Self, Self::Error> {
+    fn try_from(clargs: &Context) -> StdResult<Self, Self::Error> {
         let root = fs::canonicalize(clargs.dir())?;
 
         fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
@@ -251,10 +249,10 @@ impl Display for Tree {
                 node.display_size_right(f, base_prefix, ctx)?;
             }
 
-            writeln!(f, "")
+            writeln!(f)
         }
 
-        display_node(&root_node, "", ctx, f)?;
+        display_node(root_node, "", ctx, f)?;
 
         let mut prefix_components = vec![""];
 
@@ -282,7 +280,7 @@ impl Display for Tree {
             let prefix = current_prefix_components.join("");
 
             if current_node.depth <= level {
-                display_node(&current_node, &prefix, ctx, f)?;
+                display_node(current_node, &prefix, ctx, f)?;
             }
 
             if let Some(next_id) = descendants.peek() {

@@ -293,9 +293,9 @@ pub fn icon_from_ext(ext: &OsStr) -> Option<&str> {
 /// Attempts to return an icon based on file type.
 pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
     if ft.is_dir() {
-        return FILE_TYPE_ICON_MAP.get("dir").map(|i| *i);
+        return FILE_TYPE_ICON_MAP.get("dir").copied();
     } else if ft.is_symlink() {
-        return FILE_TYPE_ICON_MAP.get("symlink").map(|i| *i);
+        return FILE_TYPE_ICON_MAP.get("symlink").copied();
     }
 
     None
@@ -303,7 +303,7 @@ pub fn icon_from_file_type(ft: &FileType) -> Option<&str> {
 
 /// Attempts to get the icon associated with the special file kind.
 pub fn icon_from_file_name(name: &OsStr) -> Option<&str> {
-    FILE_NAME_ICON_MAP.get(name).map(|i| *i)
+    FILE_NAME_ICON_MAP.get(name).copied()
 }
 
 /// Returns the default fallback icon.

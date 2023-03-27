@@ -13,7 +13,7 @@ macro_rules! hash {
 }
 
 /// Ensure every item in a `Vec` is unique.
-pub fn uniq<T: Eq + Hash + ToOwned>(items: Vec<T>) -> Vec<T>
+pub fn uniq<T>(items: Vec<T>) -> Vec<T>
 where
     T: Eq + Hash + ToOwned,
     <T as ToOwned>::Owned: Hash + Eq,

@@ -8,13 +8,8 @@ use clap::{
 use ignore::overrides::{Override, OverrideBuilder};
 use std::{
     convert::From,
-    error::Error as StdError,
     ffi::{OsStr, OsString},
-    fmt::{self, Display},
-    num::NonZeroUsize,
     path::{Path, PathBuf},
-    thread::available_parallelism,
-    usize,
 };
 
 /// Operations to load in defaults from configuration file.
@@ -119,24 +114,21 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let user_args = Context::command().args_override_self(true).get_matches();
+        let user_args = Self::command().args_override_self(true).get_matches();
 
-        let no_config = user_args
-            .get_one("no_config")
-            .map(bool::clone)
-            .unwrap_or(false);
+        let no_config = user_args.get_one("no_config").map_or(false, bool::clone);
 
         if no_config {
-            return Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e));
+            return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
         }
 
         if let Some(ref config) = config::read_config_to_string::<&str>(None) {
-            let raw_config_args = config::parse_config(config);
-            let config_args = Context::command().get_matches_from(raw_config_args);
+            let raw_config_args = config::parse(config);
+            let config_args = Self::command().get_matches_from(raw_config_args);
 
             // If the user did not provide any arguments just read from config.
             if !user_args.args_present() {
-                return Context::from_arg_matches(&config_args).map_err(|e| Error::Config(e));
+                return Self::from_arg_matches(&config_args).map_err(Error::Config);
             }
 
             // If the user did provide arguments we need to reconcile between config and
@@ -152,7 +144,8 @@ impl Context {
             for id in ids {
                 if id == "Context" {
                     continue;
-                } else if id == "dir" {
+                }
+                if id == "dir" {
                     if let Ok(Some(raw)) = user_args.try_get_raw(id) {
                         let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
 
@@ -170,15 +163,15 @@ impl Context {
                         _ => Self::pick_args_from(id, &config_args, &mut args),
                     }
                 } else {
-                    Self::pick_args_from(id, &config_args, &mut args)
+                    Self::pick_args_from(id, &config_args, &mut args);
                 }
             }
 
-            let clargs = Context::command().get_matches_from(args);
-            return Context::from_arg_matches(&clargs).map_err(|e| Error::Config(e));
+            let clargs = Self::command().get_matches_from(args);
+            return Self::from_arg_matches(&clargs).map_err(Error::Config);
         }
 
-        Context::from_arg_matches(&user_args).map_err(|e| Error::ArgParse(e))
+        Self::from_arg_matches(&user_args).map_err(Error::ArgParse)
     }
 
     /// Returns reference to the path of the root directory to be traversed.
@@ -189,18 +182,18 @@ impl Context {
     }
 
     /// The sort-order used for printing.
-    pub fn sort(&self) -> SortType {
+    pub const fn sort(&self) -> SortType {
         self.sort
     }
 
     /// Getter for `dirs_first` field.
-    pub fn dirs_first(&self) -> bool {
+    pub const fn dirs_first(&self) -> bool {
         self.dirs_first
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
     /// sizes; this just determines how much to print.
-    pub fn level(&self) -> Option<usize> {
+    pub const fn level(&self) -> Option<usize> {
         self.level
     }
 
@@ -220,13 +213,13 @@ impl Context {
             builder.case_insensitive(true).unwrap();
         }
 
-        for glob in self.glob.iter() {
+        for glob in &self.glob {
             builder.add(glob)?;
         }
 
         // all subsequent patterns are case insensitive
         builder.case_insensitive(true).unwrap();
-        for glob in self.iglob.iter() {
+        for glob in &self.iglob {
             builder.add(glob)?;
         }
 
@@ -236,11 +229,11 @@ impl Context {
     /// Used to pick either from config or user args when constructing [Context].
     fn pick_args_from(id: &str, matches: &ArgMatches, args: &mut Vec<OsString>) {
         if let Ok(Some(raw)) = matches.try_get_raw(id) {
-            let kebap = id.replace("_", "-");
+            let kebap = id.replace('_', "-");
 
             let raw_args = raw
                 .map(OsStr::to_owned)
-                .map(|s| vec![OsString::from(format!("--{}", kebap)), s])
+                .map(|s| vec![OsString::from(format!("--{kebap}")), s])
                 .filter(|pair| pair[1] != "false")
                 .flatten()
                 .filter(|s| s != "true")
@@ -251,19 +244,10 @@ impl Context {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    ArgParse(ClapError),
-    Config(ClapError),
+    #[error("{0}")]
+    ArgParse(#[source] ClapError),
+    #[error("A configuration file was found but failed to parse: {0}")]
+    Config(#[source] ClapError),
 }
-
-impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ArgParse(e) => write!(f, "{e}"),
-            Self::Config(e) => write!(f, "A configuration file was found but failed to parse: {e}"),
-        }
-    }
-}
-
-impl StdError for Error {}

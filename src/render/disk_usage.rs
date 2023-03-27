@@ -64,7 +64,7 @@ pub struct FileSize {
 
 impl FileSize {
     /// Initializes a [FileSize].
-    pub fn new(bytes: u64, disk_usage: DiskUsage, prefix_kind: PrefixKind, scale: usize) -> Self {
+    pub const fn new(bytes: u64, disk_usage: DiskUsage, prefix_kind: PrefixKind, scale: usize) -> Self {
         Self {
             bytes,
             disk_usage,
@@ -204,7 +204,7 @@ impl FileSize {
         format!("{:len$}", "", len = Self::empty_string_len(ctx))
     }
 
-    fn empty_string_len(ctx: &Context) -> usize {
+    const fn empty_string_len(ctx: &Context) -> usize {
         // 3 places before the decimal
         // 1 for the decimal
         // ctx.scale after the decimal
