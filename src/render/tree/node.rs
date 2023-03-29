@@ -167,7 +167,7 @@ impl Node {
 
     /// Stylizes input, `entity` based on [`LS_COLORS`]
     ///
-    /// [`LS_COLORS`]: crate::render::styles::::LS_COLORS
+    /// [`LS_COLORS`]: crate::render::styles::LS_COLORS
     fn stylize(&self, entity: &str) -> String {
         self.style().foreground.map_or_else(
             || entity.to_string(),
