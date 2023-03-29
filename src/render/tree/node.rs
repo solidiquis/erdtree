@@ -26,7 +26,7 @@ use std::{
 /// uses ANSI colors determined by the file-type and [`LS_COLORS`].
 ///
 /// [`Tree`]: super::Tree
-/// [`LS_COLORS`]: crate::render::theme::LS_COLORS
+/// [`LS_COLORS`]: crate::render::styles::LS_COLORS
 #[derive(Debug)]
 pub struct Node {
     pub depth: usize,
@@ -138,7 +138,7 @@ impl Node {
     /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
     /// [`LS_COLORS`] foreground configuration of the associated file name.
     ///
-    /// [`LS_COLORS`]: crate::render::theme::LS_COLORS
+    /// [`LS_COLORS`]: crate::render::styles::LS_COLORS
     fn get_icon(&self) -> Option<String> {
         if !self.show_icon {
             return None;
@@ -167,7 +167,7 @@ impl Node {
 
     /// Stylizes input, `entity` based on [`LS_COLORS`]
     ///
-    /// [`LS_COLORS`]: crate::render::theme::::LS_COLORS
+    /// [`LS_COLORS`]: crate::render::styles::::LS_COLORS
     fn stylize(&self, entity: &str) -> String {
         self.style().foreground.map_or_else(
             || entity.to_string(),
@@ -248,6 +248,7 @@ impl Node {
         self.display(f, SizeLocation::Left, prefix, ctx)
     }
 
+    /// Unix file identifiers that you'd find in the `ls -l` command.
     #[cfg(unix)]
     pub fn file_type_identifier(&self) -> Option<&str> {
         use std::os::unix::fs::FileTypeExt;
@@ -275,6 +276,7 @@ impl Node {
         Some(iden)
     }
 
+    /// File identifiers.
     #[cfg(not(unix))]
     pub fn file_type_identifier(&self) -> Option<&str> {
         let file_type = self.file_type()?;

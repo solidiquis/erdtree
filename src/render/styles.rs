@@ -26,11 +26,11 @@ pub const VTRT: &str = "\u{251C}\u{2500} ";
 pub static LS_COLORS: OnceCell<LsColors> = OnceCell::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
-/// printing of [super::Tree]'s branches.
+/// printing of [super::tree::Tree]'s branches.
 pub static THEME: OnceCell<ThemesMap> = OnceCell::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
-/// printing of [super::Tree]'s branches for descdendents of symlinks.
+/// printing of [super::tree::Tree]'s branches for descendents of symlinks.
 pub static LINK_THEME: OnceCell<ThemesMap> = OnceCell::new();
 
 /// Runtime evaluated static that contains styles for disk usage output.

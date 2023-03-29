@@ -57,8 +57,9 @@ impl Display for Report<'_> {
         let (total_du, root_unit) = du_info(root_node);
 
         let width_du_col = if ctx.human {
-            total_du_width + root_unit.len() +
-                if matches!(prefix_kind, PrefixKind::Bin) {
+            total_du_width
+                + root_unit.len()
+                + if matches!(prefix_kind, PrefixKind::Bin) {
                     3
                 } else {
                     1
@@ -72,7 +73,10 @@ impl Display for Report<'_> {
 
         let root_name = <OsStr as AsRef<Path>>::as_ref(root_node.file_name()).display();
 
-        writeln!(f, "{root_iden}   {root_du_info:>width_du_col$}   {root_name}")?;
+        writeln!(
+            f,
+            "{root_iden}   {root_du_info:>width_du_col$}   {root_name}"
+        )?;
 
         let base_path = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
 
@@ -80,7 +84,7 @@ impl Display for Report<'_> {
             let node = tree[node_id].get();
             let (du, unit) = du_info(node);
             let du_info = format!("{du} {unit}");
-            let ft_iden = node.file_type_identifier().unwrap_or("");
+            let ft_iden = node.file_type_identifier().unwrap_or("-");
 
             let file = if ctx.file_name {
                 <OsStr as AsRef<Path>>::as_ref(node.file_name()).display()
