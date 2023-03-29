@@ -13,4 +13,5 @@ pub mod order;
 /// contents.
 pub mod tree;
 
-pub use tree::ui::get_ls_colors;
+/// Controls color output.
+pub mod styles;

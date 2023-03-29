@@ -1,5 +1,5 @@
 use super::{
-    disk_usage::{DiskUsage, PrefixKind},
+    disk_usage::{file_size::DiskUsage, unit::PrefixKind},
     order::SortType,
 };
 use clap::{
@@ -76,6 +76,18 @@ pub struct Context {
     /// Disable printing of empty branches
     #[arg(short = 'P', long)]
     pub prune: bool,
+
+    /// Print disk usage information in plain format without ASCII tree
+    #[arg(short, long)]
+    pub report: bool,
+
+    /// Print human-readable disk usage in report
+    #[arg(long)]
+    pub human: bool,
+
+    /// Print file-name in report as opposed to full path
+    #[arg(long)]
+    pub file_name: bool,
 
     /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = SortType::default())]

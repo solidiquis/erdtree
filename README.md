@@ -76,10 +76,13 @@ Options:
   -n, --scale <NUM>                Total number of digits after the decimal to display for disk usage [default: 2]
   -p, --prefix <PREFIX>            Display disk usage as binary or SI units [default: bin] [possible values: bin, si]
   -P, --prune                      Disable printing of empty branches
+  -r, --report                     Print disk usage information in plain format without ASCII tree
+      --human                      Print human-readable disk usage in report
+      --file-name                  Print file-name in report as opposed to full path
   -s, --sort <SORT>                Sort-order to display directory content [default: none] [possible values: name, size, size-rev, none]
       --dirs-first                 Always sorts directories above files
   -S, --follow-links               Traverse symlink directories and consider their disk usage; disabled by default
-  -t, --threads <THREADS>          Number of threads to use; defaults to number of logical cores available [default: 10]
+  -t, --threads <THREADS>          Number of threads to use [default: 3]
       --suppress-size              Omit disk usage from output; disabled by default
       --size-left                  Show the size on the left, decimal aligned
       --no-config                  Don't read configuration file

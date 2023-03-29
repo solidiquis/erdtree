@@ -1,10 +1,10 @@
-use super::super::get_ls_colors;
 use crate::{
     fs::inode::Inode,
     icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
     render::{
         context::Context,
-        disk_usage::{DiskUsage, FileSize},
+        disk_usage::file_size::{DiskUsage, FileSize},
+        styles::get_ls_colors,
     },
 };
 use ansi_term::Color;
@@ -26,7 +26,7 @@ use std::{
 /// uses ANSI colors determined by the file-type and [`LS_COLORS`].
 ///
 /// [`Tree`]: super::Tree
-/// [`LS_COLORS`]: super::ui::LS_COLORS
+/// [`LS_COLORS`]: crate::render::styles::LS_COLORS
 #[derive(Debug)]
 pub struct Node {
     pub depth: usize,
@@ -64,11 +64,6 @@ impl Node {
             style,
             symlink_target,
         }
-    }
-
-    /// Recursively traverse [Node]s, removing any [Node]s that have no children.
-    pub fn prune_directories(&mut self) {
-        todo!();
     }
 
     /// Returns a reference to `file_name`. If file is a symlink then `file_name` is the name of
@@ -143,7 +138,7 @@ impl Node {
     /// Gets stylized icon for node if enabled. Icons without extensions are styled based on the
     /// [`LS_COLORS`] foreground configuration of the associated file name.
     ///
-    /// [`LS_COLORS`]: super::ui::LS_COLORS
+    /// [`LS_COLORS`]: crate::render::styles::LS_COLORS
     fn get_icon(&self) -> Option<String> {
         if !self.show_icon {
             return None;
@@ -172,7 +167,7 @@ impl Node {
 
     /// Stylizes input, `entity` based on [`LS_COLORS`]
     ///
-    /// [`LS_COLORS`]: super::ui::LS_COLORS
+    /// [`LS_COLORS`]: crate::render::styles::::LS_COLORS
     fn stylize(&self, entity: &str) -> String {
         self.style().foreground.map_or_else(
             || entity.to_string(),
@@ -251,6 +246,52 @@ impl Node {
     /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
     pub fn display_size_left(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
         self.display(f, SizeLocation::Left, prefix, ctx)
+    }
+
+    /// Unix file identifiers that you'd find in the `ls -l` command.
+    #[cfg(unix)]
+    pub fn file_type_identifier(&self) -> Option<&str> {
+        use std::os::unix::fs::FileTypeExt;
+
+        let file_type = self.file_type()?;
+
+        let iden = if file_type.is_dir() {
+            "d"
+        } else if file_type.is_file() {
+            "-"
+        } else if file_type.is_symlink() {
+            "l"
+        } else if file_type.is_fifo() {
+            "p"
+        } else if file_type.is_socket() {
+            "s"
+        } else if file_type.is_char_device() {
+            "c"
+        } else if file_type.is_block_device() {
+            "b"
+        } else {
+            return None;
+        };
+
+        Some(iden)
+    }
+
+    /// File identifiers.
+    #[cfg(not(unix))]
+    pub fn file_type_identifier(&self) -> Option<&str> {
+        let file_type = self.file_type()?;
+
+        let iden = if file_type.is_dir() {
+            "d"
+        } else if file_type.is_file() {
+            "-"
+        } else if file_type.is_symlink() {
+            "l"
+        } else {
+            return None;
+        };
+
+        Some(iden)
     }
 }
 

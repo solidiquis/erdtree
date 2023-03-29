@@ -1,8 +1,9 @@
-use crate::render::{context::Context, disk_usage::FileSize, order::Order};
+use crate::render::{context::Context, disk_usage::file_size::FileSize, order::Order, styles};
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
 use indextree::{Arena, NodeId};
 use node::Node;
+use report::Report;
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
@@ -24,8 +25,8 @@ pub mod error;
 /// [`DirEntry`]: ignore::DirEntry
 pub mod node;
 
-/// [ui::LS_COLORS] initialization and ui theme for [Tree].
-pub mod ui;
+/// For generating plain-text report of disk usage without ASCII tree.
+pub mod report;
 
 /// Custom visitor that operates on each thread during filesystem traversal.
 mod visitor;
@@ -59,13 +60,22 @@ impl Tree {
     }
 
     /// Grab a reference to [Context].
-    const fn context(&self) -> &Context {
+    pub const fn context(&self) -> &Context {
         &self.ctx
+    }
+
+    /// Grab a reference to `root`.
+    const fn root(&self) -> NodeId {
+        self.root
     }
 
     /// Grabs a reference to `inner`.
     const fn inner(&self) -> &Arena<Node> {
         &self.inner
+    }
+
+    pub const fn report(&self) -> Report {
+        Report::new(self)
     }
 
     /// Parallel traversal of the root directory and its contents. Parallel traversal relies on
@@ -262,9 +272,9 @@ impl Display for Tree {
             let current_node = inner[current_node_id].get();
 
             let theme = if current_node.is_symlink() {
-                ui::get_link_theme()
+                styles::get_link_theme()
             } else {
-                ui::get_theme()
+                styles::get_theme()
             };
 
             let mut siblings = current_node_id.following_siblings(inner).skip(1).peekable();
@@ -288,7 +298,7 @@ impl Display for Tree {
 
                 if next_node.depth == current_node.depth + 1 {
                     if last_sibling {
-                        prefix_components.push(ui::SEP);
+                        prefix_components.push(styles::SEP);
                     } else {
                         prefix_components.push(theme.get("vt").unwrap());
                     }
