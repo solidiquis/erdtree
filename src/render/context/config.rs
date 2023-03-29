@@ -19,11 +19,11 @@ const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 /// - `$HOME/.config/erdtree/.erdtreerc`
 /// - `$HOME/.erdtreerc`
 pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
-    if let Some(p) = path {
-        return fs::read_to_string(p).ok().map(|l| prepend_arg_prefix(&l));
-    }
-
-    config_from_config_path()
+    path
+        .map(fs::read_to_string)
+        .map(Result::ok)
+        .flatten()
+        .or_else(config_from_config_path)
         .or_else(config_from_xdg_path)
         .or_else(config_from_home)
         .map(|e| prepend_arg_prefix(&e))
