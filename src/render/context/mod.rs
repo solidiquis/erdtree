@@ -1,5 +1,5 @@
 use super::{
-    disk_usage::{file_size::DiskUsage, unit::PrefixKind},
+    disk_usage::{file_size::DiskUsage, units::PrefixKind},
     order::SortType,
 };
 use clap::{

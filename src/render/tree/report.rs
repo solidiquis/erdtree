@@ -1,7 +1,7 @@
 use super::{node::Node, Tree};
 use crate::render::disk_usage::{
     file_size::{FileSize, HumanReadableComponents},
-    unit::PrefixKind,
+    units::PrefixKind,
 };
 use std::{
     convert::AsRef,
