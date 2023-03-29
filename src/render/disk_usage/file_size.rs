@@ -1,4 +1,4 @@
-use super::unit::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
+use super::units::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
 use crate::{render::styles::get_du_theme, Context};
 use clap::ValueEnum;
 use filesize::PathExt;
@@ -122,6 +122,7 @@ impl FileSize {
     pub fn human_readable_components(&self) -> HumanReadableComponents {
         let fbytes = self.bytes as f64;
         let scale = self.scale;
+        let power = u32::try_from(scale).unwrap();
 
         let (size, unit) = match self.prefix_kind {
             PrefixKind::Bin => {
@@ -132,7 +133,7 @@ impl FileSize {
                     (format!("{}", self.bytes), format!("{unit}"))
                 } else {
                     // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if self.bytes <= 10_u64.pow(scale as u32) {
+                    if self.bytes <= 10_u64.pow(power) {
                         (format!("{}", self.bytes), format!("{}", BinPrefix::Base))
                     } else {
                         (
@@ -151,7 +152,7 @@ impl FileSize {
                     (format!("{}", self.bytes), format!("{unit}"))
                 } else {
                     // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if 10_u64.pow(scale as u32) >= base_value {
+                    if 10_u64.pow(power) >= base_value {
                         (format!("{}", self.bytes), format!("{}", SiPrefix::Base))
                     } else {
                         (

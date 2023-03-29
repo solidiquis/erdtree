@@ -207,14 +207,24 @@ impl Tree {
         for node_id in root_id.descendants(tree) {
             let node = tree[node_id].get();
 
-            if node.is_dir() && node_id.children(tree).peekable().peek().is_none() {
+            if !node.is_dir() {
+                continue;
+            }
+
+            if node_id.children(tree).count() == 0 {
                 to_prune.push(node_id);
             }
+        }
+
+        if to_prune.is_empty() {
+            return;
         }
 
         for node_id in to_prune {
             node_id.remove_subtree(tree);
         }
+
+        Self::prune_directories(root_id, tree);
     }
 }
 
@@ -247,22 +257,8 @@ impl Display for Tree {
 
         let root_node = inner[root].get();
 
-        fn display_node(
-            node: &Node,
-            base_prefix: &str,
-            ctx: &Context,
-            f: &mut Formatter<'_>,
-        ) -> fmt::Result {
-            if ctx.size_left && !ctx.suppress_size {
-                node.display_size_left(f, base_prefix, ctx)?;
-            } else {
-                node.display_size_right(f, base_prefix, ctx)?;
-            }
-
-            writeln!(f)
-        }
-
-        display_node(root_node, "", ctx, f)?;
+        root_node.display(f, "", ctx)?;
+        writeln!(f)?;
 
         let mut prefix_components = vec![""];
 
@@ -290,7 +286,8 @@ impl Display for Tree {
             let prefix = current_prefix_components.join("");
 
             if current_node.depth <= level {
-                display_node(current_node, &prefix, ctx, f)?;
+                current_node.display(f, &prefix, ctx)?;
+                writeln!(f)?;
             }
 
             if let Some(next_id) = descendants.peek() {
