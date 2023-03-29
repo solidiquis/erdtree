@@ -135,6 +135,10 @@ impl Tree {
                     Self::prune_directories(root, &mut tree);
                 }
 
+                if ctx.dirs_only {
+                    Self::filter_directories(root, &mut tree);
+                }
+
                 Ok::<(Arena<Node>, NodeId), Error>((tree, root))
             });
 
@@ -225,6 +229,21 @@ impl Tree {
         }
 
         Self::prune_directories(root_id, tree);
+    }
+
+    /// Filter for only directories.
+    fn filter_directories(root: NodeId, tree: &mut Arena<Node>) {
+        let mut to_detach = vec![];
+
+        for descendant_id in root.descendants(tree).skip(1) {
+            if !tree[descendant_id].get().is_dir() {
+                to_detach.push(descendant_id);
+            }
+        }
+
+        for descendant_id in to_detach {
+            descendant_id.detach(tree);
+        }
     }
 }
 

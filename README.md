@@ -69,10 +69,10 @@ Options:
   -g, --glob <GLOB>                Include or exclude files using glob patterns
       --iglob <IGLOB>              Include or exclude files using glob patterns; case insensitive
       --glob-case-insensitive      Process all glob patterns case insensitively
-  -H, --hidden                     Show hidden files; disabled by default
+  -H, --hidden                     Show hidden files
       --ignore-git                 Disable traversal of .git directory when traversing hidden files; disabled by default
-  -I, --icons                      Display file icons; disabled by default
-  -i, --ignore-git-ignore          Ignore .gitignore; disabled by default
+  -I, --icons                      Display file icons
+  -i, --ignore-git-ignore          Ignore .gitignore
   -l, --level <NUM>                Maximum depth to display
   -n, --scale <NUM>                Total number of digits after the decimal to display for disk usage [default: 2]
   -p, --prefix <PREFIX>            Display disk usage as binary or SI units [default: bin] [possible values: bin, si]
@@ -82,12 +82,13 @@ Options:
       --file-name                  Print file-name in report as opposed to full path
   -s, --sort <SORT>                Sort-order to display directory content [default: none] [possible values: name, size, size-rev, none]
       --dirs-first                 Always sorts directories above files
-  -S, --follow-links               Traverse symlink directories and consider their disk usage; disabled by default
+  -S, --follow-links               Traverse symlink directories and consider their disk usage
   -t, --threads <THREADS>          Number of threads to use [default: 3]
-      --suppress-size              Omit disk usage from output; disabled by default
+      --completions <COMPLETIONS>  Print completions for a given shell to stdout [possible values: bash, elvish, fish, powershell, zsh]
+      --dirs-only                  Only print directories
+      --suppress-size              Omit disk usage from output
       --size-left                  Show the size on the left, decimal aligned
       --no-config                  Don't read configuration file
-      --completions <COMPLETIONS>  Print completions for a given shell to stdout [possible values: bash, elvish, fish, powershell, zsh]
   -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version
 ```
