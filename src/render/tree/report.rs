@@ -25,6 +25,7 @@ impl Display for Report<'_> {
         let tree = self.tree.inner();
         let root = self.tree.root();
         let ctx = self.tree.context();
+        let max_depth = ctx.level().unwrap_or(usize::MAX);
         let dir = ctx.dir();
         let prefix_kind = ctx.prefix;
 
@@ -82,6 +83,11 @@ impl Display for Report<'_> {
 
         for node_id in root.descendants(tree).skip(1) {
             let node = tree[node_id].get();
+
+            if node.depth > max_depth {
+                continue;
+            }
+
             let (du, unit) = du_info(node);
             let du_info = format!("{du} {unit}");
             let ft_iden = node.file_type_identifier().unwrap_or("-");

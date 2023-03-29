@@ -48,3 +48,28 @@ fn report_human() {
         )
     )
 }
+
+#[test]
+fn report_with_level() {
+    assert_eq!(
+        utils::run_cmd(&[
+            "--report",
+            "--level",
+            "1",
+            "--sort",
+            "name",
+            "--no-config",
+            "tests/data"
+        ]),
+        indoc!(
+            "
+            d   1241 B   data
+            d    308 B   dream_cycle
+            d    446 B   lipsum
+            -     83 B   necronomicon.txt
+            -    161 B   nemesis.txt
+            -    100 B   nylarlathotep.txt
+            d    143 B   the_yellow_king"
+        )
+    )
+}
