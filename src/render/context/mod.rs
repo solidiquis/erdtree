@@ -45,7 +45,7 @@ pub struct Context {
     #[arg(long)]
     glob_case_insensitive: bool,
 
-    /// Show hidden files; disabled by default
+    /// Show hidden files
     #[arg(short = 'H', long)]
     pub hidden: bool,
 
@@ -53,11 +53,11 @@ pub struct Context {
     #[arg(long)]
     ignore_git: bool,
 
-    /// Display file icons; disabled by default
+    /// Display file icons
     #[arg(short = 'I', long)]
     pub icons: bool,
 
-    /// Ignore .gitignore; disabled by default
+    /// Ignore .gitignore
     #[arg(short, long)]
     pub ignore_git_ignore: bool,
 
@@ -97,7 +97,7 @@ pub struct Context {
     #[arg(long)]
     dirs_first: bool,
 
-    /// Traverse symlink directories and consider their disk usage; disabled by default
+    /// Traverse symlink directories and consider their disk usage
     #[arg(short = 'S', long)]
     pub follow_links: bool,
 
@@ -105,7 +105,15 @@ pub struct Context {
     #[arg(short, long, default_value_t = 3)]
     pub threads: usize,
 
-    /// Omit disk usage from output; disabled by default
+    #[arg(long)]
+    /// Print completions for a given shell to stdout
+    pub completions: Option<clap_complete::Shell>,
+
+    /// Only print directories
+    #[arg(long)]
+    pub dirs_only: bool,
+
+    /// Omit disk usage from output
     #[arg(long)]
     pub suppress_size: bool,
 
@@ -116,10 +124,6 @@ pub struct Context {
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
-
-    #[arg(long)]
-    /// Print completions for a given shell to stdout
-    pub completions: Option<clap_complete::Shell>,
 }
 
 impl Context {
