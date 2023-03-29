@@ -30,6 +30,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
   - [File coloring](#file-coloring)
   - [Icons](#icons)
   - [Completions](#completions)
+  - [Plain view](#plain-view)
 * [Comparisons against similar programs](#comparisons-against-similar-programs)
   - [tree command](#tree-command)
   - [Advantages over exa --tree](#advantages-over-exa---tree)
@@ -223,6 +224,20 @@ this means that the font you are using doesn't include the relevant glyphs. To r
 $ et --completions zsh > ~/.oh-my-zsh/completions/_et
 $ source ~/.zshrc
 ```
+
+### Plain view
+
+`-r, --report` offers a more traditional `du`-like view of disk usage info with the additional of file-type identifiers you'd expect on `ls -l` for POSIX systems or `Get-ChildItem` on Windows.
+
+#### Regular view
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/report.png?raw=true" alt="failed to load png" />
+</p>
+
+#### Human readable
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/report_human.png?raw=true" alt="failed to load png" />
+</p>
 
 ## Comparisons against similar programs
 
