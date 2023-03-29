@@ -34,7 +34,7 @@ impl TryFrom<Metadata> for Inode {
         Ok(Self::new(md.ino(), md.dev(), md.nlink()))
     }
 
-    #[cfg(not(any(unix)))]
+    #[cfg(not(unix))]
     fn try_from(md: Metadata) -> Result<Self, Self::Error> {
         Err(Error {})
     }

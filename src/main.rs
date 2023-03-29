@@ -19,10 +19,7 @@
     clippy::fallible_impl_from
 )]
 use clap::CommandFactory;
-use render::{
-    context::Context,
-    tree::{self, Tree},
-};
+use render::{context::Context, tree::Tree};
 use std::{io::stdout, process::ExitCode};
 
 /// Filesystem operations.
@@ -54,10 +51,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    tree::ui::init();
+    render::styles::init();
+
     let tree = Tree::init(ctx)?;
 
-    println!("{tree}");
+    if tree.context().report {
+        let report = tree.report();
+        println!("{report}");
+    } else {
+        println!("{tree}");
+    }
 
     Ok(())
 }

@@ -33,6 +33,9 @@ pub static THEME: OnceCell<ThemesMap> = OnceCell::new();
 /// printing of [super::Tree]'s branches for descdendents of symlinks.
 pub static LINK_THEME: OnceCell<ThemesMap> = OnceCell::new();
 
+/// Runtime evaluated static that contains styles for disk usage output.
+pub static DU_THEME: OnceCell<HashMap<&'static str, Color>> = OnceCell::new();
+
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
 
@@ -48,6 +51,11 @@ pub fn init() {
 /// Getter for [LS_COLORS]. Panics if not initialized.
 pub fn get_ls_colors() -> &'static LsColors {
     LS_COLORS.get().expect("LS_COLORS not initialized")
+}
+
+/// Getter for [DU_THEME]. Panics if not initialized.
+pub fn get_du_theme() -> &'static HashMap<&'static str, Color> {
+    DU_THEME.get().expect("DU_THEME not initialized")
 }
 
 /// Getter for [THEME]. Panics if not initialized.
@@ -85,4 +93,18 @@ fn init_themes() {
     };
 
     LINK_THEME.set(link_theme).unwrap();
+
+    let du_theme = hash! {
+        "B" => Color::Cyan,
+        "KB" => Color::Yellow,
+        "KiB" => Color::Yellow,
+        "MB" => Color::Green,
+        "MiB" => Color::Green,
+        "GB" => Color::Red,
+        "MiB" => Color::Red,
+        "TB" => Color::Blue,
+        "TiB" => Color::Blue
+    };
+
+    DU_THEME.set(du_theme).unwrap();
 }
