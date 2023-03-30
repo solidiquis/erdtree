@@ -26,6 +26,10 @@ mod test;
 #[command(version = "1.6.0")]
 #[command(about = "erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.", long_about = None)]
 pub struct Context {
+    /// Include aggregate file count in tree output
+    #[arg(short, long)]
+    pub count: bool,
+
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
@@ -108,10 +112,6 @@ pub struct Context {
     #[arg(long)]
     /// Print completions for a given shell to stdout
     pub completions: Option<clap_complete::Shell>,
-
-    /// Include aggregate file count in tree output
-    #[arg(long)]
-    pub count: bool,
 
     /// Only print directories
     #[arg(long)]

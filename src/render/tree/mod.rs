@@ -250,14 +250,14 @@ impl Tree {
         }
     }
 
-    fn compute_node_children_metadata(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
-        let mut md = FileCount::default();
+    fn compute_file_count(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
+        let mut count = FileCount::default();
 
         for child_id in node_id.children(tree) {
-            md.update(tree[child_id].get());
+            count.update(tree[child_id].get());
         }
 
-        md
+        count
     }
 }
 
@@ -296,8 +296,8 @@ impl Display for Tree {
             node.display(f, prefix, ctx)?;
 
             if show_count {
-                let md = Self::compute_node_children_metadata(node_id, inner);
-                file_count_data.push(md);
+                let count = Self::compute_file_count(node_id, inner);
+                file_count_data.push(count);
             }
 
             writeln!(f)

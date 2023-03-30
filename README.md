@@ -65,6 +65,7 @@ Arguments:
   [DIR]  Root directory to traverse; defaults to current working directory
 
 Options:
+  -c, --count                      Include aggregate file count in tree output
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: logical] [possible values: logical, physical]
   -g, --glob <GLOB>                Include or exclude files using glob patterns
       --iglob <IGLOB>              Include or exclude files using glob patterns; case insensitive
@@ -85,7 +86,6 @@ Options:
   -S, --follow-links               Traverse symlink directories and consider their disk usage
   -t, --threads <THREADS>          Number of threads to use [default: 3]
       --completions <COMPLETIONS>  Print completions for a given shell to stdout [possible values: bash, elvish, fish, powershell, zsh]
-      --count                      Include aggregate file count in tree output
       --dirs-only                  Only print directories
       --suppress-size              Omit disk usage from output
       --size-left                  Show the size on the left, decimal aligned
