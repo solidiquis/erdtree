@@ -3,6 +3,25 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.7.0] - 2023-03-30
+
+## What's Changed
+* Fix windows can not recognize the tag version when publishing by @Tlntin in https://github.com/solidiquis/erdtree/pull/91
+* Fix the problem that test actions cannot upload windows binary files, add the function of custom form to set tag version. by @Tlntin in https://github.com/solidiquis/erdtree/pull/94
+* Reduce default thread count by @solidiquis in https://github.com/solidiquis/erdtree/pull/99
+* option for plain text disk usage reporting by @solidiquis in https://github.com/solidiquis/erdtree/pull/102
+* Prune bug by @solidiquis in https://github.com/solidiquis/erdtree/pull/103
+* dirs-only by @solidiquis in https://github.com/solidiquis/erdtree/pull/104
+* Feature/file count by @solidiquis in https://github.com/solidiquis/erdtree/pull/105
+
+## New Contributors
+* @CosmicHorrorDev made their first contribution in https://github.com/solidiquis/erdtree/pull/93
+* @KP64 made their first contribution in https://github.com/solidiquis/erdtree/pull/100
+* @Masynchin made their first contribution in https://github.com/solidiquis/erdtree/pull/98
+
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/v1.6.0...1.7.0
+
+
 ## [1.6.0] - 2023-03-20
 
 ### What's Changed
