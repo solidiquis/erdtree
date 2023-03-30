@@ -1,12 +1,11 @@
 use std::sync::mpsc::Sender;
 
-use super::{Context, Error, Node};
+use super::{Context, Node};
 use ignore::{DirEntry, Error as IgnoreError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 
 pub enum TraversalState {
     Ongoing(Node),
     Done,
-    Error(Error),
 }
 
 pub struct Branch<'a> {
