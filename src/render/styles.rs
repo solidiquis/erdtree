@@ -101,7 +101,7 @@ fn init_themes() {
         "MB" => Color::Green,
         "MiB" => Color::Green,
         "GB" => Color::Red,
-        "MiB" => Color::Red,
+        "GiB" => Color::Red,
         "TB" => Color::Blue,
         "TiB" => Color::Blue
     };
