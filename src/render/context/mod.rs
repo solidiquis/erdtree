@@ -113,6 +113,10 @@ pub struct Context {
     #[arg(long)]
     pub dirs_only: bool,
 
+    /// Include aggregate file count in tree output
+    #[arg(long)]
+    pub count: bool,
+
     /// Omit disk usage from output
     #[arg(long)]
     pub suppress_size: bool,
