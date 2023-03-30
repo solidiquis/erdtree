@@ -11,6 +11,7 @@ use ansi_term::Color;
 use ansi_term::Style;
 use ignore::DirEntry;
 use indextree::{Arena, Node as NodeWrapper, NodeId};
+use layout::SizeLocation;
 use lscolors::Style as LS_Style;
 use std::{
     borrow::{Cow, ToOwned},
@@ -20,6 +21,9 @@ use std::{
     fs::{self, FileType},
     path::{Path, PathBuf},
 };
+
+/// For determining orientation of disk usage information for [Node].
+mod layout;
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
@@ -224,10 +228,10 @@ impl Node {
 
         match size_loc {
             SizeLocation::Right => {
-                write!(f, "{prefix}{icon:<icon_padding$}{styled_name} {size}",)
+                write!(f, "{prefix}{icon:<icon_padding$}{styled_name} {size}")
             }
             SizeLocation::Left => {
-                write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}",)
+                write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}")
             }
         }
     }
@@ -354,41 +358,5 @@ impl From<(&DirEntry, &Context)> for Node {
 impl From<(NodeId, &mut Arena<Self>)> for &Node {
     fn from((node_id, tree): (NodeId, &mut Arena<Self>)) -> Self {
         tree.get(node_id).map(NodeWrapper::get).unwrap()
-    }
-}
-
-/// Simple struct to define location to put the `FileSize` while printing a `Node`
-#[derive(Copy, Clone, Default)]
-enum SizeLocation {
-    #[default]
-    Right,
-    Left,
-}
-
-impl SizeLocation {
-    /// Returns a string to use when a node has no filesize, such as empty directories
-    fn default_string(self, ctx: &Context) -> String {
-        match self {
-            Self::Right => String::new(),
-            Self::Left => FileSize::empty_string(ctx),
-        }
-    }
-
-    /// Given a [`FileSize`], style it in the expected way for its printing location
-    fn format(self, size: &FileSize) -> String {
-        match self {
-            Self::Right => format!("({})", size.format(false)),
-            Self::Left => size.format(true),
-        }
-    }
-}
-
-impl From<&Context> for SizeLocation {
-    fn from(ctx: &Context) -> Self {
-        if ctx.size_left && !ctx.suppress_size {
-            Self::Left
-        } else {
-            Self::Right
-        }
     }
 }

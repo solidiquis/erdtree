@@ -1,4 +1,5 @@
 use crate::render::{context::Context, disk_usage::file_size::FileSize, order::Order, styles};
+use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
 use indextree::{Arena, NodeId};
@@ -15,6 +16,9 @@ use std::{
     thread,
 };
 use visitor::{BranchVisitorBuilder, TraversalState};
+
+/// Operations to handle and display aggregate file counts based on their type.
+mod count;
 
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
@@ -245,6 +249,16 @@ impl Tree {
             descendant_id.detach(tree);
         }
     }
+
+    fn compute_file_count(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
+        let mut count = FileCount::default();
+
+        for child_id in node_id.children(tree) {
+            count.update(tree[child_id].get());
+        }
+
+        count
+    }
 }
 
 impl TryFrom<&Context> for WalkParallel {
@@ -271,13 +285,25 @@ impl Display for Tree {
         let inner = self.inner();
         let level = self.level();
         let ctx = self.context();
+        let show_count = ctx.count;
+        let mut file_count_data = vec![];
 
         let mut descendants = root.descendants(inner).skip(1).peekable();
 
-        let root_node = inner[root].get();
+        let mut display_node = |node_id: NodeId, prefix: &str| -> fmt::Result {
+            let node = inner[node_id].get();
 
-        root_node.display(f, "", ctx)?;
-        writeln!(f)?;
+            node.display(f, prefix, ctx)?;
+
+            if show_count {
+                let count = Self::compute_file_count(node_id, inner);
+                file_count_data.push(count);
+            }
+
+            writeln!(f)
+        };
+
+        display_node(root, "")?;
 
         let mut prefix_components = vec![""];
 
@@ -289,7 +315,7 @@ impl Display for Tree {
             let theme = if current_node.is_symlink() {
                 styles::get_link_theme()
             } else {
-                styles::get_theme()
+                styles::get_tree_theme()
             };
 
             let mut siblings = current_node_id.following_siblings(inner).skip(1).peekable();
@@ -305,8 +331,7 @@ impl Display for Tree {
             let prefix = current_prefix_components.join("");
 
             if current_node.depth <= level {
-                current_node.display(f, &prefix, ctx)?;
-                writeln!(f)?;
+                display_node(current_node_id, &prefix)?;
             }
 
             if let Some(next_id) = descendants.peek() {
@@ -324,6 +349,10 @@ impl Display for Tree {
                     prefix_components.truncate(prefix_components.len() - depth_delta);
                 }
             }
+        }
+
+        if !file_count_data.is_empty() {
+            write!(f, "\n{}", FileCount::from(file_count_data))?;
         }
 
         Ok(())

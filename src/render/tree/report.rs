@@ -1,4 +1,4 @@
-use super::{node::Node, Tree};
+use super::{node::Node, FileCount, Tree};
 use crate::render::disk_usage::{
     file_size::{FileSize, HumanReadableComponents},
     units::PrefixKind,
@@ -10,11 +10,13 @@ use std::{
     path::Path,
 };
 
+/// For a plain text output of disk usage information akin to `du`.
 pub struct Report<'a> {
     tree: &'a Tree,
 }
 
 impl<'a> Report<'a> {
+    /// Initializes a [Self] with a reference to [Tree].
     pub const fn new(tree: &'a Tree) -> Self {
         Self { tree }
     }
@@ -28,6 +30,8 @@ impl Display for Report<'_> {
         let max_depth = ctx.level().unwrap_or(usize::MAX);
         let dir = ctx.dir();
         let prefix_kind = ctx.prefix;
+        let show_count = ctx.count;
+        let mut file_count_data = vec![];
 
         let du_info = |node: &Node| {
             if ctx.human {
@@ -49,6 +53,11 @@ impl Display for Report<'_> {
         };
 
         let root_node = tree[root].get();
+
+        if show_count {
+            let count = Tree::compute_file_count(root, tree);
+            file_count_data.push(count);
+        }
 
         let total_du_width = root_node
             .file_size()
@@ -84,6 +93,11 @@ impl Display for Report<'_> {
         for node_id in root.descendants(tree).skip(1) {
             let node = tree[node_id].get();
 
+            if show_count {
+                let count = Tree::compute_file_count(node_id, tree);
+                file_count_data.push(count);
+            }
+
             if node.depth > max_depth {
                 continue;
             }
@@ -104,6 +118,10 @@ impl Display for Report<'_> {
             };
 
             writeln!(f, "{ft_iden}   {du_info:>width_du_col$}   {file}")?;
+        }
+
+        if !file_count_data.is_empty() {
+            write!(f, "\n{}", FileCount::from(file_count_data))?;
         }
 
         Ok(())

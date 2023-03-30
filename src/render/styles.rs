@@ -27,7 +27,7 @@ pub static LS_COLORS: OnceCell<LsColors> = OnceCell::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
 /// printing of [super::tree::Tree]'s branches.
-pub static THEME: OnceCell<ThemesMap> = OnceCell::new();
+pub static TREE_THEME: OnceCell<ThemesMap> = OnceCell::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
 /// printing of [super::tree::Tree]'s branches for descendents of symlinks.
@@ -59,13 +59,13 @@ pub fn get_du_theme() -> &'static HashMap<&'static str, Color> {
 }
 
 /// Getter for [THEME]. Panics if not initialized.
-pub fn get_theme() -> &'static ThemesMap {
-    THEME.get().expect("THEME not initialized")
+pub fn get_tree_theme() -> &'static ThemesMap {
+    TREE_THEME.get().expect("TREE_THEME not initialized")
 }
 
 /// Getter for [LINK_THEME]. Panics if not initialized.
 pub fn get_link_theme() -> &'static ThemesMap {
-    LINK_THEME.get().expect("THEME not initialized")
+    LINK_THEME.get().expect("LINK_THEME not initialized")
 }
 
 /// Initializes [LS_COLORS] by reading in the `LS_COLORS` environment variable. If it isn't set, a
@@ -84,7 +84,7 @@ fn init_themes() {
         "vtrt" => format!("{}", Color::Purple.paint(VTRT))
     };
 
-    THEME.set(theme).unwrap();
+    TREE_THEME.set(theme).unwrap();
 
     let link_theme = hash! {
         "vt" => format!("{}", Color::Red.paint(VT)),

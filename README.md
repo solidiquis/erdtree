@@ -65,6 +65,7 @@ Arguments:
   [DIR]  Root directory to traverse; defaults to current working directory
 
 Options:
+  -c, --count                      Include aggregate file count in tree output
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: logical] [possible values: logical, physical]
   -g, --glob <GLOB>                Include or exclude files using glob patterns
       --iglob <IGLOB>              Include or exclude files using glob patterns; case insensitive
