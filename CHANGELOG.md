@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.7.1] - 2023-03-30
+
+## What's Changed
+* fix issue where not-existent directory as cli arg causes infinite loop by @solidiquis in https://github.com/solidiquis/erdtree/pull/107
+
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/1.7.0...v1.7.1
+
 ## [1.7.0] - 2023-03-30
 
 ## What's Changed

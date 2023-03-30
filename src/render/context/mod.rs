@@ -23,7 +23,7 @@ mod test;
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "1.7.0")]
+#[command(version = "1.7.1")]
 #[command(about = "erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis tool.", long_about = None)]
 pub struct Context {
     /// Include aggregate file count in tree output
