@@ -1,11 +1,12 @@
 [package]
 name = "erdtree"
-version = "1.6.0"
+version = "1.7.0"
 edition = "2021"
 authors = ["Benjamin Nguyen <benjamin.van.nguyen@gmail.com>"]
 description = """
-erdtree (et) is vibrant multi-threaded filetree visualizer and disk usage analyzer
-that respects .gitignore and hidden file rules by default.
+erdtree (et) is a multi-threaded file-tree visualization and disk usage
+analysis tool that respects gitignore and hidden file rules offering a modern
+alternative to tree and du.
 """
 documentation = "https://github.com/solidiquis/erdtree"
 homepage = "https://github.com/solidiquis/erdtree"

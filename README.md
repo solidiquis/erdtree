@@ -5,7 +5,7 @@
 [![Packaging status](https://repology.org/badge/tiny-repos/erdtree.svg)](https://repology.org/project/erdtree/versions)
 [![Crates.io](https://img.shields.io/crates/d/erdtree)](https://crates.io/crates/erdtree)
 
-A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyzer that respects hidden files and `.gitignore` rules by default i.e. the secret love child of [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)).
+A modern, multi-threaded file-tree visualization and disk usage analysis tool that respects hidden file and `.gitignore` i.e. the secret love child of [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)).
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo.png?raw=true" alt="failed to load picture" />
@@ -22,6 +22,7 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 * [Installation](#installation)
 * [Info](#info)
   - [Configuration file](#configuration-file)
+  - [Parallelism](#parallelism)
   - [Binary prefix or SI prefix](#binary-prefix-or-si-prefix)
   - [Logical or physical disk usage](#logical-or-physical-disk-usage)
   - [How are directory sizes computed](#how-are-directory-sizes-computed)
@@ -53,8 +54,6 @@ A modern, vibrant, and multi-threaded file-tree visualizer and disk usage analyz
 If the chosen defaults don't meet your requirements and you don't want to bloat your shell configs with aliases, you can use a [configuration file](#configuration-file) instead.
 
 ## Usage
-
-**Note**: The amount of threads used by default is dependent upon how many logical CPUs available in your system.
 
 ```
 erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.
@@ -158,14 +157,36 @@ Arguments passed to `erdtree` take precedence. If you have a config that you wou
 Here is an example of a valid config:
 
 ```
-$ cat $HOME/.erdtreerc
---level 2
---icons
---scale 3
-
-# You can use the short names too
+$ cat $HOME/.config/erdtree/.erdtreerc
+# Long or short names work
 -s size
+
+# I prefer physical size
+--disk-usage physical
+
+# ooo pwetty
+--icons
+
+# This is prettier.. thanks bryceberger
+--size-left
+--prune
 ```
+
+### Parallelism
+
+A common question people have about `erdtree` is how it benefits from parallelism when disk I/O does serial processing, i.e. it can only ever service one request at a time.
+
+The idea behind leveraging parallelism for disk reads is that despite serial processing you'll still get higher throughput as saturating the disk queue depth with user-space requests allows it to process requests in aggregate rather than waiting for a single-thread to send a single request at a time and doing some CPU-bound work with the response before sending another.
+
+Here are some crude benchmarks demonstrating the relationship between performance and thread-count.
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/thread_performance.png?raw=true" alt="failed to load png" />
+</p>
+
+It's important to note that some parallelism does improve performance but after a certain threshold you do get dimishing returns. As [Amdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law) suggests, there is an asymptotic threshold for the speedup which is a function of thread-count. Once you've approached that threshold you're just paying the additional cost of managing a larger thread-pool with no added benefit.
+
+If you'd like more rigorous empirical data going into how parallelism benefits both SSD and HDD checkout [this article](https://pkolaczk.github.io/disk-parallelism/).
 
 ### Binary prefix or SI Prefix
 
