@@ -97,7 +97,13 @@ impl Tree {
 
                 let mut root_id = None;
 
-                while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
+                while let Ok(state) = rx.recv() {
+                    let node = match state {
+                        TraversalState::Done => break,
+                        TraversalState::Ongoing(n) => n,
+                        TraversalState::Error(e) => return Err(e),
+                    };
+
                     if node.is_dir() {
                         let node_path = node.path();
 
@@ -148,11 +154,15 @@ impl Tree {
 
             let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
 
-            let walker = WalkParallel::try_from(ctx)?;
-
-            walker.visit(&mut visitor_builder);
-
-            tx.send(TraversalState::Done).unwrap();
+            match WalkParallel::try_from(ctx) {
+                Ok(walker) => {
+                    walker.visit(&mut visitor_builder);
+                    tx.send(TraversalState::Done).unwrap();
+                },
+                Err(e) => {
+                    tx.send(TraversalState::Error(e)).unwrap();
+                }
+            }
 
             res.join().unwrap()
         })
