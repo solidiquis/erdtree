@@ -27,7 +27,14 @@ fn file_count() {
 #[test]
 fn file_count_report() {
     assert_eq!(
-        utils::run_cmd(&["--count", "--report", "--sort", "name", "--no-config", "tests/data"]),
+        utils::run_cmd(&[
+            "--count",
+            "--report",
+            "--sort",
+            "name",
+            "--no-config",
+            "tests/data"
+        ]),
         indoc!(
             "
             d   1241 B   data
@@ -45,4 +52,3 @@ fn file_count_report() {
         ),
     )
 }
-

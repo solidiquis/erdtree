@@ -99,8 +99,8 @@ impl Tree {
 
                 while let Ok(state) = rx.recv() {
                     let node = match state {
-                        TraversalState::Done => break,
                         TraversalState::Ongoing(n) => n,
+                        TraversalState::Done => break,
                         TraversalState::Error(e) => return Err(e),
                     };
 
@@ -158,7 +158,8 @@ impl Tree {
                 Ok(walker) => {
                     walker.visit(&mut visitor_builder);
                     tx.send(TraversalState::Done).unwrap();
-                },
+                }
+
                 Err(e) => {
                     tx.send(TraversalState::Error(e)).unwrap();
                 }
