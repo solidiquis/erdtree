@@ -109,13 +109,13 @@ pub struct Context {
     /// Print completions for a given shell to stdout
     pub completions: Option<clap_complete::Shell>,
 
-    /// Only print directories
-    #[arg(long)]
-    pub dirs_only: bool,
-
     /// Include aggregate file count in tree output
     #[arg(long)]
     pub count: bool,
+
+    /// Only print directories
+    #[arg(long)]
+    pub dirs_only: bool,
 
     /// Omit disk usage from output
     #[arg(long)]
