@@ -19,10 +19,8 @@ const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 /// - `$HOME/.config/erdtree/.erdtreerc`
 /// - `$HOME/.erdtreerc`
 pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
-    path
-        .map(fs::read_to_string)
-        .map(Result::ok)
-        .flatten()
+    path.map(fs::read_to_string)
+        .and_then(Result::ok)
         .or_else(config_from_config_path)
         .or_else(config_from_xdg_path)
         .or_else(config_from_home)

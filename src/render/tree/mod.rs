@@ -87,6 +87,7 @@ impl Tree {
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
     fn traverse(ctx: &Context) -> Result<(Arena<Node>, NodeId)> {
+        let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
 
         thread::scope(|s| {
@@ -147,8 +148,6 @@ impl Tree {
             });
 
             let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
-
-            let walker = WalkParallel::try_from(ctx)?;
 
             walker.visit(&mut visitor_builder);
 
