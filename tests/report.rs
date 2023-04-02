@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn report() {
     assert_eq!(
-        utils::run_cmd(&["--report", "--sort", "name", "--no-config", "tests/data"]),
+        utils::run_cmd(&["--report", "--sort", "name", "tests/data"]),
         indoc!(
             "
             d   1241 B   data
@@ -30,7 +30,6 @@ fn report_human() {
             "--human",
             "--sort",
             "name",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(
@@ -58,7 +57,6 @@ fn report_with_level() {
             "1",
             "--sort",
             "name",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(

@@ -10,7 +10,6 @@ fn glob() {
             "name",
             "--glob",
             "*.txt",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(
@@ -36,7 +35,6 @@ fn glob_negative() {
             "name",
             "--glob",
             "!*.txt",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(
@@ -59,7 +57,6 @@ fn glob_case_insensitive() {
             "--glob",
             "*.TXT",
             "--glob-case-insensitive",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(
@@ -85,7 +82,6 @@ fn iglob() {
             "name",
             "--iglob",
             "*.TXT",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(

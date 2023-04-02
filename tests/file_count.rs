@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn file_count() {
     assert_eq!(
-        utils::run_cmd(&["--count", "--sort", "name", "--no-config", "tests/data"]),
+        utils::run_cmd(&["--count", "--sort", "name", "tests/data"]),
         indoc!(
             "
             data (1.21 KiB)
@@ -32,7 +32,6 @@ fn file_count_report() {
             "--report",
             "--sort",
             "name",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(

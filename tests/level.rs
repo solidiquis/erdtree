@@ -10,7 +10,6 @@ fn level() {
             "name",
             "--level",
             "1",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(

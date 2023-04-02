@@ -24,7 +24,6 @@ mod test {
                 "--sort",
                 "name",
                 "--follow-links",
-                "--no-config",
                 &link_canonical
             ]),
             indoc!(

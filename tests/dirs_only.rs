@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn dirs_only() {
     assert_eq!(
-        utils::run_cmd(&["--dirs-only", "--sort", "name", "--no-config", "tests/data"]),
+        utils::run_cmd(&["--dirs-only", "--sort", "name", "tests/data"]),
         indoc!(
             "
             data (1.21 KiB)
