@@ -23,7 +23,7 @@ fn config() {
 
     let icons = context.icons;
 
-    assert!(icons, "Failed to propertly read 'icons' from config");
+    assert!(icons, "Failed to properly read 'icons' from config");
 }
 
 fn context_from_config() -> Option<Context> {
