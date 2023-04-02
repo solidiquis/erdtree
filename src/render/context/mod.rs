@@ -53,8 +53,8 @@ pub struct Context {
     #[arg(short = 'H', long)]
     pub hidden: bool,
 
-    /// Disable traversal of .git directory when traversing hidden files; disabled by default
-    #[arg(long)]
+    /// Disable traversal of .git directory when traversing hidden files
+    #[arg(long, requires = "hidden")]
     ignore_git: bool,
 
     /// Display file icons
