@@ -203,8 +203,8 @@ Logical sizes are reported by default but you can toggle the reporting to physic
 ### How are directory sizes computed
 
 - A directory will have a size equal to the sum of the sizes of all of its entries.
-- Hidden files, files excluded by `.gitignore`, and files excluded via globbing will be ommitted from the disk usages of their parent directories.
-- Files/Directories that don't have read permissions will be ommitted from the disk usages of their parent directories.
+- Hidden files, files excluded by `.gitignore`, and files excluded via globbing will be omitted from the disk usages of their parent directories.
+- Files/Directories that don't have read permissions will be omitted from the disk usages of their parent directories.
 - Special files such a named pipes, sockets, etc. have negligible sizes so their disk usage aren't reported.
 
 ### Symlinks
