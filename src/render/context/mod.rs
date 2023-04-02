@@ -86,11 +86,11 @@ pub struct Context {
     pub report: bool,
 
     /// Print human-readable disk usage in report
-    #[arg(long)]
+    #[arg(long, requires = "report")]
     pub human: bool,
 
     /// Print file-name in report as opposed to full path
-    #[arg(long)]
+    #[arg(long, requires = "report")]
     pub file_name: bool,
 
     /// Sort-order to display directory content

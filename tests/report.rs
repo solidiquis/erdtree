@@ -73,3 +73,15 @@ fn report_with_level() {
         )
     )
 }
+
+#[test]
+#[should_panic]
+fn report_requires_human() {
+    utils::run_cmd(&["--human"]);
+}
+
+#[test]
+#[should_panic]
+fn report_requires_file_name() {
+    utils::run_cmd(&["--file-name"]);
+}
