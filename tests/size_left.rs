@@ -3,7 +3,7 @@ mod utils;
 #[test]
 fn size_left_bin() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--no-config", "--size-left", "tests/data"]),
+        utils::run_cmd(&["--sort", "name", "--size-left", "tests/data"]),
         "1.21 KiB data
    308   B ├─ dream_cycle
    308   B │  └─ polaris.txt
@@ -23,7 +23,6 @@ fn size_left_si() {
         utils::run_cmd(&[
             "--sort",
             "name",
-            "--no-config",
             "-p",
             "si",
             "--size-left",
@@ -48,7 +47,6 @@ fn size_left_altered_precision() {
         utils::run_cmd(&[
             "--sort",
             "name",
-            "--no-config",
             "-n",
             "3",
             "--size-left",

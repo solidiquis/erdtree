@@ -10,7 +10,6 @@ fn prune() {
             "name",
             "--glob",
             "*.txt",
-            "--no-config",
             "--prune",
             "tests/data"
         ]),

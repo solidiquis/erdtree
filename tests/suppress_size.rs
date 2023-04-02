@@ -9,7 +9,6 @@ fn suppress_size() {
             "--suppress-size",
             "--sort",
             "name",
-            "--no-config",
             "tests/data"
         ]),
         indoc!(
