@@ -25,13 +25,7 @@ fn report() {
 #[test]
 fn report_human() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--report",
-            "--human",
-            "--sort",
-            "name",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--report", "--human", "--sort", "name", "tests/data"]),
         indoc!(
             "
             d     1.21 KiB   data
@@ -51,14 +45,7 @@ fn report_human() {
 #[test]
 fn report_with_level() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--report",
-            "--level",
-            "1",
-            "--sort",
-            "name",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--report", "--level", "1", "--sort", "name", "tests/data"]),
         indoc!(
             "
             d   1241 B   data

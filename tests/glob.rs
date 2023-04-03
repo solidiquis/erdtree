@@ -5,13 +5,7 @@ mod utils;
 #[test]
 fn glob() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--glob",
-            "*.txt",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--sort", "name", "--glob", "*.txt", "tests/data"]),
         indoc!(
             "
             data (1.07 KiB)
@@ -30,13 +24,7 @@ fn glob() {
 #[test]
 fn glob_negative() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--glob",
-            "!*.txt",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--sort", "name", "--glob", "!*.txt", "tests/data"]),
         indoc!(
             "
             data (143 B)
@@ -77,13 +65,7 @@ fn glob_case_insensitive() {
 #[test]
 fn iglob() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--iglob",
-            "*.TXT",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--sort", "name", "--iglob", "*.TXT", "tests/data"]),
         indoc!(
             "
             data (1.07 KiB)
