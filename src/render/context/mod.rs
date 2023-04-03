@@ -39,7 +39,7 @@ pub struct Context {
 
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
-    glob: Vec<String>,
+    pub glob: Vec<String>,
 
     /// Include or exclude files using glob patterns; case insensitive
     #[arg(long)]
@@ -128,13 +128,22 @@ pub struct Context {
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
+
+    /// Take input from Stdin
+    #[arg(long, hide = true)]
+    pub stdin: bool,
 }
 
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let user_args = Self::command().args_override_self(true).get_matches();
+        let mut args: Vec<_> = std::env::args().collect();
+        crate::utils::detect_stdin(&mut args);
+
+        let user_args = Self::command()
+            .args_override_self(true)
+            .get_matches_from(args);
 
         let no_config = user_args.get_one("no_config").map_or(false, bool::clone);
 

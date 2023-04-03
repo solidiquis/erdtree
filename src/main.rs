@@ -20,7 +20,10 @@
 )]
 use clap::CommandFactory;
 use render::{context::Context, tree::Tree};
-use std::{io::stdout, process::ExitCode};
+use std::{
+    io::{stdout, BufRead},
+    process::ExitCode,
+};
 
 /// Filesystem operations.
 mod fs;
@@ -44,7 +47,17 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let ctx = Context::init()?;
+    let mut ctx = Context::init()?;
+
+    if ctx.stdin {
+        let mut stdin_lines = std::io::stdin()
+            .lock()
+            .lines()
+            .filter_map(|s| s.ok())
+            .filter(|l| !l.is_empty())
+            .collect::<Vec<String>>();
+        ctx.glob.append(&mut stdin_lines);
+    }
 
     if let Some(shell) = ctx.completions {
         clap_complete::generate(shell, &mut Context::command(), "et", &mut stdout().lock());
