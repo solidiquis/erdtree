@@ -28,8 +28,8 @@ fn glob_negative() {
         indoc!(
             "
             data (143 B)
-            ├─ dream_cycle 
-            ├─ lipsum 
+            ├─ dream_cycle
+            ├─ lipsum
             └─ the_yellow_king (143 B)
                └─ cassildas_song.md (143 B)"
         )
@@ -113,22 +113,22 @@ fn glob_stdin() {
         indoc!(
             "
             erdtree (304 B)
-            ├─ assets 
-            ├─ src 
-            │  ├─ fs 
-            │  └─ render 
-            │     ├─ context 
-            │     ├─ disk_usage 
-            │     └─ tree 
-            │        └─ node 
+            ├─ assets
+            ├─ src
+            │  ├─ fs
+            │  └─ render
+            │     ├─ context
+            │     ├─ disk_usage
+            │     └─ tree
+            │        └─ node
             └─ tests (304 B)
                ├─ data (304 B)
-               │  ├─ dream_cycle 
-               │  ├─ lipsum 
+               │  ├─ dream_cycle
+               │  ├─ lipsum
                │  ├─ nemesis.txt (161 B)
                │  └─ the_yellow_king (143 B)
                │     └─ cassildas_song.md (143 B)
-               └─ utils 
+               └─ utils
 
             "
         )

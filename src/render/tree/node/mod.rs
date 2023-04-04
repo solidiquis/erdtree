@@ -213,6 +213,12 @@ impl Node {
             |size| size_loc.format(size),
         );
 
+        let size_padding = if size.is_empty() {
+            String::new()
+        } else {
+            String::from(" ")
+        };
+
         let icon = if self.show_icon {
             self.get_icon().unwrap()
         } else {
@@ -228,7 +234,7 @@ impl Node {
 
         match size_loc {
             SizeLocation::Right => {
-                write!(f, "{prefix}{icon:<icon_padding$}{styled_name} {size}")
+                write!(f, "{prefix}{icon:<icon_padding$}{styled_name}{size_padding}{size}")
             }
             SizeLocation::Left => {
                 write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}")
