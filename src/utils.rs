@@ -25,21 +25,3 @@ where
         .filter(|item| set.insert(item.to_owned()))
         .collect::<Vec<T>>()
 }
-
-/// Follow the naming convention and use "-" to specify a Standard Input.
-/// Retain "-" from [`args`] and add "--stdin" if necessary.
-pub fn detect_stdin(args: &mut Vec<String>) {
-    let dash = String::from("-");
-    let stdin_flag = String::from("--stdin");
-
-    let mut is_stdin = false;
-    args.retain(|e| {
-        if *e == dash {
-            is_stdin = true
-        };
-        *e != dash
-    });
-    if is_stdin && !args.contains(&stdin_flag) {
-        args.push(stdin_flag)
-    }
-}

@@ -234,7 +234,10 @@ impl Node {
 
         match size_loc {
             SizeLocation::Right => {
-                write!(f, "{prefix}{icon:<icon_padding$}{styled_name}{size_padding}{size}")
+                write!(
+                    f,
+                    "{prefix}{icon:<icon_padding$}{styled_name}{size_padding}{size}"
+                )
             }
             SizeLocation::Left => {
                 write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}")

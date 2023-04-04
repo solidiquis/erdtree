@@ -6,9 +6,11 @@ use clap::{
     parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
 };
 use ignore::overrides::{Override, OverrideBuilder};
+use is_terminal::IsTerminal;
 use std::{
     convert::From,
     ffi::{OsStr, OsString},
+    io::{stdin, BufRead},
     path::{Path, PathBuf},
 };
 
@@ -128,10 +130,6 @@ pub struct Context {
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
-
-    /// Take input from Stdin
-    #[arg(long, hide = true)]
-    pub stdin: bool,
 }
 
 impl Context {
@@ -139,7 +137,19 @@ impl Context {
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
         let mut args: Vec<_> = std::env::args().collect();
-        crate::utils::detect_stdin(&mut args);
+
+        // If there's input on stdin we add each line as a separate glob pattern
+        if !stdin().is_terminal() {
+            stdin()
+                .lock()
+                .lines()
+                .filter_map(|s| s.ok())
+                .filter(|l| !l.is_empty())
+                .for_each(|line| {
+                    args.push("--glob".into());
+                    args.push(line);
+                });
+        }
 
         let user_args = Self::command()
             .args_override_self(true)
