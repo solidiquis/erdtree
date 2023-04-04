@@ -211,7 +211,7 @@ impl Tree {
     fn prune_directories(root_id: NodeId, tree: &mut Arena<Node>) {
         let mut to_prune = vec![];
 
-        for node_id in root_id.descendants(tree) {
+        for node_id in root_id.descendants(tree).skip(1) {
             let node = tree[node_id].get();
 
             if !node.is_dir() {

@@ -24,5 +24,20 @@ fn prune() {
             ├─ nemesis.txt (161 B)
             └─ nylarlathotep.txt (100 B)"
         )
+    );
+
+    assert_eq!(
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--glob",
+            "something_that_does_not_exist.txt",
+            "--prune",
+            "tests/data"
+        ]),
+        indoc!(
+            "
+            data"
+        )
     )
 }

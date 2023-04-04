@@ -24,7 +24,7 @@ fn glob() {
             ├─ nylarlathotep.txt (100 B)
             └─ the_yellow_king"
         )
-    )
+    );
 }
 
 #[test]
