@@ -138,6 +138,7 @@ impl Context {
     pub fn init() -> Result<Self, Error> {
         let mut args: Vec<_> = std::env::args().collect();
 
+        #[cfg(not(test))]
         if !stdin().is_terminal() {
             stdin()
                 .lock()
