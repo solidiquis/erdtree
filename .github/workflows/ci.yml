@@ -40,6 +40,9 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: faketty
+        uses: Yuri6037/Action-FakeTTY@v1.1
+
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:

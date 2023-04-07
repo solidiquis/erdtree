@@ -138,18 +138,16 @@ impl Context {
     pub fn init() -> Result<Self, Error> {
         let mut args: Vec<_> = std::env::args().collect();
 
-        if cfg!(not(test)) {
-            if !stdin().is_terminal() {
-                stdin()
-                    .lock()
-                    .lines()
-                    .filter_map(|s| s.ok())
-                    .filter(|l| !l.is_empty())
-                    .for_each(|line| {
-                        args.push("--glob".into());
-                        args.push(line);
-                    });
-            }
+        if !stdin().is_terminal() {
+            stdin()
+                .lock()
+                .lines()
+                .filter_map(|s| s.ok())
+                .filter(|l| !l.is_empty())
+                .for_each(|line| {
+                    args.push("--glob".into());
+                    args.push(line);
+                });
         }
 
         let user_args = Self::command()
