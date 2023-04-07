@@ -141,7 +141,6 @@ impl Context {
         // If there's input on stdin we add each line as a separate glob pattern
         if !stdin().is_terminal() {
             stdin()
-                .lock()
                 .lines()
                 .filter_map(|s| s.ok())
                 .filter(|l| !l.is_empty())
