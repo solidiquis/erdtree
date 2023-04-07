@@ -6,9 +6,11 @@ use clap::{
     parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
 };
 use ignore::overrides::{Override, OverrideBuilder};
+use is_terminal::IsTerminal;
 use std::{
     convert::From,
     ffi::{OsStr, OsString},
+    io::{stdin, BufRead},
     path::{Path, PathBuf},
 };
 
@@ -39,7 +41,7 @@ pub struct Context {
 
     /// Include or exclude files using glob patterns
     #[arg(short, long)]
-    glob: Vec<String>,
+    pub glob: Vec<String>,
 
     /// Include or exclude files using glob patterns; case insensitive
     #[arg(long)]
@@ -134,7 +136,24 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let user_args = Self::command().args_override_self(true).get_matches();
+        let mut args: Vec<_> = std::env::args().collect();
+
+        // If there's input on stdin we add each line as a separate glob pattern
+        if !stdin().is_terminal() {
+            stdin()
+                .lock()
+                .lines()
+                .filter_map(|s| s.ok())
+                .filter(|l| !l.is_empty())
+                .for_each(|line| {
+                    args.push("--glob".into());
+                    args.push(line);
+                });
+        }
+
+        let user_args = Self::command()
+            .args_override_self(true)
+            .get_matches_from(args);
 
         let no_config = user_args.get_one("no_config").map_or(false, bool::clone);
 

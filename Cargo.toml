@@ -30,6 +30,7 @@ clap_complete = "4.1.1"
 filesize = "0.2.0"
 ignore = "0.4.2"
 indextree = "4.6.0"
+is-terminal = "0.4.6"
 lscolors = { version = "0.13.0", features = ["ansi_term"] }
 once_cell = "1.17.0"
 thiserror = "1.0.40"

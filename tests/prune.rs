@@ -5,14 +5,7 @@ mod utils;
 #[test]
 fn prune() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--glob",
-            "*.txt",
-            "--prune",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--sort", "name", "--glob", "*.txt", "--prune", "tests/data"]),
         indoc!(
             "
             data (1.07 KiB)
