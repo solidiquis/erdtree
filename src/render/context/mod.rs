@@ -140,14 +140,14 @@ impl Context {
 
         // If there's input on stdin we add each line as a separate glob pattern
         if !stdin().is_terminal() {
-            stdin()
-                .lines()
-                .filter_map(|s| s.ok())
-                .filter(|l| !l.is_empty())
-                .for_each(|line| {
-                    args.push("--glob".into());
-                    args.push(line);
-                });
+            //stdin()
+                //.lines()
+                //.filter_map(|s| s.ok())
+                //.filter(|l| !l.is_empty())
+                //.for_each(|line| {
+                    //args.push("--glob".into());
+                    //args.push(line);
+                //});
         }
 
         let user_args = Self::command()
