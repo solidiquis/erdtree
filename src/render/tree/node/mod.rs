@@ -10,7 +10,6 @@ use crate::{
 use ansi_term::Color;
 use ansi_term::Style;
 use ignore::DirEntry;
-use indextree::{Arena, Node as NodeWrapper, NodeId};
 use layout::SizeLocation;
 use lscolors::Style as LS_Style;
 use std::{
@@ -361,11 +360,5 @@ impl From<(&DirEntry, &Context)> for Node {
             style,
             symlink_target,
         )
-    }
-}
-
-impl From<(NodeId, &mut Arena<Self>)> for &Node {
-    fn from((node_id, tree): (NodeId, &mut Arena<Self>)) -> Self {
-        tree.get(node_id).map(NodeWrapper::get).unwrap()
     }
 }
