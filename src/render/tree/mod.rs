@@ -1,4 +1,4 @@
-use crate::render::{context::Context, disk_usage::file_size::FileSize, order::Order, styles};
+use crate::render::{context::Context, disk_usage::file_size::FileSize, styles};
 use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
@@ -193,7 +193,7 @@ impl Tree {
         }
 
         // Sort if sorting specified
-        if let Some(func) = Order::from((ctx.sort(), ctx.dirs_first())).comparator() {
+        if let Some(func) = node::cmp::comparator(ctx) {
             children.sort_by(|id_a, id_b| {
                 let node_a = tree[*id_a].get();
                 let node_b = tree[*id_b].get();

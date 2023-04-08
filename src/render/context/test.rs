@@ -1,4 +1,4 @@
-use crate::render::order::SortType;
+use crate::render::context::sort::SortType;
 use clap::{CommandFactory, FromArgMatches};
 
 use super::{config, Context};

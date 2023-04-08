@@ -21,6 +21,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Ordering and sorting rules for [Node].
+pub mod cmp;
+
 /// For determining orientation of disk usage information for [Node].
 mod layout;
 

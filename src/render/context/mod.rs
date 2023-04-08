@@ -1,12 +1,10 @@
-use super::{
-    disk_usage::{file_size::DiskUsage, units::PrefixKind},
-    order::SortType,
-};
+use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use clap::{
     parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
 };
 use ignore::overrides::{Override, OverrideBuilder};
 use is_terminal::IsTerminal;
+use sort::SortType;
 use std::{
     convert::From,
     ffi::{OsStr, OsString},
@@ -16,6 +14,9 @@ use std::{
 
 /// Operations to load in defaults from configuration file.
 pub mod config;
+
+/// Printing order kinds.
+pub mod sort;
 
 /// Unit tests for [Context]
 #[cfg(test)]
@@ -97,11 +98,11 @@ pub struct Context {
 
     /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
-    sort: SortType,
+    pub sort: SortType,
 
     /// Always sorts directories above files
     #[arg(long)]
-    dirs_first: bool,
+    pub dirs_first: bool,
 
     /// Traverse symlink directories and consider their disk usage
     #[arg(short = 'S', long)]
