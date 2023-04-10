@@ -38,11 +38,17 @@ impl From<Node> for TraversalState {
 
 impl ParallelVisitor for Branch<'_> {
     fn visit(&mut self, entry: Result<DirEntry, IgnoreError>) -> WalkState {
-        entry
-            .map(|e| TraversalState::from(Node::from((&e, self.ctx))))
-            .map(|n| self.tx.send(n).unwrap())
-            .map(|_| WalkState::Continue)
-            .unwrap_or(WalkState::Skip)
+        let Ok(dir_entry) = entry else {
+            return WalkState::Skip;
+        };
+
+        match Node::try_from((dir_entry, self.ctx)) {
+            Ok(node) => {
+                self.tx.send(TraversalState::from(node)).unwrap();
+                WalkState::Continue
+            }
+            _ => WalkState::Skip,
+        }
     }
 }
 

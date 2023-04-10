@@ -1,3 +1,4 @@
+#![cfg_attr(windows, feature(windows_by_handle))]
 #![warn(
     clippy::all,
     clippy::correctness,

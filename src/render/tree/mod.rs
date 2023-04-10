@@ -106,7 +106,7 @@ impl Tree {
                             branches.insert(node_path.to_owned(), vec![]);
                         }
 
-                        if node.depth == 0 {
+                        if node.depth() == 0 {
                             root_id = Some(tree.new_node(node));
                             continue;
                         }
@@ -114,7 +114,7 @@ impl Tree {
 
                     // If a hard-link is already accounted for, skip all subsequent ones.
                     if let Some(inode) = node.inode() {
-                        if inode.nlink > 1 && !inodes.insert(inode.properties()) {
+                        if inode.nlink > 1 && !inodes.insert(inode) {
                             continue;
                         }
                     }
@@ -329,21 +329,21 @@ impl Display for Tree {
 
             let prefix = current_prefix_components.join("");
 
-            if current_node.depth <= level {
+            if current_node.depth() <= level {
                 display_node(current_node_id, &prefix)?;
             }
 
             if let Some(next_id) = descendants.peek() {
                 let next_node = inner[*next_id].get();
 
-                if next_node.depth == current_node.depth + 1 {
+                if next_node.depth() == current_node.depth() + 1 {
                     if last_sibling {
                         prefix_components.push(styles::SEP);
                     } else {
                         prefix_components.push(theme.get("vt").unwrap());
                     }
-                } else if next_node.depth < current_node.depth {
-                    let depth_delta = current_node.depth - next_node.depth;
+                } else if next_node.depth() < current_node.depth() {
+                    let depth_delta = current_node.depth() - next_node.depth();
 
                     prefix_components.truncate(prefix_components.len() - depth_delta);
                 }

@@ -15,30 +15,37 @@ jobs:
         include:
           - os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
+            toolchain: stable
             use-cross: false
 
           - os: ubuntu-20.04
             target: x86_64-unknown-linux-musl
+            toolchain: stable
             use-cross: false
           
           - os: ubuntu-20.04
             target: aarch64-unknown-linux-gnu
+            toolchain: stable
             use-cross: true
 
           - os: ubuntu-20.04
             target: aarch64-unknown-linux-musl
+            toolchain: stable
             use-cross: true
 
           - os: macos-latest
             target: x86_64-apple-darwin
+            toolchain: stable
             use-cross: false
 
           - os: macos-latest
             target: aarch64-apple-darwin
+            toolchain: stable
             use-cross: false
           
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            toolchain: nightly
             use-cross: false
 
     steps:
@@ -50,7 +57,7 @@ jobs:
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
+        toolchain: ${{ matrix.toolchain }}
         profile: minimal
         override: true
         target: ${{ matrix.target }}
@@ -65,7 +72,6 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-
 
     - name: Build
       uses: actions-rs/cargo@v1

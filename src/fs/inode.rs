@@ -1,7 +1,7 @@
 use std::{convert::TryFrom, fs::Metadata};
 
 /// Represents a file's underlying inode.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Inode {
     pub ino: u64,
     pub dev: u64,
@@ -13,29 +13,39 @@ impl Inode {
     pub const fn new(ino: u64, dev: u64, nlink: u64) -> Self {
         Self { ino, dev, nlink }
     }
-
-    /// Returns a tuple fields of the [Inode] that mark is unique.
-    pub const fn properties(&self) -> (u64, u64) {
-        (self.ino, self.dev)
-    }
 }
 
 #[derive(Debug, thiserror::Error)]
 #[error("Insufficient information to compute inode")]
 pub struct Error;
 
-impl TryFrom<Metadata> for Inode {
+impl TryFrom<&Metadata> for Inode {
     type Error = Error;
 
     #[cfg(unix)]
-    fn try_from(md: Metadata) -> Result<Self, Self::Error> {
+    fn try_from(md: &Metadata) -> Result<Self, Self::Error> {
         use std::os::unix::fs::MetadataExt;
 
         Ok(Self::new(md.ino(), md.dev(), md.nlink()))
     }
 
-    #[cfg(not(unix))]
-    fn try_from(md: Metadata) -> Result<Self, Self::Error> {
+    #[cfg(windows)]
+    fn try_from(md: &Metadata) -> Result<Self, Self::Error> {
+        use std::os::windows::fs::MetadataExt;
+
+        if let (Some(dev), Some(ino), Some(nlink)) = (
+            md.volume_serial_number(),
+            md.file_index(),
+            md.number_of_links(),
+        ) {
+            return Ok(Self::new(ino, dev.into(), nlink.into()));
+        }
+
+        Err(Error {})
+    }
+
+    #[cfg(not(any(unix, windows)))]
+    fn try_from(md: &Metadata) -> Result<Self, Self::Error> {
         Err(Error {})
     }
 }
