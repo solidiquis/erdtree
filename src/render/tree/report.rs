@@ -98,7 +98,7 @@ impl Display for Report<'_> {
                 file_count_data.push(count);
             }
 
-            if node.depth > max_depth {
+            if node.depth() > max_depth {
                 continue;
             }
 

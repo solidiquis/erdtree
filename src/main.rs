@@ -1,3 +1,4 @@
+#![cfg_attr(windows, feature(windows_by_handle))]
 #![warn(
     clippy::all,
     clippy::correctness,
@@ -55,12 +56,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     let tree = Tree::init(ctx)?;
 
-    if tree.context().report {
-        let report = tree.report();
-        println!("{report}");
-    } else {
-        println!("{tree}");
-    }
+    println!("{tree}");
 
     Ok(())
 }

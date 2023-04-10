@@ -1,4 +1,4 @@
-use crate::render::{context::Context, disk_usage::file_size::FileSize, order::Order, styles};
+use crate::render::{context::Context, disk_usage::file_size::FileSize, styles};
 use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
@@ -106,7 +106,7 @@ impl Tree {
                             branches.insert(node_path.to_owned(), vec![]);
                         }
 
-                        if node.depth == 0 {
+                        if node.depth() == 0 {
                             root_id = Some(tree.new_node(node));
                             continue;
                         }
@@ -114,7 +114,7 @@ impl Tree {
 
                     // If a hard-link is already accounted for, skip all subsequent ones.
                     if let Some(inode) = node.inode() {
-                        if inode.nlink > 1 && !inodes.insert(inode.properties()) {
+                        if inode.nlink > 1 && !inodes.insert(inode) {
                             continue;
                         }
                     }
@@ -193,7 +193,7 @@ impl Tree {
         }
 
         // Sort if sorting specified
-        if let Some(func) = Order::from((ctx.sort(), ctx.dirs_first())).comparator() {
+        if let Some(func) = node::cmp::comparator(ctx) {
             children.sort_by(|id_a, id_b| {
                 let node_a = tree[*id_a].get();
                 let node_b = tree[*id_b].get();
@@ -280,10 +280,16 @@ impl TryFrom<&Context> for WalkParallel {
 
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let ctx = self.context();
+
+        if ctx.report {
+            let report = self.report();
+            return write!(f, "{report}");
+        }
+
         let root = self.root;
         let inner = self.inner();
         let level = self.level();
-        let ctx = self.context();
         let show_count = ctx.count;
         let mut file_count_data = vec![];
 
@@ -329,21 +335,21 @@ impl Display for Tree {
 
             let prefix = current_prefix_components.join("");
 
-            if current_node.depth <= level {
+            if current_node.depth() <= level {
                 display_node(current_node_id, &prefix)?;
             }
 
             if let Some(next_id) = descendants.peek() {
                 let next_node = inner[*next_id].get();
 
-                if next_node.depth == current_node.depth + 1 {
+                if next_node.depth() == current_node.depth() + 1 {
                     if last_sibling {
                         prefix_components.push(styles::SEP);
                     } else {
                         prefix_components.push(theme.get("vt").unwrap());
                     }
-                } else if next_node.depth < current_node.depth {
-                    let depth_delta = current_node.depth - next_node.depth;
+                } else if next_node.depth() < current_node.depth() {
+                    let depth_delta = current_node.depth() - next_node.depth();
 
                     prefix_components.truncate(prefix_components.len() - depth_delta);
                 }
