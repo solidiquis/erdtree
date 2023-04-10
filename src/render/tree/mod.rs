@@ -280,10 +280,16 @@ impl TryFrom<&Context> for WalkParallel {
 
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let ctx = self.context();
+
+        if ctx.report {
+            let report = self.report();
+            return write!(f, "{report}");
+        }
+
         let root = self.root;
         let inner = self.inner();
         let level = self.level();
-        let ctx = self.context();
         let show_count = ctx.count;
         let mut file_count_data = vec![];
 
