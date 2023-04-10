@@ -144,7 +144,7 @@ impl Context {
             stdin()
                 .lock()
                 .lines()
-                .filter_map(|s| s.ok())
+                .filter_map(Result::ok)
                 .filter(|l| !l.is_empty())
                 .for_each(|line| {
                     args.push("--glob".into());

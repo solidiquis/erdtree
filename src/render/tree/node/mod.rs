@@ -36,38 +36,38 @@ mod layout;
 /// [`LS_COLORS`]: crate::render::styles::LS_COLORS
 #[derive(Debug)]
 pub struct Node {
-    pub file_size: Option<FileSize>,
-    icon: String,
-    style: Style,
-    symlink_target: Option<PathBuf>,
     dir_entry: DirEntry,
     metadata: Metadata,
+    file_size: Option<FileSize>,
+    style: Style,
+    icon: String,
+    symlink_target: Option<PathBuf>,
 }
 
 impl Node {
     /// Initializes a new [Node].
     pub const fn new(
-        file_size: Option<FileSize>,
-        icon: String,
-        style: Style,
-        symlink_target: Option<PathBuf>,
         dir_entry: DirEntry,
         metadata: Metadata,
+        file_size: Option<FileSize>,
+        style: Style,
+        icon: String,
+        symlink_target: Option<PathBuf>,
     ) -> Self {
         Self {
-            file_size,
-            icon,
-            style,
-            symlink_target,
             dir_entry,
             metadata,
+            file_size,
+            style,
+            icon,
+            symlink_target,
         }
     }
 
     /// Returns a reference to `file_name`. If file is a symlink then `file_name` is the name of
     /// the symlink not the target.
     pub fn file_name(&self) -> &OsStr {
-        &self.dir_entry.file_name()
+        self.dir_entry.file_name()
     }
 
     /// Get depth level of [Node].
@@ -120,7 +120,7 @@ impl Node {
 
     /// Returns a reference to `path`.
     pub fn path(&self) -> &Path {
-        &self.dir_entry.path()
+        self.dir_entry.path()
     }
 
     /// Gets 'file_size'.
@@ -328,12 +328,12 @@ impl TryFrom<(DirEntry, &Context)> for Node {
         };
 
         Ok(Self::new(
-            file_size,
-            icon,
-            style,
-            symlink_target,
             dir_entry,
             metadata,
+            file_size,
+            style,
+            icon,
+            symlink_target,
         ))
     }
 }

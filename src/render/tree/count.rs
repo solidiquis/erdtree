@@ -5,6 +5,7 @@ use std::{
 };
 
 /// For keeping track of the number of various file-types of [Node]'s chlidren.
+#[allow(clippy::module_name_repetitions)]
 #[derive(Default)]
 pub struct FileCount {
     pub num_dirs: usize,
