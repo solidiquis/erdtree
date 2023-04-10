@@ -39,7 +39,7 @@ pub static DU_THEME: OnceCell<HashMap<&'static str, Color>> = OnceCell::new();
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
 
-/// Initializes both [LS_COLORS] and [THEME].
+/// Initializes both [LS_COLORS] and all themes.
 pub fn init() {
     #[cfg(windows)]
     let _ = ansi_term::enable_ansi_support();
@@ -58,7 +58,7 @@ pub fn get_du_theme() -> &'static HashMap<&'static str, Color> {
     DU_THEME.get().expect("DU_THEME not initialized")
 }
 
-/// Getter for [THEME]. Panics if not initialized.
+/// Getter for [TREE_THEME]. Panics if not initialized.
 pub fn get_tree_theme() -> &'static ThemesMap {
     TREE_THEME.get().expect("TREE_THEME not initialized")
 }
@@ -76,7 +76,7 @@ fn init_ls_colors() {
         .unwrap();
 }
 
-/// Initializes [THEME].
+/// Initializes all themes.
 fn init_themes() {
     let theme = hash! {
         "vt" => format!("{}", Color::Purple.paint(VT)),
