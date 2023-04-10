@@ -317,6 +317,8 @@ impl Display for Tree {
 
             let current_node = inner[current_node_id].get();
 
+            let current_node_depth = current_node.depth();
+
             let theme = if current_node.is_symlink() {
                 styles::get_link_theme()
             } else {
@@ -335,21 +337,23 @@ impl Display for Tree {
 
             let prefix = current_prefix_components.join("");
 
-            if current_node.depth() <= level {
+            if current_node_depth <= level {
                 display_node(current_node_id, &prefix)?;
             }
 
             if let Some(next_id) = descendants.peek() {
                 let next_node = inner[*next_id].get();
 
-                if next_node.depth() == current_node.depth() + 1 {
+                let next_node_depth = next_node.depth();
+
+                if next_node_depth == current_node_depth + 1 {
                     if last_sibling {
                         prefix_components.push(styles::SEP);
                     } else {
                         prefix_components.push(theme.get("vt").unwrap());
                     }
-                } else if next_node.depth() < current_node.depth() {
-                    let depth_delta = current_node.depth() - next_node.depth();
+                } else if next_node_depth < current_node_depth {
+                    let depth_delta = current_node_depth - next_node_depth;
 
                     prefix_components.truncate(prefix_components.len() - depth_delta);
                 }
