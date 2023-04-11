@@ -30,8 +30,8 @@ pub fn icon_from_file_name(name: &OsStr) -> Option<&'static str> {
 }
 
 /// Returns the default fallback icon.
-pub fn get_default_icon<'a>() -> &'a str {
-    DEFAULT_ICON.as_str()
+pub fn get_default_icon<'a>() -> (u8, &'a str) {
+    *DEFAULT_ICON
 }
 
 /// Convenience method to paint fixed colors.
@@ -40,7 +40,7 @@ pub fn col(num: u8, code: &str) -> String {
 }
 
 /// Default fallback icon.
-static DEFAULT_ICON: Lazy<String> = Lazy::new(|| col(66, "\u{f15b}"));
+static DEFAULT_ICON: Lazy<(u8, &str)> = Lazy::new(|| (66, "\u{f15b}"));
 
 /// Lazily evaluated static hash-map of special file-types and their corresponding styled icons.
 /// These icons will take on the color properties of their associated file which is based on
