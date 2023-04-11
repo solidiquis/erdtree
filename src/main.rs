@@ -57,7 +57,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    render::styles::init();
+    if tty::stdout_is_tty() && !ctx.no_color {
+        render::styles::init();
+    }
 
     let tree = Tree::init(ctx)?;
 

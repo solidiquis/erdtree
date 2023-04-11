@@ -128,6 +128,10 @@ pub struct Context {
     #[arg(long)]
     pub size_left: bool,
 
+    /// Print plainly without ANSI escapes
+    #[arg(long)]
+    pub no_color: bool,
+
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,

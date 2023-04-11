@@ -1,3 +1,4 @@
+#![allow(clippy::module_name_repetitions)]
 use is_terminal::IsTerminal;
 use once_cell::sync::OnceCell;
 use std::io::{stdin, stdout};
@@ -20,10 +21,16 @@ pub fn init_is_tty() {
 
 /// See [STDIN_IS_TTY].
 pub fn stdin_is_tty() -> bool {
-    STDIN_IS_TTY.get().map(bool::clone).expect("Failed to initialize STDIN_IS_TTY")
+    STDIN_IS_TTY
+        .get()
+        .map(bool::clone)
+        .expect("Failed to initialize STDIN_IS_TTY")
 }
 
 /// See [STDOUT_IS_TTY].
 pub fn stdout_is_tty() -> bool {
-    STDOUT_IS_TTY.get().map(bool::clone).expect("Failed to initialize STDOUT_IS_TTY")
+    STDOUT_IS_TTY
+        .get()
+        .map(bool::clone)
+        .expect("Failed to initialize STDOUT_IS_TTY")
 }
