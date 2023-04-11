@@ -1,4 +1,7 @@
-use crate::render::{context::Context, disk_usage::file_size::FileSize, styles};
+use crate::{
+    render::{context::Context, disk_usage::file_size::FileSize, styles},
+    tty,
+};
 use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
@@ -290,6 +293,7 @@ impl Display for Tree {
         let root = self.root;
         let inner = self.inner();
         let level = self.level();
+        let no_color = ctx.no_color || !tty::stdout_is_tty();
         let show_count = ctx.count;
         let mut file_count_data = vec![];
 
@@ -319,10 +323,12 @@ impl Display for Tree {
 
             let current_node_depth = current_node.depth();
 
-            let theme = if current_node.is_symlink() {
-                styles::get_link_theme()
+            let theme = if no_color {
+                None
+            } else if current_node.is_symlink() {
+                Some(styles::get_link_theme().unwrap())
             } else {
-                styles::get_tree_theme()
+                Some(styles::get_tree_theme().unwrap())
             };
 
             let mut siblings = current_node_id.following_siblings(inner).skip(1).peekable();
@@ -330,9 +336,15 @@ impl Display for Tree {
             let last_sibling = siblings.peek().is_none();
 
             if last_sibling {
-                current_prefix_components.push(theme.get("uprt").unwrap());
+                let prefix = theme
+                    .and_then(|th| th.get("uprt").map(String::as_str))
+                    .unwrap_or(styles::UPRT);
+                current_prefix_components.push(prefix);
             } else {
-                current_prefix_components.push(theme.get("vtrt").unwrap());
+                let prefix = theme
+                    .and_then(|th| th.get("vtrt").map(String::as_str))
+                    .unwrap_or(styles::VTRT);
+                current_prefix_components.push(prefix);
             }
 
             let prefix = current_prefix_components.join("");
@@ -350,7 +362,10 @@ impl Display for Tree {
                     if last_sibling {
                         prefix_components.push(styles::SEP);
                     } else {
-                        prefix_components.push(theme.get("vt").unwrap());
+                        let prefix = theme
+                            .and_then(|th| th.get("vt").map(String::as_str))
+                            .unwrap_or(styles::VT);
+                        prefix_components.push(prefix);
                     }
                 } else if next_node_depth < current_node_depth {
                     let depth_delta = current_node_depth - next_node_depth;

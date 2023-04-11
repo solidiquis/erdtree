@@ -19,7 +19,10 @@ pub fn run_cmd(args: &[&str]) -> String {
         .wait_with_output()
         .unwrap();
 
-    assert!(output.status.success());
+    if !output.status.success() {
+        let err_msg = String::from_utf8(output.stderr).unwrap();
+        panic!("{err_msg}");
+    }
 
     String::from_utf8(strip_ansi_escapes(output.stdout).unwrap())
         .unwrap()

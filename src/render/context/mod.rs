@@ -1,9 +1,9 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
+use crate::tty;
 use clap::{
     parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
 };
 use ignore::overrides::{Override, OverrideBuilder};
-use is_terminal::IsTerminal;
 use sort::SortType;
 use std::{
     convert::From,
@@ -128,6 +128,10 @@ pub struct Context {
     #[arg(long)]
     pub size_left: bool,
 
+    /// Print plainly without ANSI escapes
+    #[arg(long)]
+    pub no_color: bool,
+
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
@@ -140,7 +144,7 @@ impl Context {
         let mut args: Vec<_> = std::env::args().collect();
 
         // If there's input on stdin we add each line as a separate glob pattern
-        if !stdin().is_terminal() {
+        if !tty::stdin_is_tty() {
             stdin()
                 .lock()
                 .lines()

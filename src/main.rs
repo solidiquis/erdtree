@@ -32,6 +32,9 @@ mod icons;
 /// Tools and operations to display root-directory.
 mod render;
 
+/// Determine if standard streams are connected to a tty.
+mod tty;
+
 /// Common utilities.
 mod utils;
 
@@ -45,6 +48,8 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
+    tty::init_is_tty();
+
     let ctx = Context::init()?;
 
     if let Some(shell) = ctx.completions {
@@ -52,7 +57,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    render::styles::init();
+    if tty::stdout_is_tty() && !ctx.no_color {
+        render::styles::init();
+    }
 
     let tree = Tree::init(ctx)?;
 

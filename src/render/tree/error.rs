@@ -1,3 +1,4 @@
+use super::styles::error::Error as StyleError;
 use ignore::Error as IgnoreError;
 use std::io::Error as IoError;
 
@@ -20,4 +21,7 @@ pub enum Error {
 
     #[error("{0}")]
     PathCanonicalization(#[from] IoError),
+
+    #[error("{0}")]
+    UninitializedTheme(#[from] StyleError<'static>),
 }
