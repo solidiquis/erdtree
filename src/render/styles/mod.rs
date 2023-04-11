@@ -5,6 +5,7 @@ use lscolors::LsColors;
 use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 
+/// Errors for this module.
 pub mod error;
 
 /// Used for padding between tree branches.

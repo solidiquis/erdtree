@@ -30,10 +30,9 @@ mod layout;
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
-/// uses ANSI colors determined by the file-type and [`LS_COLORS`].
+/// uses ANSI colors determined by the file-type and `LS_COLORS`.
 ///
 /// [`Tree`]: super::Tree
-/// [`LS_COLORS`]: crate::render::styles::LS_COLORS
 #[derive(Debug)]
 pub struct Node {
     dir_entry: DirEntry,
@@ -138,10 +137,8 @@ impl Node {
         self.icon.as_deref()
     }
 
-    /// Stylizes input, `entity` based on [`LS_COLORS`]. If `style` is `None` then the entity is
+    /// Stylizes input, `entity` based on `LS_COLORS`. If `style` is `None` then the entity is
     /// returned unmodified.
-    ///
-    /// [`LS_COLORS`]: crate::render::styles::LS_COLORS
     fn stylize<'a>(&self, entity: Cow<'a, str>) -> Cow<'a, str> {
         if let Some(Style {
             foreground: Some(ref fg),
