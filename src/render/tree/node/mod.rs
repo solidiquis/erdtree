@@ -321,7 +321,12 @@ impl Node {
             return icon;
         }
 
-        Some(Cow::from(get_default_icon()))
+        if no_color {
+            Some(Cow::from(get_default_icon().1))
+        } else {
+            let (code, icon) = get_default_icon();
+            Some(Cow::from(icons::col(code, icon)))
+        }
     }
 }
 
@@ -355,7 +360,8 @@ impl TryFrom<(DirEntry, &Context)> for Node {
         };
 
         let icon = if ctx.icons {
-            Self::compute_icon(&dir_entry, link_target.as_ref(), style, ctx.no_color)
+            let no_color = ctx.no_color || !tty::stdout_is_tty();
+            Self::compute_icon(&dir_entry, link_target.as_ref(), style, no_color)
         } else {
             None
         };
