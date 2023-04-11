@@ -100,14 +100,10 @@ fn init_themes() {
 
     let du_theme = hash! {
         "B" => Color::Cyan,
-        "KB" => Color::Yellow,
-        "KiB" => Color::Yellow,
-        "MB" => Color::Green,
-        "MiB" => Color::Green,
-        "GB" => Color::Red,
-        "GiB" => Color::Red,
-        "TB" => Color::Blue,
-        "TiB" => Color::Blue
+        "KB" | "KiB" => Color::Yellow,
+        "MB" | "MiB" => Color::Green,
+        "GB" | "GiB" => Color::Red,
+        "TB" | "TiB" => Color::Blue
     };
 
     DU_THEME.set(du_theme).unwrap();
