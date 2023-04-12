@@ -43,13 +43,18 @@ static DU_THEME: OnceCell<HashMap<&'static str, Color>> = OnceCell::new();
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
 
-/// Initializes both [LS_COLORS] and all themes.
-pub fn init() {
+/// Initializes both [LS_COLORS] and all themes. If `plain` argument is `true` then plain colorless
+/// themes are used and [LS_COLORS] won't be initialized.
+pub fn init(plain: bool) {
     #[cfg(windows)]
     let _ = ansi_term::enable_ansi_support();
 
-    init_ls_colors();
-    init_themes();
+    if plain {
+        init_plain();
+    } else {
+        init_ls_colors();
+        init_themes();
+    }
 }
 
 /// Getter for [LS_COLORS]. Returns an error if not initialized.
@@ -78,6 +83,25 @@ fn init_ls_colors() {
     LS_COLORS
         .set(LsColors::from_env().unwrap_or_default())
         .unwrap();
+}
+
+/// Colorless themes
+fn init_plain() {
+    let theme = hash! {
+        "vt" => VT.to_owned(),
+        "uprt" => UPRT.to_owned(),
+        "vtrt" => VTRT.to_owned()
+    };
+
+    TREE_THEME.set(theme).unwrap();
+
+    let link_theme = hash! {
+        "vt" => VT.to_owned(),
+        "uprt" => UPRT.to_owned(),
+        "vtrt" => VTRT.to_owned()
+    };
+
+    LINK_THEME.set(link_theme).unwrap();
 }
 
 /// Initializes all color themes.

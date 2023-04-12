@@ -20,7 +20,13 @@
     clippy::fallible_impl_from
 )]
 use clap::CommandFactory;
-use render::{context::Context, tree::Tree};
+use render::{
+    context::Context,
+    tree::{
+        display::{Regular, Report},
+        Tree,
+    },
+};
 use std::{io::stdout, process::ExitCode};
 
 /// Filesystem operations.
@@ -48,8 +54,6 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
-    tty::init_is_tty();
-
     let ctx = Context::init()?;
 
     if let Some(shell) = ctx.completions {
@@ -57,13 +61,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    if tty::stdout_is_tty() && !ctx.no_color {
-        render::styles::init();
+    if ctx.report {
+        let tree = Tree::<Report>::init(ctx)?;
+        println!("{tree}");
+    } else {
+        render::styles::init(ctx.no_color());
+        let tree = Tree::<Regular>::init(ctx)?;
+        println!("{tree}");
     }
-
-    let tree = Tree::init(ctx)?;
-
-    println!("{tree}");
 
     Ok(())
 }
