@@ -1,15 +1,15 @@
 use crate::{
     fs::inode::Inode,
-    icons::{self, icon_from_ext, icon_from_file_name, icon_from_file_type},
+    icons::{self, get_default_icon, icon_from_ext, icon_from_file_name, icon_from_file_type},
     render::{
         context::Context,
         disk_usage::file_size::{DiskUsage, FileSize},
         styles::get_ls_colors,
         tree::error::Error,
     },
+    tty,
 };
-use ansi_term::Color;
-use ansi_term::Style;
+use ansi_term::{ANSIGenericString, Color, Style};
 use ignore::DirEntry;
 use layout::SizeLocation;
 use lscolors::Style as LS_Style;
@@ -30,17 +30,16 @@ mod layout;
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
-/// uses ANSI colors determined by the file-type and [`LS_COLORS`].
+/// uses ANSI colors determined by the file-type and `LS_COLORS`.
 ///
 /// [`Tree`]: super::Tree
-/// [`LS_COLORS`]: crate::render::styles::LS_COLORS
 #[derive(Debug)]
 pub struct Node {
     dir_entry: DirEntry,
     metadata: Metadata,
     file_size: Option<FileSize>,
-    style: Style,
-    icon: String,
+    style: Option<Style>,
+    icon: Option<Cow<'static, str>>,
     symlink_target: Option<PathBuf>,
 }
 
@@ -50,8 +49,8 @@ impl Node {
         dir_entry: DirEntry,
         metadata: Metadata,
         file_size: Option<FileSize>,
-        style: Style,
-        icon: String,
+        style: Option<Style>,
+        icon: Option<Cow<'static, str>>,
         symlink_target: Option<PathBuf>,
     ) -> Self {
         Self {
@@ -133,33 +132,32 @@ impl Node {
         self.file_size = Some(size);
     }
 
-    /// Sets 'style'.
-    pub const fn style(&self) -> &Style {
-        &self.style
-    }
-
     /// Grabs a reference to `icon`.
-    pub fn icon(&self) -> &str {
-        &self.icon
+    pub fn icon(&self) -> Option<&str> {
+        self.icon.as_deref()
     }
 
-    /// Stylizes input, `entity` based on [`LS_COLORS`]
-    ///
-    /// [`LS_COLORS`]: crate::render::styles::LS_COLORS
-    fn stylize(&self, entity: &str) -> String {
-        self.style().foreground.map_or_else(
-            || entity.to_string(),
-            |fg| fg.bold().paint(entity).to_string(),
-        )
+    /// Stylizes input, `entity` based on `LS_COLORS`. If `style` is `None` then the entity is
+    /// returned unmodified.
+    fn stylize<'a>(&self, entity: Cow<'a, str>) -> Cow<'a, str> {
+        if let Some(Style {
+            foreground: Some(ref fg),
+            ..
+        }) = self.style
+        {
+            Cow::from(fg.bold().paint(entity).to_string())
+        } else {
+            entity
+        }
     }
 
     /// Stylizes symlink name for display.
-    fn stylize_link_name(&self) -> Option<String> {
+    fn stylize_link_name(&self) -> Option<Cow<'_, str>> {
         self.symlink_target_file_name().map(|name| {
             let file_name = self.file_name_lossy();
-            let styled_name = self.stylize(&file_name);
+            let styled_name = self.stylize(file_name);
             let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_string_lossy()));
-            format!("{styled_name} {target_name}")
+            Cow::from(format!("{styled_name} {target_name}"))
         })
     }
 
@@ -187,30 +185,30 @@ impl Node {
             |size| size_loc.format(size),
         );
 
-        let size_padding = if size.is_empty() {
-            String::new()
-        } else {
-            String::from(" ")
-        };
+        let size_padding = if size.is_empty() { "" } else { " " };
 
-        let icon = self.icon();
+        let icon = self.icon().unwrap_or("");
 
         let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
 
-        let styled_name = self.stylize_link_name().unwrap_or_else(|| {
-            let file_name = self.file_name_lossy();
-            self.stylize(&file_name)
-        });
+        let file_name = if ctx.no_color() {
+            self.file_name().to_string_lossy()
+        } else {
+            self.stylize_link_name().unwrap_or_else(|| {
+                let file_name = self.file_name_lossy();
+                self.stylize(file_name)
+            })
+        };
 
         match size_loc {
             SizeLocation::Right => {
                 write!(
                     f,
-                    "{prefix}{icon:<icon_padding$}{styled_name}{size_padding}{size}"
+                    "{prefix}{icon:<icon_padding$}{file_name}{size_padding}{size}"
                 )
             }
             SizeLocation::Left => {
-                write!(f, "{size} {prefix}{icon:<icon_padding$}{styled_name}")
+                write!(f, "{size} {prefix}{icon:<icon_padding$}{file_name}")
             }
         }
     }
@@ -261,21 +259,74 @@ impl Node {
         Some(iden)
     }
 
-    /// Tries to compute which icon to use from [FileType]. Directories and links for example have
-    /// special icons based on file-type as opposed to extension.
-    fn icon_from_file_type(file_type: &FileType) -> Option<&str> {
-        icon_from_file_type(file_type)
-    }
+    /// Attempts to compute icon with given parameters. Icon will be colorless if stdout isn't a
+    /// tty or if `no_color` is true.
+    ///
+    /// The precedent from highest to lowest in terms of which parameters determine the icon used
+    /// is as followed: file-type, file-extension, and then file-name. If an icon cannot be
+    /// computed the fall-back default icon is used.
+    ///
+    /// If a directory entry is a link and the link target is provided, the link target will be
+    /// used to determine the icon.
+    fn compute_icon(
+        entry: &DirEntry,
+        link_target: Option<&PathBuf>,
+        style: Option<Style>,
+        no_color: bool,
+    ) -> Option<Cow<'static, str>> {
+        let icon = entry
+            .file_type()
+            .and_then(icon_from_file_type)
+            .map(Cow::from);
 
-    /// Tries to compute which icon to use from file-extension provided the path.
-    fn icon_from_path(path: &Path) -> Option<&str> {
-        path.extension().and_then(icon_from_ext)
-    }
+        let paint_icon = |icon| match style {
+            Some(Style {
+                foreground: Some(fg),
+                ..
+            }) if tty::stdout_is_tty() && !no_color => {
+                let ansi_string: ANSIGenericString<str> = fg.bold().paint(icon);
+                let styled_icon = ansi_string.to_string();
+                Some(Cow::from(styled_icon))
+            }
 
-    /// Tries to compute which icon to use from the provided file-name. This is relevant to special
-    /// files such as `.gitignore`, `LICENSE`, and so on.
-    fn icon_from_file_name(file_name: &OsStr) -> Option<&str> {
-        icon_from_file_name(file_name)
+            _ => Some(icon),
+        };
+
+        if let Some(icon) = icon {
+            return paint_icon(icon);
+        }
+
+        let ext = match link_target {
+            Some(target) if entry.path_is_symlink() => target.extension(),
+            _ => entry.path().extension(),
+        };
+
+        let icon = ext.and_then(icon_from_ext).map(|attrs| {
+            if no_color || !tty::stdout_is_tty() {
+                Cow::from(attrs.1)
+            } else {
+                Cow::from(icons::col(attrs.0, attrs.1))
+            }
+        });
+
+        if icon.is_some() {
+            return icon;
+        }
+
+        let icon = icon_from_file_name(entry.file_name())
+            .map(Cow::from)
+            .and_then(paint_icon);
+
+        if icon.is_some() {
+            return icon;
+        }
+
+        if no_color {
+            Some(Cow::from(get_default_icon().1))
+        } else {
+            let (code, icon) = get_default_icon();
+            Some(Cow::from(icons::col(code, icon)))
+        }
     }
 }
 
@@ -287,14 +338,16 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let path = dir_entry.path();
 
-        let symlink_target = crate::fs::symlink_target(&dir_entry);
+        let link_target = crate::fs::symlink_target(&dir_entry);
 
         let metadata = dir_entry.metadata()?;
 
-        let style = get_ls_colors()
-            .style_for_path_with_metadata(path, Some(&metadata))
-            .map(LS_Style::to_ansi_term_style)
-            .unwrap_or_default();
+        let style = get_ls_colors().ok().and_then(|ls_colors| {
+            ls_colors
+                .style_for_path_with_metadata(path, Some(&metadata))
+                .map(LS_Style::to_ansi_term_style)
+                .or_else(|| Some(Style::default()))
+        });
 
         let file_type = dir_entry.file_type();
 
@@ -307,24 +360,10 @@ impl TryFrom<(DirEntry, &Context)> for Node {
         };
 
         let icon = if ctx.icons {
-            let plain_icon = file_type
-                .as_ref()
-                .and_then(Self::icon_from_file_type)
-                .or_else(|| {
-                    symlink_target.as_ref().map_or_else(
-                        || Self::icon_from_path(path),
-                        |target| Self::icon_from_path(target),
-                    )
-                })
-                .or_else(|| Self::icon_from_file_name(dir_entry.file_name()))
-                .unwrap_or_else(icons::get_default_icon);
-
-            style.foreground.map_or_else(
-                || String::from(plain_icon),
-                |fg| fg.bold().paint(plain_icon).to_string(),
-            )
+            let no_color = ctx.no_color();
+            Self::compute_icon(&dir_entry, link_target.as_ref(), style, no_color)
         } else {
-            String::new()
+            None
         };
 
         Ok(Self::new(
@@ -333,7 +372,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             file_size,
             style,
             icon,
-            symlink_target,
+            link_target,
         ))
     }
 }

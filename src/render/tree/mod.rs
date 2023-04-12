@@ -4,12 +4,11 @@ use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
 use indextree::{Arena, NodeId};
 use node::Node;
-use report::Report;
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
-    fmt::{self, Display, Formatter},
     fs,
+    marker::PhantomData,
     path::PathBuf,
     result::Result as StdResult,
     sync::mpsc::{self, Sender},
@@ -20,6 +19,9 @@ use visitor::{BranchVisitorBuilder, TraversalState};
 /// Operations to handle and display aggregate file counts based on their type.
 mod count;
 
+/// Display variants for [Tree].
+pub mod display;
+
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
 
@@ -29,26 +31,35 @@ pub mod error;
 /// [`DirEntry`]: ignore::DirEntry
 pub mod node;
 
-/// For generating plain-text report of disk usage without ASCII tree.
-pub mod report;
-
 /// Custom visitor that operates on each thread during filesystem traversal.
 mod visitor;
 
 /// Virtual data structure that represents local file-system hierarchy.
 #[derive(Debug)]
-pub struct Tree {
+pub struct Tree<T>
+where
+    T: display::TreeVariant,
+{
     inner: Arena<Node>,
     root: NodeId,
     ctx: Context,
+    display_variant: PhantomData<T>,
 }
 
 pub type Result<T> = StdResult<T, Error>;
 
-impl Tree {
+impl<T> Tree<T>
+where
+    T: display::TreeVariant,
+{
     /// Constructor for [Tree].
     pub const fn new(inner: Arena<Node>, root: NodeId, ctx: Context) -> Self {
-        Self { inner, root, ctx }
+        Self {
+            inner,
+            root,
+            ctx,
+            display_variant: PhantomData,
+        }
     }
 
     /// Initiates file-system traversal and [Tree construction].
@@ -76,10 +87,6 @@ impl Tree {
     /// Grabs a reference to `inner`.
     const fn inner(&self) -> &Arena<Node> {
         &self.inner
-    }
-
-    pub const fn report(&self) -> Report {
-        Report::new(self)
     }
 
     /// Parallel traversal of the root directory and its contents. Parallel traversal relies on
@@ -275,95 +282,5 @@ impl TryFrom<&Context> for WalkParallel {
             .threads(clargs.threads)
             .overrides(clargs.overrides()?)
             .build_parallel())
-    }
-}
-
-impl Display for Tree {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let ctx = self.context();
-
-        if ctx.report {
-            let report = self.report();
-            return write!(f, "{report}");
-        }
-
-        let root = self.root;
-        let inner = self.inner();
-        let level = self.level();
-        let show_count = ctx.count;
-        let mut file_count_data = vec![];
-
-        let mut descendants = root.descendants(inner).skip(1).peekable();
-
-        let mut display_node = |node_id: NodeId, prefix: &str| -> fmt::Result {
-            let node = inner[node_id].get();
-
-            node.display(f, prefix, ctx)?;
-
-            if show_count {
-                let count = Self::compute_file_count(node_id, inner);
-                file_count_data.push(count);
-            }
-
-            writeln!(f)
-        };
-
-        display_node(root, "")?;
-
-        let mut prefix_components = vec![""];
-
-        while let Some(current_node_id) = descendants.next() {
-            let mut current_prefix_components = prefix_components.clone();
-
-            let current_node = inner[current_node_id].get();
-
-            let current_node_depth = current_node.depth();
-
-            let theme = if current_node.is_symlink() {
-                styles::get_link_theme()
-            } else {
-                styles::get_tree_theme()
-            };
-
-            let mut siblings = current_node_id.following_siblings(inner).skip(1).peekable();
-
-            let last_sibling = siblings.peek().is_none();
-
-            if last_sibling {
-                current_prefix_components.push(theme.get("uprt").unwrap());
-            } else {
-                current_prefix_components.push(theme.get("vtrt").unwrap());
-            }
-
-            let prefix = current_prefix_components.join("");
-
-            if current_node_depth <= level {
-                display_node(current_node_id, &prefix)?;
-            }
-
-            if let Some(next_id) = descendants.peek() {
-                let next_node = inner[*next_id].get();
-
-                let next_node_depth = next_node.depth();
-
-                if next_node_depth == current_node_depth + 1 {
-                    if last_sibling {
-                        prefix_components.push(styles::SEP);
-                    } else {
-                        prefix_components.push(theme.get("vt").unwrap());
-                    }
-                } else if next_node_depth < current_node_depth {
-                    let depth_delta = current_node_depth - next_node_depth;
-
-                    prefix_components.truncate(prefix_components.len() - depth_delta);
-                }
-            }
-        }
-
-        if !file_count_data.is_empty() {
-            write!(f, "\n{}", FileCount::from(file_count_data))?;
-        }
-
-        Ok(())
     }
 }

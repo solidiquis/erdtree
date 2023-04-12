@@ -1,9 +1,9 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
+use crate::tty;
 use clap::{
     parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
 };
 use ignore::overrides::{Override, OverrideBuilder};
-use is_terminal::IsTerminal;
 use sort::SortType;
 use std::{
     convert::From,
@@ -26,7 +26,7 @@ mod test;
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "1.7.1")]
+#[command(version = "1.8.1")]
 #[command(about = "erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis tool.", long_about = None)]
 pub struct Context {
     /// Include aggregate file count in tree output
@@ -50,7 +50,7 @@ pub struct Context {
 
     /// Process all glob patterns case insensitively
     #[arg(long)]
-    glob_case_insensitive: bool,
+    pub glob_case_insensitive: bool,
 
     /// Show hidden files
     #[arg(short = 'H', long)]
@@ -58,7 +58,7 @@ pub struct Context {
 
     /// Disable traversal of .git directory when traversing hidden files
     #[arg(long, requires = "hidden")]
-    ignore_git: bool,
+    pub ignore_git: bool,
 
     /// Display file icons
     #[arg(short = 'I', long)]
@@ -128,9 +128,19 @@ pub struct Context {
     #[arg(long)]
     pub size_left: bool,
 
+    /// Print plainly without ANSI escapes
+    #[arg(long)]
+    pub no_color: bool,
+
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
+
+    #[clap(skip = tty::stdin_is_tty())]
+    pub stdin_is_tty: bool,
+
+    #[clap(skip = tty::stdout_is_tty())]
+    pub stdout_is_tty: bool,
 }
 
 impl Context {
@@ -140,7 +150,7 @@ impl Context {
         let mut args: Vec<_> = std::env::args().collect();
 
         // If there's input on stdin we add each line as a separate glob pattern
-        if !stdin().is_terminal() {
+        if !tty::stdin_is_tty() {
             stdin()
                 .lock()
                 .lines()
@@ -156,7 +166,7 @@ impl Context {
             .args_override_self(true)
             .get_matches_from(args);
 
-        let no_config = user_args.get_one("no_config").map_or(false, bool::clone);
+        let no_config = user_args.get_one::<bool>("no_config").copied().unwrap_or(false);
 
         if no_config {
             return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
@@ -214,21 +224,17 @@ impl Context {
         Self::from_arg_matches(&user_args).map_err(Error::ArgParse)
     }
 
+    /// Determines whether or not it's appropriate to display color in output based on `--no-color`
+    /// and whether or not stdout is connected to a tty.
+    pub const fn no_color(&self) -> bool {
+        self.no_color || !self.stdout_is_tty
+    }
+
     /// Returns reference to the path of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
         self.dir
             .as_ref()
             .map_or_else(|| Path::new("."), |pb| pb.as_path())
-    }
-
-    /// The sort-order used for printing.
-    pub const fn sort(&self) -> SortType {
-        self.sort
-    }
-
-    /// Getter for `dirs_first` field.
-    pub const fn dirs_first(&self) -> bool {
-        self.dirs_first
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file

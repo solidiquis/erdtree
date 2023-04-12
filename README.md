@@ -56,7 +56,7 @@ If the chosen defaults don't meet your requirements and you don't want to bloat 
 ## Usage
 
 ```
-erdtree (et) is a multi-threaded filetree visualizer and disk usage analyzer.
+erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis tool.
 
 Usage: et [OPTIONS] [DIR]
 
@@ -70,7 +70,7 @@ Options:
       --iglob <IGLOB>              Include or exclude files using glob patterns; case insensitive
       --glob-case-insensitive      Process all glob patterns case insensitively
   -H, --hidden                     Show hidden files
-      --ignore-git                 Disable traversal of .git directory when traversing hidden files; disabled by default
+      --ignore-git                 Disable traversal of .git directory when traversing hidden files
   -I, --icons                      Display file icons
   -i, --ignore-git-ignore          Ignore .gitignore
   -l, --level <NUM>                Maximum depth to display
@@ -88,6 +88,7 @@ Options:
       --dirs-only                  Only print directories
       --suppress-size              Omit disk usage from output
       --size-left                  Show the size on the left, decimal aligned
+      --no-color                   Print plainly without ANSI escapes
       --no-config                  Don't read configuration file
   -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version

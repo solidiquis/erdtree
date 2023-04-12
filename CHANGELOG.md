@@ -3,6 +3,24 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.8.1] - 2023-04-11
+
+## What's Changed
+* Fix some typos by @goggle in https://github.com/solidiquis/erdtree/pull/110
+* add clap requires to flags that depent on --report by @jhscheer in https://github.com/solidiquis/erdtree/pull/111
+* refactor tests: move --no-config to mod::run_cmd by @jhscheer in https://github.com/solidiquis/erdtree/pull/112
+* Prevent panic when `--prune` is used with `--glob` which results in empty match set by @solidiquis in https://github.com/solidiquis/erdtree/pull/116
+* Add ability to take glob patterns from stdin by @jhscheer in https://github.com/solidiquis/erdtree/pull/114
+* Refactor/node and support hard link detection on Windows by @solidiquis in https://github.com/solidiquis/erdtree/pull/118
+* Support colorless output when redirecting/piping stdout; also provide `--no-color` option by @solidiquis in https://github.com/solidiquis/erdtree/pull/120
+* remove ansi escapes for default icon by @solidiquis in https://github.com/solidiquis/erdtree/pull/122
+
+## New Contributors
+* @goggle made their first contribution in https://github.com/solidiquis/erdtree/pull/110
+* @jhscheer made their first contribution in https://github.com/solidiquis/erdtree/pull/111
+
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/v1.7.1...v1.8.1
+
 ## [1.7.1] - 2023-03-30
 
 ## What's Changed

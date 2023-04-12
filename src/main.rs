@@ -20,7 +20,13 @@
     clippy::fallible_impl_from
 )]
 use clap::CommandFactory;
-use render::{context::Context, tree::Tree};
+use render::{
+    context::Context,
+    tree::{
+        display::{Regular, Report},
+        Tree,
+    },
+};
 use std::{io::stdout, process::ExitCode};
 
 /// Filesystem operations.
@@ -31,6 +37,9 @@ mod icons;
 
 /// Tools and operations to display root-directory.
 mod render;
+
+/// Determine if standard streams are connected to a tty.
+mod tty;
 
 /// Common utilities.
 mod utils;
@@ -52,11 +61,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    render::styles::init();
-
-    let tree = Tree::init(ctx)?;
-
-    println!("{tree}");
+    if ctx.report {
+        let tree = Tree::<Report>::init(ctx)?;
+        println!("{tree}");
+    } else {
+        render::styles::init(ctx.no_color());
+        let tree = Tree::<Regular>::init(ctx)?;
+        println!("{tree}");
+    }
 
     Ok(())
 }

@@ -78,22 +78,29 @@ impl FileSize {
     /// `  1.23 MiB`
     /// `    12   B`
     pub fn format(&self, align: bool) -> String {
-        let du_themes = get_du_theme();
+        let du_themes = get_du_theme().ok();
 
         let HumanReadableComponents { size, unit } = Self::human_readable_components(self);
-        let color = du_themes.get(unit.as_str()).unwrap();
+        let color = du_themes.and_then(|th| th.get(unit.as_str()));
 
-        if align {
-            match self.prefix_kind {
-                PrefixKind::Bin => color
+        match color {
+            Some(col) if align => match self.prefix_kind {
+                PrefixKind::Bin => col
                     .paint(format!("{size:>len$} {unit:>3}", len = self.scale + 4))
                     .to_string(),
-                PrefixKind::Si => color
+                PrefixKind::Si => col
                     .paint(format!("{size:>len$} {unit:>2}", len = self.scale + 4))
                     .to_string(),
-            }
-        } else {
-            color.paint(format!("{size} {unit}")).to_string()
+            },
+
+            Some(col) => col.paint(format!("{size} {unit}")).to_string(),
+
+            None if align => match self.prefix_kind {
+                PrefixKind::Bin => format!("{size:>len$} {unit:>3}", len = self.scale + 4),
+                PrefixKind::Si => format!("{size:>len$} {unit:>2}", len = self.scale + 4),
+            },
+
+            _ => format!("{size} {unit}"),
         }
     }
 
