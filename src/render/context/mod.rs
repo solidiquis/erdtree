@@ -166,7 +166,7 @@ impl Context {
             .args_override_self(true)
             .get_matches_from(args);
 
-        let no_config = user_args.get_one("no_config").map_or(false, bool::clone);
+        let no_config = user_args.get_one::<bool>("no_config").copied().unwrap_or(false);
 
         if no_config {
             return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);

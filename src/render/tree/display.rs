@@ -83,8 +83,6 @@ impl Display for Tree<Regular> {
 
             if current_node_depth <= level {
                 display_node(current_node_id, &prefix)?;
-            } else {
-                break;
             }
 
             if let Some(next_id) = descendants.peek() {
