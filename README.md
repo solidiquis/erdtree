@@ -95,6 +95,14 @@ Options:
 
 ## Installation
 
+### Quick Install
+
+You can run the below curl to install it at ./bin folder
+
+```
+$ curl -s https://raw.githubusercontent.com/solidiquis/erdtree/master/install.sh | sudo bash
+```
+
 ### crates.io
 
 Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
