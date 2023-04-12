@@ -13,7 +13,7 @@ fn config() {
 
     assert_eq!(level, 1, "Failed to properly read 'level' from config");
 
-    let sort = context.sort();
+    let sort = context.sort;
 
     assert_eq!(
         sort,

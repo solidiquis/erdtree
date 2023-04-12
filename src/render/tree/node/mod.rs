@@ -191,7 +191,7 @@ impl Node {
 
         let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
 
-        let file_name = if ctx.no_color {
+        let file_name = if ctx.no_color() {
             self.file_name().to_string_lossy()
         } else {
             self.stylize_link_name().unwrap_or_else(|| {
@@ -360,7 +360,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
         };
 
         let icon = if ctx.icons {
-            let no_color = ctx.no_color || !tty::stdout_is_tty();
+            let no_color = ctx.no_color();
             Self::compute_icon(&dir_entry, link_target.as_ref(), style, no_color)
         } else {
             None
