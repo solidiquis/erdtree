@@ -32,7 +32,6 @@ impl Display for Tree<Regular> {
         let root = self.root;
         let inner = self.inner();
         let level = self.level();
-        let show_count = ctx.count;
         let mut file_count_data = vec![];
 
         let mut descendants = root.descendants(inner).skip(1).peekable();
@@ -41,11 +40,7 @@ impl Display for Tree<Regular> {
             let node = inner[node_id].get();
 
             node.display(f, prefix, ctx)?;
-
-            if show_count {
-                let count = Self::compute_file_count(node_id, inner);
-                file_count_data.push(count);
-            }
+            file_count_data.push(Self::compute_file_count(node_id, inner));
 
             writeln!(f)
         };
@@ -59,7 +54,7 @@ impl Display for Tree<Regular> {
 
             let current_node = inner[current_node_id].get();
 
-            let current_node_depth = current_node.depth();
+            let current_depth = current_node.depth();
 
             let mut siblings = current_node_id.following_siblings(inner).skip(1).peekable();
 
@@ -81,24 +76,24 @@ impl Display for Tree<Regular> {
 
             let prefix = current_prefix_components.join("");
 
-            if current_node_depth <= level {
+            if current_depth <= level {
                 display_node(current_node_id, &prefix)?;
             }
 
             if let Some(next_id) = descendants.peek() {
                 let next_node = inner[*next_id].get();
 
-                let next_node_depth = next_node.depth();
+                let next_depth = next_node.depth();
 
-                if next_node_depth == current_node_depth + 1 {
+                if next_depth == current_depth + 1 {
                     if last_sibling {
                         prefix_components.push(styles::SEP);
                     } else {
                         let prefix = theme.get("vt").unwrap();
                         prefix_components.push(prefix);
                     }
-                } else if next_node_depth < current_node_depth {
-                    let depth_delta = current_node_depth - next_node_depth;
+                } else if next_depth < current_depth {
+                    let depth_delta = current_depth - next_depth;
 
                     prefix_components.truncate(prefix_components.len() - depth_delta);
                 }
@@ -121,7 +116,6 @@ impl Display for Tree<Report> {
         let max_depth = ctx.level().unwrap_or(usize::MAX);
         let dir = ctx.dir();
         let prefix_kind = ctx.prefix;
-        let show_count = ctx.count;
         let mut file_count_data = vec![];
 
         let du_info = |node: &Node| {
@@ -145,10 +139,7 @@ impl Display for Tree<Report> {
 
         let root_node = tree[root].get();
 
-        if show_count {
-            let count = Self::compute_file_count(root, tree);
-            file_count_data.push(count);
-        }
+        file_count_data.push(Self::compute_file_count(root, tree));
 
         let total_du_width = root_node
             .file_size()
@@ -184,10 +175,7 @@ impl Display for Tree<Report> {
         for node_id in root.descendants(tree).skip(1) {
             let node = tree[node_id].get();
 
-            if show_count {
-                let count = Self::compute_file_count(node_id, tree);
-                file_count_data.push(count);
-            }
+            file_count_data.push(Self::compute_file_count(node_id, tree));
 
             if node.depth() > max_depth {
                 continue;

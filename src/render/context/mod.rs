@@ -29,10 +29,6 @@ mod test;
 #[command(version = "1.8.1")]
 #[command(about = "erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis tool.", long_about = None)]
 pub struct Context {
-    /// Include aggregate file count in tree output
-    #[arg(short, long)]
-    pub count: bool,
-
     /// Root directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
@@ -123,10 +119,6 @@ pub struct Context {
     /// Omit disk usage from output
     #[arg(long)]
     pub suppress_size: bool,
-
-    /// Show the size on the left, decimal aligned
-    #[arg(long)]
-    pub size_left: bool,
 
     /// Print plainly without ANSI escapes
     #[arg(long)]

@@ -107,7 +107,11 @@ impl FileSize {
     /// Returns spaces times the length of a file size, formatted with the given options
     /// " " * len(123.45 KiB)
     pub fn empty_string(ctx: &Context) -> String {
-        format!("{:len$}", "", len = Self::empty_string_len(ctx))
+        if ctx.suppress_size {
+            String::new()
+        } else {
+            format!("{:len$}", "", len = Self::empty_string_len(ctx))
+        }
     }
 
     const fn empty_string_len(ctx: &Context) -> usize {

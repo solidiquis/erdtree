@@ -7,16 +7,17 @@ fn glob() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--glob", "*.txt", "tests/data"]),
         indoc!(
-            "
-            data (1.07 KiB)
-            ├─ dream_cycle (308 B)
-            │  └─ polaris.txt (308 B)
-            ├─ lipsum (446 B)
-            │  └─ lipsum.txt (446 B)
-            ├─ necronomicon.txt (83 B)
-            ├─ nemesis.txt (161 B)
-            ├─ nylarlathotep.txt (100 B)
-            └─ the_yellow_king"
+            "1.07 KiB data
+              308   B ├─ dream_cycle
+              308   B │  └─ polaris.txt
+              446   B ├─ lipsum
+              446   B │  └─ lipsum.txt
+               83   B ├─ necronomicon.txt
+              161   B ├─ nemesis.txt
+              100   B ├─ nylarlathotep.txt
+                      └─ the_yellow_king
+
+           3 directories, 5 files"
         )
     );
 }
@@ -26,12 +27,13 @@ fn glob_negative() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--glob", "!*.txt", "tests/data"]),
         indoc!(
-            "
-            data (143 B)
-            ├─ dream_cycle
-            ├─ lipsum
-            └─ the_yellow_king (143 B)
-               └─ cassildas_song.md (143 B)"
+          "143   B data
+                   ├─ dream_cycle
+                   ├─ lipsum
+           143   B └─ the_yellow_king
+           143   B    └─ cassildas_song.md
+
+        3 directories, 1 file"
         )
     )
 }
@@ -48,16 +50,17 @@ fn glob_case_insensitive() {
             "tests/data"
         ]),
         indoc!(
-            "
-            data (1.07 KiB)
-            ├─ dream_cycle (308 B)
-            │  └─ polaris.txt (308 B)
-            ├─ lipsum (446 B)
-            │  └─ lipsum.txt (446 B)
-            ├─ necronomicon.txt (83 B)
-            ├─ nemesis.txt (161 B)
-            ├─ nylarlathotep.txt (100 B)
-            └─ the_yellow_king"
+             "1.07 KiB data
+               308   B ├─ dream_cycle
+               308   B │  └─ polaris.txt
+               446   B ├─ lipsum
+               446   B │  └─ lipsum.txt
+                83   B ├─ necronomicon.txt
+               161   B ├─ nemesis.txt
+               100   B ├─ nylarlathotep.txt
+                       └─ the_yellow_king
+
+            3 directories, 5 files"
         )
     )
 }
@@ -67,16 +70,17 @@ fn iglob() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--iglob", "*.TXT", "tests/data"]),
         indoc!(
-            "
-            data (1.07 KiB)
-            ├─ dream_cycle (308 B)
-            │  └─ polaris.txt (308 B)
-            ├─ lipsum (446 B)
-            │  └─ lipsum.txt (446 B)
-            ├─ necronomicon.txt (83 B)
-            ├─ nemesis.txt (161 B)
-            ├─ nylarlathotep.txt (100 B)
-            └─ the_yellow_king"
+             "1.07 KiB data
+               308   B ├─ dream_cycle
+               308   B │  └─ polaris.txt
+               446   B ├─ lipsum
+               446   B │  └─ lipsum.txt
+                83   B ├─ necronomicon.txt
+               161   B ├─ nemesis.txt
+               100   B ├─ nylarlathotep.txt
+                       └─ the_yellow_king
+
+            3 directories, 5 files"
         )
     )
 }
@@ -87,15 +91,15 @@ fn glob_stdin() {
     use std::process::{Command, Stdio};
     use strip_ansi_escapes::strip as strip_ansi_escapes;
     let expected = indoc!(
-        "
-        data (304 B)
-        ├─ dream_cycle
-        ├─ lipsum
-        ├─ nemesis.txt (161 B)
-        └─ the_yellow_king (143 B)
-           └─ cassildas_song.md (143 B)
+      "304   B data
+               ├─ dream_cycle
+               ├─ lipsum
+       161   B ├─ nemesis.txt
+       143   B └─ the_yellow_king
+       143   B    └─ cassildas_song.md
 
-        "
+    3 directories, 2 files
+    "
     );
     let stdin = String::from("cassildas_song.md\nnemesis.txt\n");
 
@@ -118,9 +122,8 @@ fn glob_stdin() {
     write!(cmd.stdin.as_ref().unwrap(), "{}", stdin).unwrap();
     let output = cmd.wait_with_output().unwrap();
 
-    assert_eq!(
-        String::from_utf8(strip_ansi_escapes(output.stdout).unwrap()).unwrap(),
-        expected
-    );
+    let out = String::from_utf8(strip_ansi_escapes(output.stdout).unwrap()).unwrap();
+
+    assert_eq!(out.trim_start(), expected);
     assert!(output.status.success());
 }
