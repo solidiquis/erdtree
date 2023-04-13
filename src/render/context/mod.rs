@@ -11,7 +11,6 @@ use sort::SortType;
 use std::{
     convert::From,
     ffi::{OsStr, OsString},
-    io::{stdin, BufRead},
     path::{Path, PathBuf},
 };
 
@@ -145,24 +144,7 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let mut args: Vec<_> = std::env::args().collect();
-
-        // If there's input on stdin we add each line as a separate glob pattern
-        if !tty::stdin_is_tty() {
-            stdin()
-                .lock()
-                .lines()
-                .filter_map(Result::ok)
-                .filter(|l| !l.is_empty())
-                .for_each(|line| {
-                    args.push("--glob".into());
-                    args.push(line);
-                });
-        }
-
-        let user_args = Self::command()
-            .args_override_self(true)
-            .get_matches_from(args);
+        let user_args = Self::command().args_override_self(true).get_matches();
 
         let no_config = user_args
             .get_one::<bool>("no_config")
