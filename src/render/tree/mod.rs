@@ -1,4 +1,8 @@
-use crate::render::{context::Context, disk_usage::file_size::FileSize, styles};
+use crate::render::{
+    context::{Context, error::Error as CtxError},
+    disk_usage::file_size::FileSize,
+    styles,
+};
 use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
@@ -67,11 +71,6 @@ where
         let (inner, root) = Self::traverse(&ctx)?;
 
         Ok(Self::new(inner, root, ctx))
-    }
-
-    /// Maximum depth to display.
-    fn level(&self) -> usize {
-        self.ctx.level.unwrap_or(usize::MAX)
     }
 
     /// Grab a reference to [Context].
@@ -176,7 +175,7 @@ where
 
         let mut children = branches.remove(current_node.path()).unwrap();
 
-        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.prefix, ctx.scale);
+        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.unit, ctx.scale);
 
         for child_id in &children {
             let index = *child_id;
@@ -270,17 +269,31 @@ where
 impl TryFrom<&Context> for WalkParallel {
     type Error = Error;
 
-    fn try_from(clargs: &Context) -> StdResult<Self, Self::Error> {
-        let root = fs::canonicalize(clargs.dir())?;
+    fn try_from(ctx: &Context) -> StdResult<Self, Self::Error> {
+        let root = fs::canonicalize(ctx.dir())?;
 
         fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
 
-        Ok(WalkBuilder::new(root)
-            .follow_links(clargs.follow_links)
-            .git_ignore(!clargs.ignore_git_ignore)
-            .hidden(!clargs.hidden)
-            .threads(clargs.threads)
-            .overrides(clargs.overrides()?)
-            .build_parallel())
+        let mut builder = WalkBuilder::new(root);
+
+        builder
+            .follow_links(ctx.follow_links)
+            .git_ignore(!ctx.ignore_git_ignore)
+            .hidden(!ctx.hidden)
+            .threads(ctx.threads)
+            .overrides(ctx.overrides()?);
+
+        match ctx.regex_predicate() {
+            Err(error) => {
+                if let CtxError::InvalidRegularExpression(e) = error {
+                    return Err(Error::from(CtxError::InvalidRegularExpression(e)));
+                }
+            }
+            Ok(predicate) => {
+                builder.filter_entry(predicate);
+            }
+        }
+
+        Ok(builder.build_parallel())
     }
 }

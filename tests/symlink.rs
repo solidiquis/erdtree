@@ -22,9 +22,9 @@ mod test {
         let out = super::utils::run_cmd(&["--sort", "name", "--follow-links", &link_canonical]);
 
         assert_eq!(
-            out, 
+            out,
             indoc!(
-               "143   B the_yellow_king
+                "143   B the_yellow_king
                    143   B └─ cassildas_song.md
 
                 1 file"

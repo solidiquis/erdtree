@@ -1,4 +1,5 @@
 use super::styles::error::Error as StyleError;
+use crate::render::context::error::Error as CtxError;
 use ignore::Error as IgnoreError;
 use std::io::Error as IoError;
 
@@ -7,6 +8,9 @@ use std::io::Error as IoError;
 /// [`Tree`]: super::Tree
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("{0}")]
+    ContextError(#[from] CtxError),
+
     #[error("{0}")]
     DirNotFound(String),
 

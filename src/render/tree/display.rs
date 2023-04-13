@@ -31,7 +31,7 @@ impl Display for Tree<Regular> {
 
         let root = self.root;
         let inner = self.inner();
-        let level = self.level();
+        let level = ctx.level();
         let mut file_count_data = vec![];
 
         let mut descendants = root.descendants(inner).skip(1).peekable();
@@ -113,9 +113,9 @@ impl Display for Tree<Report> {
         let tree = self.inner();
         let root = self.root();
         let ctx = self.context();
-        let max_depth = ctx.level().unwrap_or(usize::MAX);
+        let max_depth = ctx.level();
         let dir = ctx.dir();
-        let prefix_kind = ctx.prefix;
+        let prefix_kind = ctx.unit;
         let mut file_count_data = vec![];
 
         let du_info = |node: &Node| {

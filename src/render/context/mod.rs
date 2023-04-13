@@ -1,9 +1,19 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
 use clap::{
-    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
+    ArgMatches,
+    CommandFactory,
+    FromArgMatches,
+    Id,
+    Parser,
+    parser::ValueSource,
 };
-use ignore::overrides::{Override, OverrideBuilder};
+use error::Error;
+use ignore::{
+    overrides::{Override, OverrideBuilder},
+    DirEntry
+};
+use regex::Regex;
 use sort::SortType;
 use std::{
     convert::From,
@@ -14,6 +24,9 @@ use std::{
 
 /// Operations to load in defaults from configuration file.
 pub mod config;
+
+/// [Context] related errors.
+pub mod error;
 
 /// Printing order kinds.
 pub mod sort;
@@ -36,17 +49,17 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
 
-    /// Include or exclude files using glob patterns
+    /// Regular expression (or a glob if '--glob' is used) used to match files
     #[arg(short, long)]
-    pub glob: Vec<String>,
+    pub pattern: Option<String>,
 
-    /// Include or exclude files using glob patterns; case insensitive
-    #[arg(long)]
-    iglob: Vec<String>,
+    /// Enables glob based searching
+    #[arg(long, requires = "pattern")]
+    pub glob: bool,
 
-    /// Process all glob patterns case insensitively
-    #[arg(long)]
-    pub glob_case_insensitive: bool,
+    /// Enables case-insensitive glob based searching
+    #[arg(long, requires = "pattern")]
+    pub iglob: bool,
 
     /// Show hidden files
     #[arg(short = 'H', long)]
@@ -66,15 +79,11 @@ pub struct Context {
 
     /// Maximum depth to display
     #[arg(short, long, value_name = "NUM")]
-    pub level: Option<usize>,
+    level: Option<usize>,
 
     /// Total number of digits after the decimal to display for disk usage
     #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
     pub scale: usize,
-
-    /// Display disk usage as binary or SI units
-    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
-    pub prefix: PrefixKind,
 
     /// Disable printing of empty branches
     #[arg(short = 'P', long)]
@@ -99,6 +108,10 @@ pub struct Context {
     /// Always sorts directories above files
     #[arg(long)]
     pub dirs_first: bool,
+
+    /// Display disk usage as binary or SI units
+    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
+    pub unit: PrefixKind,
 
     /// Traverse symlink directories and consider their disk usage
     #[arg(short = 'S', long)]
@@ -158,7 +171,10 @@ impl Context {
             .args_override_self(true)
             .get_matches_from(args);
 
-        let no_config = user_args.get_one::<bool>("no_config").copied().unwrap_or(false);
+        let no_config = user_args
+            .get_one::<bool>("no_config")
+            .copied()
+            .unwrap_or(false);
 
         if no_config {
             return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
@@ -231,37 +247,34 @@ impl Context {
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
     /// sizes; this just determines how much to print.
-    pub const fn level(&self) -> Option<usize> {
-        self.level
+    pub fn level(&self) -> usize {
+        self.level.unwrap_or(usize::MAX)
     }
 
     /// Ignore file overrides.
-    pub fn overrides(&self) -> Result<Override, ignore::Error> {
+    pub fn overrides(&self) -> Result<Override, Error> {
         let mut builder = OverrideBuilder::new(self.dir());
 
         if self.ignore_git {
             builder.add("!.git")?;
         }
 
-        if self.glob.is_empty() && self.iglob.is_empty() {
-            return builder.build();
+        if !self.glob && !self.iglob {
+            let builder = builder.build()?;
+            return Ok(builder);
         }
 
-        if self.glob_case_insensitive {
+        if self.iglob {
             builder.case_insensitive(true).unwrap();
         }
 
-        for glob in &self.glob {
-            builder.add(glob)?;
+        if let Some(ref p) = self.pattern {
+            builder.add(p)?;
         }
 
-        // all subsequent patterns are case insensitive
-        builder.case_insensitive(true).unwrap();
-        for glob in &self.iglob {
-            builder.add(glob)?;
-        }
+        let builder = builder.build()?;
 
-        builder.build()
+        Ok(builder)
     }
 
     /// Used to pick either from config or user args when constructing [Context].
@@ -280,12 +293,30 @@ impl Context {
             args.extend(raw_args);
         }
     }
-}
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("{0}")]
-    ArgParse(#[source] ClapError),
-    #[error("A configuration file was found but failed to parse: {0}")]
-    Config(#[source] ClapError),
+    /// Returns a closure that is used to determine if a non-directory directory entry matches the
+    /// provided regular expression. If there is a match then that entry will be included in the
+    /// output.
+    pub fn regex_predicate(
+        &self,
+    ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
+        if self.iglob || self.glob {
+            return Err(Error::RegexDisabled);
+        }
+
+        let Some(pattern) = self.pattern.as_ref() else {
+            return Err(Error::PatternNotProvided);
+        };
+
+        let re = Regex::new(pattern)?;
+
+        Ok(Box::new(move |dir_entry: &DirEntry| {
+            if dir_entry.file_type().map_or(false, |ft| ft.is_dir()) {
+                return true;
+            }
+
+            let file_name = dir_entry.file_name().to_string_lossy();
+            re.is_match(&file_name)
+        }))
+    }
 }

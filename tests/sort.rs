@@ -7,7 +7,7 @@ fn sort_name() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "tests/data"]),
         indoc!(
-             "1.21 KiB data
+            "1.21 KiB data
                308   B ├─ dream_cycle
                308   B │  └─ polaris.txt
                446   B ├─ lipsum
@@ -29,7 +29,7 @@ fn sort_name_dir_first() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--dirs-first", "tests/data"]),
         indoc!(
-             "1.21 KiB data
+            "1.21 KiB data
                308   B ├─ dream_cycle
                308   B │  └─ polaris.txt
                446   B ├─ lipsum
@@ -51,7 +51,7 @@ fn sort_size() {
     assert_eq!(
         utils::run_cmd(&["--sort", "size", "tests/data"]),
         indoc!(
-             "1.21 KiB data
+            "1.21 KiB data
                 83   B ├─ necronomicon.txt
                100   B ├─ nylarlathotep.txt
                143   B ├─ the_yellow_king
@@ -73,7 +73,7 @@ fn sort_size_dir_first() {
     assert_eq!(
         utils::run_cmd(&["--sort", "size", "--dirs-first", "tests/data"]),
         indoc!(
-             "1.21 KiB data
+            "1.21 KiB data
                143   B ├─ the_yellow_king
                143   B │  └─ cassildas_song.md
                308   B ├─ dream_cycle

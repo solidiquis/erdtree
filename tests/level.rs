@@ -7,7 +7,7 @@ fn level() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--level", "1", "tests/data"]),
         indoc!(
-             "1.21 KiB data
+            "1.21 KiB data
                308   B ├─ dream_cycle
                446   B ├─ lipsum
                 83   B ├─ necronomicon.txt

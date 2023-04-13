@@ -123,7 +123,7 @@ impl FileSize {
         3 + 1
             + ctx.scale
             + 1
-            + match ctx.prefix {
+            + match ctx.unit {
                 PrefixKind::Bin => 3,
                 PrefixKind::Si => 2,
             }

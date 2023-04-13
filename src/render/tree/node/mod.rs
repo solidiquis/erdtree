@@ -174,10 +174,9 @@ impl Node {
     /// Note the two spaces to the left of the first character of the number -- even if never used,
     /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
     pub fn display(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
-        let size = self.file_size().map_or_else(
-            || FileSize::empty_string(ctx),
-            |size| size.format(true),
-        );
+        let size = self
+            .file_size()
+            .map_or_else(|| FileSize::empty_string(ctx), |size| size.format(true));
 
         let icon = self.icon().unwrap_or("");
 
@@ -335,8 +334,8 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let file_size = match file_type {
             Some(ref ft) if ft.is_file() && !ctx.suppress_size => match ctx.disk_usage {
-                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.prefix, ctx.scale)),
-                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.prefix, ctx.scale),
+                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.unit, ctx.scale)),
+                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.unit, ctx.scale),
             },
             _ => None,
         };
