@@ -19,7 +19,7 @@ mod test {
             .canonicalize()
             .map(|c| c.to_string_lossy().into_owned())?;
 
-        let out = super::utils::run_cmd(&["--sort", "name", "--follow-links", &link_canonical]);
+        let out = super::utils::run_cmd(&["--sort", "name", "--follow", &link_canonical]);
 
         assert_eq!(
             out,

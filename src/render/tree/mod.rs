@@ -294,7 +294,7 @@ impl TryFrom<&Context> for WalkParallel {
 
         builder
             .follow_links(ctx.follow_links)
-            .git_ignore(!ctx.ignore_git_ignore)
+            .git_ignore(!ctx.no_ignore)
             .hidden(!ctx.hidden)
             .threads(ctx.threads)
             .overrides(ctx.overrides()?);

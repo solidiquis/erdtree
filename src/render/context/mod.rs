@@ -34,14 +34,38 @@ mod test;
 #[command(version = "1.8.1")]
 #[command(about = "erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis tool.", long_about = None)]
 pub struct Context {
-    /// Root directory to traverse; defaults to current working directory
+    /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
 
-    /// Regular expression (or a glob if '--glob' is used) used to match files
+    /// Show hidden files
+    #[arg(short = '.', long)]
+    pub hidden: bool,
+
+    /// Disable traversal of .git directory when traversing hidden files
+    #[arg(long, requires = "hidden")]
+    pub no_git: bool,
+
+    /// Do not respect .gitignore files
+    #[arg(short = 'i', long)]
+    pub no_ignore: bool,
+
+    /// Display file icons
+    #[arg(short = 'I', long)]
+    pub icons: bool,
+
+    /// Follow symlinks and consider their disk usage
+    #[arg(short = 'L', long = "follow")]
+    pub follow_links: bool,
+
+    /// Maximum depth to display
+    #[arg(short, long, value_name = "NUM")]
+    level: Option<usize>,
+
+    /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
     pub pattern: Option<String>,
 
@@ -53,33 +77,13 @@ pub struct Context {
     #[arg(long, requires = "pattern")]
     pub iglob: bool,
 
-    /// Show hidden files
-    #[arg(short = 'H', long)]
-    pub hidden: bool,
-
-    /// Disable traversal of .git directory when traversing hidden files
-    #[arg(long, requires = "hidden")]
-    pub ignore_git: bool,
-
-    /// Display file icons
-    #[arg(short = 'I', long)]
-    pub icons: bool,
-
-    /// Ignore .gitignore
-    #[arg(short, long)]
-    pub ignore_git_ignore: bool,
-
-    /// Maximum depth to display
-    #[arg(short, long, value_name = "NUM")]
-    level: Option<usize>,
+    /// Remove empty directories from output
+    #[arg(short = 'P', long)]
+    pub prune: bool,
 
     /// Total number of digits after the decimal to display for disk usage
     #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
     pub scale: usize,
-
-    /// Disable printing of empty branches
-    #[arg(short = 'P', long)]
-    pub prune: bool,
 
     /// Print disk usage information in plain format without ASCII tree
     #[arg(short, long)]
@@ -97,21 +101,17 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
     pub sort: SortType,
 
-    /// Always sorts directories above files
+    /// Sort directories above files
     #[arg(long)]
     pub dirs_first: bool,
-
-    /// Display disk usage as binary or SI units
-    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
-    pub unit: PrefixKind,
-
-    /// Traverse symlink directories and consider their disk usage
-    #[arg(short = 'S', long)]
-    pub follow_links: bool,
 
     /// Number of threads to use
     #[arg(short, long, default_value_t = 3)]
     pub threads: usize,
+
+    /// Report disk usage in binary or SI units
+    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
+    pub unit: PrefixKind,
 
     #[arg(long)]
     /// Print completions for a given shell to stdout
@@ -121,10 +121,6 @@ pub struct Context {
     #[arg(long)]
     pub dirs_only: bool,
 
-    /// Omit disk usage from output
-    #[arg(long)]
-    pub suppress_size: bool,
-
     /// Print plainly without ANSI escapes
     #[arg(long)]
     pub no_color: bool,
@@ -132,6 +128,10 @@ pub struct Context {
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
+
+    /// Omit disk usage from output
+    #[arg(long)]
+    pub suppress_size: bool,
 
     #[clap(skip = tty::stdin_is_tty())]
     pub stdin_is_tty: bool,
@@ -230,7 +230,7 @@ impl Context {
     pub fn overrides(&self) -> Result<Override, Error> {
         let mut builder = OverrideBuilder::new(self.dir());
 
-        if self.ignore_git {
+        if self.no_git {
             builder.add("!.git")?;
         }
 
