@@ -5,7 +5,15 @@ mod utils;
 #[test]
 fn prune() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--glob", "--pattern", "*.txt", "--prune", "tests/data"]),
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--glob",
+            "--pattern",
+            "*.txt",
+            "--prune",
+            "tests/data"
+        ]),
         indoc!(
             "1.07 KiB data
                308   B ├─ dream_cycle
@@ -19,20 +27,4 @@ fn prune() {
             2 directories, 5 files"
         )
     );
-
-    assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--glob",
-            "--pattern",
-            "something_that_does_not_exist.txt",
-            "--prune",
-            "tests/data"
-        ]),
-        indoc!(
-            "
-            data"
-        )
-    )
 }

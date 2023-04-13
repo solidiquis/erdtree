@@ -1,17 +1,10 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
-use clap::{
-    ArgMatches,
-    CommandFactory,
-    FromArgMatches,
-    Id,
-    Parser,
-    parser::ValueSource,
-};
+use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
 use error::Error;
 use ignore::{
     overrides::{Override, OverrideBuilder},
-    DirEntry
+    DirEntry,
 };
 use regex::Regex;
 use sort::SortType;

@@ -1,5 +1,5 @@
 use crate::render::{
-    context::{Context, error::Error as CtxError},
+    context::{error::Error as CtxError, Context},
     disk_usage::file_size::FileSize,
     styles,
 };
@@ -70,7 +70,23 @@ where
     pub fn init(ctx: Context) -> Result<Self> {
         let (inner, root) = Self::traverse(&ctx)?;
 
-        Ok(Self::new(inner, root, ctx))
+        let tree = Self::new(inner, root, ctx);
+
+        if tree.is_stump() {
+            return Err(Error::NoMatches);
+        }
+
+        Ok(tree)
+    }
+
+    /// Returns `true` if there are no entries to show excluding the root.
+    pub fn is_stump(&self) -> bool {
+        self.root
+            .descendants(self.inner())
+            .skip(1)
+            .peekable()
+            .next()
+            .is_none()
     }
 
     /// Grab a reference to [Context].
