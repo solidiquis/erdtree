@@ -24,10 +24,10 @@ pub struct HumanReadableComponents {
 #[derive(Copy, Clone, Debug, ValueEnum, Default)]
 pub enum DiskUsage {
     /// How many bytes does a file contain
-    #[default]
     Logical,
 
     /// How much actual space on disk, taking into account sparse files and compression.
+    #[default]
     Physical,
 }
 
