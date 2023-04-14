@@ -9,7 +9,7 @@ const TEST_CONFIG: &str = "./tests/data/.erdtreerc";
 fn config() {
     let context = context_from_config().expect("Failed to build Context from config path");
 
-    let level = context.level().expect("'level' should not be 'None'");
+    let level = context.level();
 
     assert_eq!(level, 1, "Failed to properly read 'level' from config");
 

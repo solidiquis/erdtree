@@ -1,19 +1,24 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
-use clap::{
-    parser::ValueSource, ArgMatches, CommandFactory, Error as ClapError, FromArgMatches, Id, Parser,
+use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
+use error::Error;
+use ignore::{
+    overrides::{Override, OverrideBuilder},
+    DirEntry,
 };
-use ignore::overrides::{Override, OverrideBuilder};
+use regex::Regex;
 use sort::SortType;
 use std::{
     convert::From,
     ffi::{OsStr, OsString},
-    io::{stdin, BufRead},
     path::{Path, PathBuf},
 };
 
 /// Operations to load in defaults from configuration file.
 pub mod config;
+
+/// [Context] related errors.
+pub mod error;
 
 /// Printing order kinds.
 pub mod sort;
@@ -29,60 +34,56 @@ mod test;
 #[command(version = "1.8.1")]
 #[command(about = "erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis tool.", long_about = None)]
 pub struct Context {
-    /// Include aggregate file count in tree output
-    #[arg(short, long)]
-    pub count: bool,
-
-    /// Root directory to traverse; defaults to current working directory
+    /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
 
-    /// Include or exclude files using glob patterns
-    #[arg(short, long)]
-    pub glob: Vec<String>,
-
-    /// Include or exclude files using glob patterns; case insensitive
-    #[arg(long)]
-    iglob: Vec<String>,
-
-    /// Process all glob patterns case insensitively
-    #[arg(long)]
-    pub glob_case_insensitive: bool,
-
     /// Show hidden files
-    #[arg(short = 'H', long)]
+    #[arg(short = '.', long)]
     pub hidden: bool,
 
     /// Disable traversal of .git directory when traversing hidden files
     #[arg(long, requires = "hidden")]
-    pub ignore_git: bool,
+    pub no_git: bool,
+
+    /// Do not respect .gitignore files
+    #[arg(short = 'i', long)]
+    pub no_ignore: bool,
 
     /// Display file icons
     #[arg(short = 'I', long)]
     pub icons: bool,
 
-    /// Ignore .gitignore
-    #[arg(short, long)]
-    pub ignore_git_ignore: bool,
+    /// Follow symlinks and consider their disk usage
+    #[arg(short = 'L', long = "follow")]
+    pub follow_links: bool,
 
     /// Maximum depth to display
     #[arg(short, long, value_name = "NUM")]
-    pub level: Option<usize>,
+    level: Option<usize>,
+
+    /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
+    #[arg(short, long)]
+    pub pattern: Option<String>,
+
+    /// Enables glob based searching
+    #[arg(long, requires = "pattern")]
+    pub glob: bool,
+
+    /// Enables case-insensitive glob based searching
+    #[arg(long, requires = "pattern")]
+    pub iglob: bool,
+
+    /// Remove empty directories from output
+    #[arg(short = 'P', long)]
+    pub prune: bool,
 
     /// Total number of digits after the decimal to display for disk usage
     #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
     pub scale: usize,
-
-    /// Display disk usage as binary or SI units
-    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
-    pub prefix: PrefixKind,
-
-    /// Disable printing of empty branches
-    #[arg(short = 'P', long)]
-    pub prune: bool,
 
     /// Print disk usage information in plain format without ASCII tree
     #[arg(short, long)]
@@ -100,17 +101,17 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
     pub sort: SortType,
 
-    /// Always sorts directories above files
+    /// Sort directories above files
     #[arg(long)]
     pub dirs_first: bool,
-
-    /// Traverse symlink directories and consider their disk usage
-    #[arg(short = 'S', long)]
-    pub follow_links: bool,
 
     /// Number of threads to use
     #[arg(short, long, default_value_t = 3)]
     pub threads: usize,
+
+    /// Report disk usage in binary or SI units
+    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
+    pub unit: PrefixKind,
 
     #[arg(long)]
     /// Print completions for a given shell to stdout
@@ -120,14 +121,6 @@ pub struct Context {
     #[arg(long)]
     pub dirs_only: bool,
 
-    /// Omit disk usage from output
-    #[arg(long)]
-    pub suppress_size: bool,
-
-    /// Show the size on the left, decimal aligned
-    #[arg(long)]
-    pub size_left: bool,
-
     /// Print plainly without ANSI escapes
     #[arg(long)]
     pub no_color: bool,
@@ -135,6 +128,10 @@ pub struct Context {
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
+
+    /// Omit disk usage from output
+    #[arg(long)]
+    pub suppress_size: bool,
 
     #[clap(skip = tty::stdin_is_tty())]
     pub stdin_is_tty: bool,
@@ -147,26 +144,12 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        let mut args: Vec<_> = std::env::args().collect();
+        let user_args = Self::command().args_override_self(true).get_matches();
 
-        // If there's input on stdin we add each line as a separate glob pattern
-        if !tty::stdin_is_tty() {
-            stdin()
-                .lock()
-                .lines()
-                .filter_map(Result::ok)
-                .filter(|l| !l.is_empty())
-                .for_each(|line| {
-                    args.push("--glob".into());
-                    args.push(line);
-                });
-        }
-
-        let user_args = Self::command()
-            .args_override_self(true)
-            .get_matches_from(args);
-
-        let no_config = user_args.get_one::<bool>("no_config").copied().unwrap_or(false);
+        let no_config = user_args
+            .get_one::<bool>("no_config")
+            .copied()
+            .unwrap_or(false);
 
         if no_config {
             return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
@@ -239,37 +222,34 @@ impl Context {
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
     /// sizes; this just determines how much to print.
-    pub const fn level(&self) -> Option<usize> {
-        self.level
+    pub fn level(&self) -> usize {
+        self.level.unwrap_or(usize::MAX)
     }
 
     /// Ignore file overrides.
-    pub fn overrides(&self) -> Result<Override, ignore::Error> {
+    pub fn overrides(&self) -> Result<Override, Error> {
         let mut builder = OverrideBuilder::new(self.dir());
 
-        if self.ignore_git {
+        if self.no_git {
             builder.add("!.git")?;
         }
 
-        if self.glob.is_empty() && self.iglob.is_empty() {
-            return builder.build();
+        if !self.glob && !self.iglob {
+            let builder = builder.build()?;
+            return Ok(builder);
         }
 
-        if self.glob_case_insensitive {
+        if self.iglob {
             builder.case_insensitive(true).unwrap();
         }
 
-        for glob in &self.glob {
-            builder.add(glob)?;
+        if let Some(ref p) = self.pattern {
+            builder.add(p)?;
         }
 
-        // all subsequent patterns are case insensitive
-        builder.case_insensitive(true).unwrap();
-        for glob in &self.iglob {
-            builder.add(glob)?;
-        }
+        let builder = builder.build()?;
 
-        builder.build()
+        Ok(builder)
     }
 
     /// Used to pick either from config or user args when constructing [Context].
@@ -288,12 +268,30 @@ impl Context {
             args.extend(raw_args);
         }
     }
-}
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("{0}")]
-    ArgParse(#[source] ClapError),
-    #[error("A configuration file was found but failed to parse: {0}")]
-    Config(#[source] ClapError),
+    /// Returns a closure that is used to determine if a non-directory directory entry matches the
+    /// provided regular expression. If there is a match then that entry will be included in the
+    /// output.
+    pub fn regex_predicate(
+        &self,
+    ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
+        if self.iglob || self.glob {
+            return Err(Error::RegexDisabled);
+        }
+
+        let Some(pattern) = self.pattern.as_ref() else {
+            return Err(Error::PatternNotProvided);
+        };
+
+        let re = Regex::new(pattern)?;
+
+        Ok(Box::new(move |dir_entry: &DirEntry| {
+            if dir_entry.file_type().map_or(false, |ft| ft.is_dir()) {
+                return true;
+            }
+
+            let file_name = dir_entry.file_name().to_string_lossy();
+            re.is_match(&file_name)
+        }))
+    }
 }

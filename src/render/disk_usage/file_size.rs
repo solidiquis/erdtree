@@ -24,10 +24,10 @@ pub struct HumanReadableComponents {
 #[derive(Copy, Clone, Debug, ValueEnum, Default)]
 pub enum DiskUsage {
     /// How many bytes does a file contain
-    #[default]
     Logical,
 
     /// How much actual space on disk, taking into account sparse files and compression.
+    #[default]
     Physical,
 }
 
@@ -107,7 +107,11 @@ impl FileSize {
     /// Returns spaces times the length of a file size, formatted with the given options
     /// " " * len(123.45 KiB)
     pub fn empty_string(ctx: &Context) -> String {
-        format!("{:len$}", "", len = Self::empty_string_len(ctx))
+        if ctx.suppress_size {
+            String::new()
+        } else {
+            format!("{:len$}", "", len = Self::empty_string_len(ctx))
+        }
     }
 
     const fn empty_string_len(ctx: &Context) -> usize {
@@ -119,7 +123,7 @@ impl FileSize {
         3 + 1
             + ctx.scale
             + 1
-            + match ctx.prefix {
+            + match ctx.unit {
                 PrefixKind::Bin => 3,
                 PrefixKind::Si => 2,
             }

@@ -11,7 +11,6 @@ use crate::{
 };
 use ansi_term::{ANSIGenericString, Color, Style};
 use ignore::DirEntry;
-use layout::SizeLocation;
 use lscolors::Style as LS_Style;
 use std::{
     borrow::Cow,
@@ -24,9 +23,6 @@ use std::{
 
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
-
-/// For determining orientation of disk usage information for [Node].
-mod layout;
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
@@ -178,14 +174,9 @@ impl Node {
     /// Note the two spaces to the left of the first character of the number -- even if never used,
     /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
     pub fn display(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
-        let size_loc = SizeLocation::from(ctx);
-
-        let size = self.file_size().map_or_else(
-            || size_loc.default_string(ctx),
-            |size| size_loc.format(size),
-        );
-
-        let size_padding = if size.is_empty() { "" } else { " " };
+        let size = self
+            .file_size()
+            .map_or_else(|| FileSize::empty_string(ctx), |size| size.format(true));
 
         let icon = self.icon().unwrap_or("");
 
@@ -200,17 +191,7 @@ impl Node {
             })
         };
 
-        match size_loc {
-            SizeLocation::Right => {
-                write!(
-                    f,
-                    "{prefix}{icon:<icon_padding$}{file_name}{size_padding}{size}"
-                )
-            }
-            SizeLocation::Left => {
-                write!(f, "{size} {prefix}{icon:<icon_padding$}{file_name}")
-            }
-        }
+        write!(f, "{size} {prefix}{icon:<icon_padding$}{file_name}")
     }
 
     /// Unix file identifiers that you'd find in the `ls -l` command.
@@ -353,8 +334,8 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let file_size = match file_type {
             Some(ref ft) if ft.is_file() && !ctx.suppress_size => match ctx.disk_usage {
-                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.prefix, ctx.scale)),
-                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.prefix, ctx.scale),
+                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.unit, ctx.scale)),
+                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.unit, ctx.scale),
             },
             _ => None,
         };

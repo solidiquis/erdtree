@@ -7,11 +7,12 @@ fn dirs_only() {
     assert_eq!(
         utils::run_cmd(&["--dirs-only", "--sort", "name", "tests/data"]),
         indoc!(
-            "
-            data (1.21 KiB)
-            ├─ dream_cycle (308 B)
-            ├─ lipsum (446 B)
-            └─ the_yellow_king (143 B)"
+            "1.21 KiB data
+              308   B ├─ dream_cycle
+              446   B ├─ lipsum
+              143   B └─ the_yellow_king
+
+           3 directories"
         )
     )
 }
