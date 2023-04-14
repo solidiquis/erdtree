@@ -13,34 +13,41 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn try_user_mode_from(mode_mask: u32) -> Result<Self, Error> {
-        let owner = mode_mask & u32::from(SMode::S_IRWXU.bits());
+    pub fn try_user_mode_from(modes_mask: u32) -> Result<Self, Error> {
+        let user = modes_mask & u32::from(SMode::S_IRWXU.bits());
 
-        let read = owner & u32::from(SMode::S_IRUSR.bits()) == u32::from(SMode::S_IRUSR.bits());
-        let write = owner & u32::from(SMode::S_IWUSR.bits()) == u32::from(SMode::S_IWUSR.bits());
-        let execute = owner & u32::from(SMode::S_IXUSR.bits()) == u32::from(SMode::S_IXUSR.bits());
-
-        Self::try_mode_from_rwx(read, write, execute)
-    }
-
-    pub fn try_group_mode_from(mode_mask: u32) -> Result<Self, Error> {
-        let owner = mode_mask & u32::from(SMode::S_IRWXG.bits());
-
-        let read = owner & u32::from(SMode::S_IRGRP.bits()) == u32::from(SMode::S_IRGRP.bits());
-        let write = owner & u32::from(SMode::S_IWGRP.bits()) == u32::from(SMode::S_IWGRP.bits());
-        let execute = owner & u32::from(SMode::S_IXGRP.bits()) == u32::from(SMode::S_IXGRP.bits());
+        let read = Self::enabled(user, SMode::S_IRUSR.bits());
+        let write = Self::enabled(user, SMode::S_IWUSR.bits());
+        let execute = Self::enabled(user, SMode::S_IXUSR.bits());
 
         Self::try_mode_from_rwx(read, write, execute)
     }
 
-    pub fn try_other_mode_from(mode_mask: u32) -> Result<Self, Error> {
-        let owner = mode_mask & u32::from(SMode::S_IRWXO.bits());
+    pub fn try_group_mode_from(modes_mask: u32) -> Result<Self, Error> {
+        let group = modes_mask & u32::from(SMode::S_IRWXG.bits());
 
-        let read = owner & u32::from(SMode::S_IROTH.bits()) == u32::from(SMode::S_IROTH.bits());
-        let write = owner & u32::from(SMode::S_IWOTH.bits()) == u32::from(SMode::S_IWOTH.bits());
-        let execute = owner & u32::from(SMode::S_IXOTH.bits()) == u32::from(SMode::S_IXOTH.bits());
+        let read = Self::enabled(group, SMode::S_IRGRP.bits());
+        let write = Self::enabled(group, SMode::S_IWGRP.bits());
+        let execute = Self::enabled(group, SMode::S_IXGRP.bits());
 
         Self::try_mode_from_rwx(read, write, execute)
+    }
+
+    pub fn try_other_mode_from(modes_mask: u32) -> Result<Self, Error> {
+        let other = modes_mask & u32::from(SMode::S_IRWXO.bits());
+
+        let read = Self::enabled(other, SMode::S_IROTH.bits());
+        let write = Self::enabled(other, SMode::S_IWOTH.bits());
+        let execute = Self::enabled(other, SMode::S_IXOTH.bits());
+
+        Self::try_mode_from_rwx(read, write, execute)
+    }
+
+    fn enabled<N>(class_mask: u32, mode_mask: N) -> bool
+    where
+        N: Copy + Into<u32>,
+    {
+        class_mask & mode_mask.into() == mode_mask.into()
     }
 
     const fn try_mode_from_rwx(r: bool, w: bool, x: bool) -> Result<Self, Error> {
