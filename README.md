@@ -61,33 +61,33 @@ erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis
 Usage: et [OPTIONS] [DIR]
 
 Arguments:
-  [DIR]  Root directory to traverse; defaults to current working directory
+  [DIR]  Directory to traverse; defaults to current working directory
 
 Options:
-  -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: logical] [possible values: logical, physical]
-  -g, --glob <GLOB>                Include or exclude files using glob patterns
-      --iglob <IGLOB>              Include or exclude files using glob patterns; case insensitive
-      --glob-case-insensitive      Process all glob patterns case insensitively
-  -H, --hidden                     Show hidden files
-      --ignore-git                 Disable traversal of .git directory when traversing hidden files
+  -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
+  -., --hidden                     Show hidden files
+      --no-git                     Disable traversal of .git directory when traversing hidden files
+  -i, --no-ignore                  Do not respect .gitignore files
   -I, --icons                      Display file icons
-  -i, --ignore-git-ignore          Ignore .gitignore
+  -L, --follow                     Follow symlinks and consider their disk usage
   -l, --level <NUM>                Maximum depth to display
+  -p, --pattern <PATTERN>          Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
+      --glob                       Enables glob based searching
+      --iglob                      Enables case-insensitive glob based searching
+  -P, --prune                      Remove empty directories from output
   -n, --scale <NUM>                Total number of digits after the decimal to display for disk usage [default: 2]
-  -p, --prefix <PREFIX>            Display disk usage as binary or SI units [default: bin] [possible values: bin, si]
-  -P, --prune                      Disable printing of empty branches
   -r, --report                     Print disk usage information in plain format without ASCII tree
       --human                      Print human-readable disk usage in report
       --file-name                  Print file-name in report as opposed to full path
   -s, --sort <SORT>                Sort-order to display directory content [default: none] [possible values: name, size, size-rev, none]
-      --dirs-first                 Always sorts directories above files
-  -S, --follow-links               Traverse symlink directories and consider their disk usage
+      --dirs-first                 Sort directories above files
   -t, --threads <THREADS>          Number of threads to use [default: 3]
+  -u, --unit <UNIT>                Report disk usage in binary or SI units [default: bin] [possible values: bin, si]
       --completions <COMPLETIONS>  Print completions for a given shell to stdout [possible values: bash, elvish, fish, powershell, zsh]
       --dirs-only                  Only print directories
-      --suppress-size              Omit disk usage from output
       --no-color                   Print plainly without ANSI escapes
       --no-config                  Don't read configuration file
+      --suppress-size              Omit disk usage from output
   -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version
 ```
