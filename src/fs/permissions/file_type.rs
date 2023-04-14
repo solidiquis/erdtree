@@ -27,6 +27,7 @@ impl FileType {
     }
 }
 
+/// The argument `mode` is meant to come from the `mode` method of [std::fs::Permissions].
 impl TryFrom<u32> for FileType {
     type Error = Error;
 

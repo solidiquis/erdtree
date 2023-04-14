@@ -2,6 +2,7 @@ use super::error::Error;
 use nix::sys::stat::Mode as SMode;
 use std::fmt::{self, Display};
 
+/// The set of permissions for a particular class i.e. user, group, or other.
 pub enum Mode {
     Read,
     Write,
@@ -12,7 +13,9 @@ pub enum Mode {
     ReadWriteExecute,
 }
 
+/// All `modes_mask` arguments represent the portions of `st_mode` which excludes the file-type.
 impl Mode {
+    /// Computes user permissions.
     pub fn try_user_mode_from(modes_mask: u32) -> Result<Self, Error> {
         let user = modes_mask & u32::from(SMode::S_IRWXU.bits());
 
@@ -23,6 +26,7 @@ impl Mode {
         Self::try_mode_from_rwx(read, write, execute)
     }
 
+    /// Computes group permissions.
     pub fn try_group_mode_from(modes_mask: u32) -> Result<Self, Error> {
         let group = modes_mask & u32::from(SMode::S_IRWXG.bits());
 
@@ -33,6 +37,7 @@ impl Mode {
         Self::try_mode_from_rwx(read, write, execute)
     }
 
+    /// Computes other permissions.
     pub fn try_other_mode_from(modes_mask: u32) -> Result<Self, Error> {
         let other = modes_mask & u32::from(SMode::S_IRWXO.bits());
 
@@ -43,6 +48,7 @@ impl Mode {
         Self::try_mode_from_rwx(read, write, execute)
     }
 
+    /// Checks if a particular mode (read, write, or execute) is enabled.
     fn enabled<N>(class_mask: u32, mode_mask: N) -> bool
     where
         N: Copy + Into<u32>,
@@ -50,6 +56,7 @@ impl Mode {
         class_mask & mode_mask.into() == mode_mask.into()
     }
 
+    /// Helper function to compute permissions.
     const fn try_mode_from_rwx(r: bool, w: bool, x: bool) -> Result<Self, Error> {
         match (r, w, x) {
             (true, false, false) => Ok(Self::Read),
@@ -64,6 +71,7 @@ impl Mode {
     }
 }
 
+/// The `rwx` representation of a [Mode].
 impl Display for Mode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
