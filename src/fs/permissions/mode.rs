@@ -16,9 +16,9 @@ impl Mode {
     pub fn try_user_mode_from(mode_mask: u32) -> Result<Self, Error> {
         let owner = mode_mask & u32::from(SMode::S_IRWXU.bits());
 
-        let read = owner & u32::from(SMode::S_IRUSR.bits()) != 0;
-        let write = owner & u32::from(SMode::S_IWUSR.bits()) != 0;
-        let execute = owner & u32::from(SMode::S_IXUSR.bits()) != 0;
+        let read = owner & u32::from(SMode::S_IRUSR.bits()) == u32::from(SMode::S_IRUSR.bits());
+        let write = owner & u32::from(SMode::S_IWUSR.bits()) == u32::from(SMode::S_IWUSR.bits());
+        let execute = owner & u32::from(SMode::S_IXUSR.bits()) == u32::from(SMode::S_IXUSR.bits());
 
         Self::try_mode_from_rwx(read, write, execute)
     }
@@ -26,9 +26,9 @@ impl Mode {
     pub fn try_group_mode_from(mode_mask: u32) -> Result<Self, Error> {
         let owner = mode_mask & u32::from(SMode::S_IRWXG.bits());
 
-        let read = owner & u32::from(SMode::S_IRGRP.bits()) != 0;
-        let write = owner & u32::from(SMode::S_IWGRP.bits()) != 0;
-        let execute = owner & u32::from(SMode::S_IXGRP.bits()) != 0;
+        let read = owner & u32::from(SMode::S_IRGRP.bits()) == u32::from(SMode::S_IRGRP.bits());
+        let write = owner & u32::from(SMode::S_IWGRP.bits()) == u32::from(SMode::S_IWGRP.bits());
+        let execute = owner & u32::from(SMode::S_IXGRP.bits()) == u32::from(SMode::S_IXGRP.bits());
 
         Self::try_mode_from_rwx(read, write, execute)
     }
@@ -36,9 +36,9 @@ impl Mode {
     pub fn try_other_mode_from(mode_mask: u32) -> Result<Self, Error> {
         let owner = mode_mask & u32::from(SMode::S_IRWXO.bits());
 
-        let read = owner & u32::from(SMode::S_IROTH.bits()) != 0;
-        let write = owner & u32::from(SMode::S_IWOTH.bits()) != 0;
-        let execute = owner & u32::from(SMode::S_IXOTH.bits()) != 0;
+        let read = owner & u32::from(SMode::S_IROTH.bits()) == u32::from(SMode::S_IROTH.bits());
+        let write = owner & u32::from(SMode::S_IWOTH.bits()) == u32::from(SMode::S_IWOTH.bits());
+        let execute = owner & u32::from(SMode::S_IXOTH.bits()) == u32::from(SMode::S_IXOTH.bits());
 
         Self::try_mode_from_rwx(read, write, execute)
     }
