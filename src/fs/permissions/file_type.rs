@@ -2,6 +2,7 @@ use super::error::Error;
 use nix::sys::stat::SFlag;
 
 /// Unix file types.
+#[derive(Debug, PartialEq)]
 pub enum FileType {
     Directory,
     File,

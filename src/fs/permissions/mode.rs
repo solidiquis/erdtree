@@ -3,6 +3,7 @@ use nix::sys::stat::Mode as SMode;
 use std::fmt::{self, Display};
 
 /// The set of permissions for a particular class i.e. user, group, or other.
+#[derive(Debug, PartialEq)]
 pub enum Mode {
     Read,
     Write,
@@ -11,6 +12,7 @@ pub enum Mode {
     ReadExecute,
     WriteExecute,
     ReadWriteExecute,
+    None
 }
 
 /// All `modes_mask` arguments represent the portions of `st_mode` which excludes the file-type.
@@ -66,6 +68,7 @@ impl Mode {
             (true, false, true) => Ok(Self::ReadExecute),
             (false, true, true) => Ok(Self::WriteExecute),
             (true, true, true) => Ok(Self::ReadWriteExecute),
+            (false, false, false) => Ok(Self::None),
             _ => Err(Error::UnknownMode),
         }
     }
@@ -82,6 +85,7 @@ impl Display for Mode {
             Self::ReadExecute => write!(f, "r-x"),
             Self::WriteExecute => write!(f, "-wx"),
             Self::ReadWriteExecute => write!(f, "rwx"),
+            Self::None => write!(f, "---"),
         }
     }
 }
