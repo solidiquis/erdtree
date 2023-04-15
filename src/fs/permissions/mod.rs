@@ -37,6 +37,7 @@ impl SymbolicNotation for Permissions {}
 /// A struct which holds information about the permissions of a particular file. [FileMode]
 /// implements [Display] which allows it to be conveniently represented in symbolic notation when
 /// expressing file permissions.
+#[derive(Debug)]
 pub struct FileMode {
     file_type: FileType,
     user_mode: Mode,

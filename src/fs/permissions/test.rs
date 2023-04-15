@@ -1,12 +1,5 @@
-use std::{
-    error::Error,
-    fs::File,
-};
-use super::{
-    file_type::FileType,
-    mode::Mode,
-    SymbolicNotation
-};
+use super::{file_type::FileType, mode::Mode, SymbolicNotation};
+use std::{error::Error, fs::File};
 
 #[test]
 fn test_symbolic_notation() -> Result<(), Box<dyn Error>> {
@@ -31,6 +24,6 @@ fn test_symbolic_notation() -> Result<(), Box<dyn Error>> {
     let rwx_string = format!("{file_mode}");
 
     assert_eq!(rwx_string, ".rw-r--r--");
-    
+
     Ok(())
 }
