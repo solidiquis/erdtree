@@ -1,5 +1,4 @@
 use super::error::Error;
-use nix::sys::stat::SFlag;
 
 /// Unix file types.
 #[derive(Debug, PartialEq, Eq)]
@@ -33,21 +32,21 @@ impl TryFrom<u32> for FileType {
     type Error = Error;
 
     fn try_from(mode: u32) -> Result<Self, Self::Error> {
-        let file_mask = mode & u32::from(SFlag::S_IFMT.bits());
+        let file_mask = mode & u32::from(libc::S_IFMT);
 
-        if file_mask == u32::from(SFlag::S_IFIFO.bits()) {
+        if file_mask == u32::from(libc::S_IFIFO) {
             Ok(Self::Fifo)
-        } else if file_mask == u32::from(SFlag::S_IFCHR.bits()) {
+        } else if file_mask == u32::from(libc::S_IFCHR) {
             Ok(Self::CharDevice)
-        } else if file_mask == u32::from(SFlag::S_IFDIR.bits()) {
+        } else if file_mask == u32::from(libc::S_IFDIR) {
             Ok(Self::Directory)
-        } else if file_mask == u32::from(SFlag::S_IFBLK.bits()) {
+        } else if file_mask == u32::from(libc::S_IFBLK) {
             Ok(Self::BlockDevice)
-        } else if file_mask == u32::from(SFlag::S_IFREG.bits()) {
+        } else if file_mask == u32::from(libc::S_IFREG) {
             Ok(Self::File)
-        } else if file_mask == u32::from(SFlag::S_IFLNK.bits()) {
+        } else if file_mask == u32::from(libc::S_IFLNK) {
             Ok(Self::Symlink)
-        } else if file_mask == u32::from(SFlag::S_IFSOCK.bits()) {
+        } else if file_mask == u32::from(libc::S_IFSOCK) {
             Ok(Self::Socket)
         } else {
             Err(Error::UnknownFileType)

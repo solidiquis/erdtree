@@ -37,7 +37,7 @@ regex = "1.7.3"
 thiserror = "1.0.40"
 
 [target.'cfg(unix)'.dependencies]
-nix = { version = "0.26.2", features = ["fs"] }
+libc = "0.2.141"
 
 [dev-dependencies]
 indoc = "2.0.0"

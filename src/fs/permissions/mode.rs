@@ -1,5 +1,4 @@
 use super::error::Error;
-use nix::sys::stat::Mode as SMode;
 use std::fmt::{self, Display};
 
 /// The set of permissions for a particular class i.e. user, group, or other.
@@ -19,33 +18,33 @@ pub enum Mode {
 impl Mode {
     /// Computes user permissions.
     pub fn try_user_mode_from(modes_mask: u32) -> Result<Self, Error> {
-        let user = modes_mask & u32::from(SMode::S_IRWXU.bits());
+        let user = modes_mask & u32::from(libc::S_IRWXU);
 
-        let read = Self::enabled(user, SMode::S_IRUSR.bits());
-        let write = Self::enabled(user, SMode::S_IWUSR.bits());
-        let execute = Self::enabled(user, SMode::S_IXUSR.bits());
+        let read = Self::enabled(user, libc::S_IRUSR);
+        let write = Self::enabled(user, libc::S_IWUSR);
+        let execute = Self::enabled(user, libc::S_IXUSR);
 
         Self::try_mode_from_rwx(read, write, execute)
     }
 
     /// Computes group permissions.
     pub fn try_group_mode_from(modes_mask: u32) -> Result<Self, Error> {
-        let group = modes_mask & u32::from(SMode::S_IRWXG.bits());
+        let group = modes_mask & u32::from(libc::S_IRWXG);
 
-        let read = Self::enabled(group, SMode::S_IRGRP.bits());
-        let write = Self::enabled(group, SMode::S_IWGRP.bits());
-        let execute = Self::enabled(group, SMode::S_IXGRP.bits());
+        let read = Self::enabled(group, libc::S_IRGRP);
+        let write = Self::enabled(group, libc::S_IWGRP);
+        let execute = Self::enabled(group, libc::S_IXGRP);
 
         Self::try_mode_from_rwx(read, write, execute)
     }
 
     /// Computes other permissions.
     pub fn try_other_mode_from(modes_mask: u32) -> Result<Self, Error> {
-        let other = modes_mask & u32::from(SMode::S_IRWXO.bits());
+        let other = modes_mask & u32::from(libc::S_IRWXO);
 
-        let read = Self::enabled(other, SMode::S_IROTH.bits());
-        let write = Self::enabled(other, SMode::S_IWOTH.bits());
-        let execute = Self::enabled(other, SMode::S_IXOTH.bits());
+        let read = Self::enabled(other, libc::S_IROTH);
+        let write = Self::enabled(other, libc::S_IWOTH);
+        let execute = Self::enabled(other, libc::S_IXOTH);
 
         Self::try_mode_from_rwx(read, write, execute)
     }

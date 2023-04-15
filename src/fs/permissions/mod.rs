@@ -1,7 +1,6 @@
 use error::Error;
 use file_type::FileType;
 use mode::Mode;
-use nix::sys::stat::SFlag;
 use std::{
     convert::TryFrom,
     fmt::{self, Display},
@@ -100,7 +99,7 @@ impl TryFrom<u32> for FileMode {
 
     fn try_from(mode: u32) -> Result<Self, Self::Error> {
         let file_type = FileType::try_from(mode)?;
-        let modes_mask = mode & !u32::from(SFlag::S_IFMT.bits());
+        let modes_mask = mode & !u32::from(libc::S_IFMT);
         let user_mode = Mode::try_user_mode_from(modes_mask)?;
         let group_mode = Mode::try_group_mode_from(modes_mask)?;
         let other_mode = Mode::try_other_mode_from(modes_mask)?;
