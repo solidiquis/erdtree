@@ -14,12 +14,12 @@ pub trait ExtendedAttr {
     fn path(&self) -> &Path;
 
     /// Query the extended attribute and return an error if something goes wrong.
-    fn try_xattr(&self) -> io::Result<XAttrs> {
+    fn try_get_xattrs(&self) -> io::Result<XAttrs> {
         xattr::list(self.path())
     }
 
     /// Query the extended attribute and return `None` if something goes.
-    fn xattr(&self) -> Option<XAttrs> {
+    fn get_xattrs(&self) -> Option<XAttrs> {
         xattr::list(self.path()).ok()
     }
 }

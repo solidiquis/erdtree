@@ -62,11 +62,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if ctx.report {
-        let tree = Tree::<Report>::init(ctx)?;
+        let tree = Tree::<Report>::try_init(ctx)?;
         println!("{tree}");
     } else {
         render::styles::init(ctx.no_color());
-        let tree = Tree::<Regular>::init(ctx)?;
+        let tree = Tree::<Regular>::try_init(ctx)?;
         println!("{tree}");
     }
 

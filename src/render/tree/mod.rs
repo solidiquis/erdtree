@@ -67,7 +67,7 @@ where
     }
 
     /// Initiates file-system traversal and [Tree construction].
-    pub fn init(ctx: Context) -> Result<Self> {
+    pub fn try_init(ctx: Context) -> Result<Self> {
         let (inner, root) = Self::traverse(&ctx)?;
 
         let tree = Self::new(inner, root, ctx);

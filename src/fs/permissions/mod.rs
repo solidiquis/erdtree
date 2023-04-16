@@ -33,9 +33,8 @@ pub trait SymbolicNotation: PermissionsExt {
 }
 
 /// A struct which holds information about the permissions of a particular file. [FileMode]
-/// implements [Display] which allows it to be conveniently represented in symbolic notation when
+/// implements [Display] which allows it to be conveniently presented in symbolic notation when
 /// expressing file permissions.
-#[derive(Debug)]
 pub struct FileMode {
     pub st_mode: u32,
     file_type: FileType,
