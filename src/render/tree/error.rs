@@ -1,5 +1,8 @@
 use super::styles::error::Error as StyleError;
-use crate::render::context::error::Error as CtxError;
+use crate::{
+    fs::permissions::error::Error as PermissionsError,
+    render::context::error::Error as CtxError,
+};
 use ignore::Error as IgnoreError;
 use std::io::Error as IoError;
 
@@ -28,6 +31,9 @@ pub enum Error {
 
     #[error("{0}")]
     PathCanonicalization(#[from] IoError),
+
+    #[error("{0}")]
+    Persmissions(#[from] PermissionsError),
 
     #[error("{0}")]
     UninitializedTheme(#[from] StyleError<'static>),

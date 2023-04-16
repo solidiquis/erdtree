@@ -1,5 +1,8 @@
 use crate::{
-    fs::inode::Inode,
+    fs::{
+        permissions::{FileMode, SymbolicNotation},
+        inode::Inode,
+    },
     icons::{self, get_default_icon, icon_from_ext, icon_from_file_name, icon_from_file_type},
     render::{
         context::Context,
@@ -37,6 +40,7 @@ pub struct Node {
     style: Option<Style>,
     icon: Option<Cow<'static, str>>,
     symlink_target: Option<PathBuf>,
+    inode: Option<Inode>,
 }
 
 impl Node {
@@ -48,6 +52,7 @@ impl Node {
         style: Option<Style>,
         icon: Option<Cow<'static, str>>,
         symlink_target: Option<PathBuf>,
+        inode: Option<Inode>,
     ) -> Self {
         Self {
             dir_entry,
@@ -56,6 +61,7 @@ impl Node {
             style,
             icon,
             symlink_target,
+            inode,
         }
     }
 
@@ -72,7 +78,7 @@ impl Node {
 
     /// Gets the underlying [Inode] of the entry.
     pub fn inode(&self) -> Option<Inode> {
-        Inode::try_from(&self.metadata).ok()
+        self.inode
     }
 
     /// Converts `OsStr` to `String`; if fails does a lossy conversion replacing non-Unicode
@@ -131,6 +137,13 @@ impl Node {
     /// Grabs a reference to `icon`.
     pub fn icon(&self) -> Option<&str> {
         self.icon.as_deref()
+    }
+
+    /// Attempts to return an instance of [FileMode] for the display of symbolic permissions.
+    pub fn mode(&self) -> Result<FileMode, Error> {
+        let permissions = self.metadata.permissions();
+        let file_mode = permissions.try_mode_symbolic_notation()?;
+        Ok(file_mode)
     }
 
     /// Stylizes input, `entity` based on `LS_COLORS`. If `style` is `None` then the entity is
@@ -347,6 +360,8 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             None
         };
 
+        let inode = Inode::try_from(&metadata).ok();
+
         Ok(Self::new(
             dir_entry,
             metadata,
@@ -354,6 +369,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             style,
             icon,
             link_target,
+            inode,
         ))
     }
 }

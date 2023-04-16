@@ -53,17 +53,21 @@ pub struct Context {
     #[arg(short = 'i', long)]
     pub no_ignore: bool,
 
+    /// Follow symlinks and consider their disk usage
+    #[arg(short = 'f', long = "follow")]
+    pub follow_links: bool,
+
     /// Display file icons
     #[arg(short = 'I', long)]
     pub icons: bool,
 
-    /// Follow symlinks and consider their disk usage
-    #[arg(short = 'L', long = "follow")]
-    pub follow_links: bool,
-
     /// Maximum depth to display
-    #[arg(short, long, value_name = "NUM")]
+    #[arg(short = 'L', long, value_name = "NUM")]
     level: Option<usize>,
+
+    /// Show extended metadata and attributes
+    #[arg(short, long)]
+    pub long: bool,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
