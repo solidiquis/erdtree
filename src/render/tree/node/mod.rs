@@ -166,7 +166,7 @@ impl Node {
         }
     }
 
-    /// Consumes `xattrs` and answers whether or not [Node] has extended attributes.
+    /// Whether or not [Node] has extended attributes.
     fn has_xattrs(&self) -> bool {
         let count = self.xattrs
             .as_ref()
