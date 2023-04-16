@@ -2,6 +2,7 @@ use crate::{
     fs::{
         permissions::{FileMode, SymbolicNotation},
         inode::Inode,
+        xattr::ExtendedAttr,
     },
     icons::{self, get_default_icon, icon_from_ext, icon_from_file_name, icon_from_file_type},
     render::{
@@ -23,6 +24,7 @@ use std::{
     fs::{FileType, Metadata},
     path::{Path, PathBuf},
 };
+use xattr::XAttrs;
 
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
@@ -32,7 +34,6 @@ pub mod cmp;
 /// uses ANSI colors determined by the file-type and `LS_COLORS`.
 ///
 /// [`Tree`]: super::Tree
-#[derive(Debug)]
 pub struct Node {
     dir_entry: DirEntry,
     metadata: Metadata,
@@ -41,6 +42,9 @@ pub struct Node {
     icon: Option<Cow<'static, str>>,
     symlink_target: Option<PathBuf>,
     inode: Option<Inode>,
+
+    /// Will always be `None` on incompatible platforms.
+    xattrs: Option<XAttrs>,
 }
 
 impl Node {
@@ -53,6 +57,7 @@ impl Node {
         icon: Option<Cow<'static, str>>,
         symlink_target: Option<PathBuf>,
         inode: Option<Inode>,
+        xattrs: Option<XAttrs>,
     ) -> Self {
         Self {
             dir_entry,
@@ -62,6 +67,7 @@ impl Node {
             icon,
             symlink_target,
             inode,
+            xattrs,
         }
     }
 
@@ -160,6 +166,16 @@ impl Node {
         }
     }
 
+    /// Consumes `xattrs` and answers whether or not [Node] has extended attributes.
+    fn has_xattrs(&self) -> bool {
+        let count = self.xattrs
+            .as_ref()
+            .map(|xattrs| xattrs.clone().count())
+            .unwrap_or(0);
+
+        count > 0
+    }
+
     /// Stylizes symlink name for display.
     fn stylize_link_name(&self) -> Option<Cow<'_, str>> {
         self.symlink_target_file_name().map(|name| {
@@ -204,7 +220,17 @@ impl Node {
             })
         };
 
-        write!(f, "{size} {prefix}{icon:<icon_padding$}{file_name}")
+        if ctx.long {
+            let mode = if self.has_xattrs() {
+                format!("{}@", self.mode().unwrap())
+            } else {
+                format!("{}", self.mode().unwrap())
+            };
+
+            write!(f, "{mode:12}{size} {prefix}{icon:<icon_padding$}{file_name}")
+        } else {
+            write!(f, "{size} {prefix}{icon:<icon_padding$}{file_name}")
+        }
     }
 
     /// Unix file identifiers that you'd find in the `ls -l` command.
@@ -362,6 +388,12 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let inode = Inode::try_from(&metadata).ok();
 
+        let xattrs = if ctx.long {
+            dir_entry.get_xattrs()
+        } else {
+            None
+        };
+
         Ok(Self::new(
             dir_entry,
             metadata,
@@ -370,6 +402,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             icon,
             link_target,
             inode,
+            xattrs
         ))
     }
 }

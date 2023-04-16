@@ -39,7 +39,6 @@ pub mod node;
 mod visitor;
 
 /// Virtual data structure that represents local file-system hierarchy.
-#[derive(Debug)]
 pub struct Tree<T>
 where
     T: display::TreeVariant,
