@@ -77,30 +77,35 @@ impl FileSize {
     /// `123.45 KiB`
     /// `  1.23 MiB`
     /// `    12   B`
-    pub fn format(&self, align: bool) -> String {
+    pub fn format(&self, max_size_width: usize) -> String {
         let du_themes = get_du_theme().ok();
 
         let HumanReadableComponents { size, unit } = Self::human_readable_components(self);
         let color = du_themes.and_then(|th| th.get(unit.as_str()));
 
+        let max_padded = max_size_width + 4;
+        let current_padded = self.scale + 4;
+
+        let padded_total_width = if current_padded > max_padded {
+            max_padded
+        } else {
+            current_padded
+        };
+
         match color {
-            Some(col) if align => match self.prefix_kind {
+            Some(col) => match self.prefix_kind {
                 PrefixKind::Bin => col
-                    .paint(format!("{size:>len$} {unit:>3}", len = self.scale + 4))
+                    .paint(format!("{size:>padded_total_width$} {unit:>3}"))
                     .to_string(),
                 PrefixKind::Si => col
-                    .paint(format!("{size:>len$} {unit:>2}", len = self.scale + 4))
+                    .paint(format!("{size:>padded_total_width$} {unit:>2}"))
                     .to_string(),
             },
 
-            Some(col) => col.paint(format!("{size} {unit}")).to_string(),
-
-            None if align => match self.prefix_kind {
-                PrefixKind::Bin => format!("{size:>len$} {unit:>3}", len = self.scale + 4),
-                PrefixKind::Si => format!("{size:>len$} {unit:>2}", len = self.scale + 4),
+            None => match self.prefix_kind {
+                PrefixKind::Bin => format!("{size:>padded_total_width$} {unit:>3}"),
+                PrefixKind::Si => format!("{size:>padded_total_width$} {unit:>2}"),
             },
-
-            _ => format!("{size} {unit}"),
         }
     }
 
@@ -133,7 +138,7 @@ impl FileSize {
     pub fn human_readable_components(&self) -> HumanReadableComponents {
         let fbytes = self.bytes as f64;
         let scale = self.scale;
-        let power = u32::try_from(scale).unwrap();
+        let power = u32::try_from(scale).expect("Provided scale caused an overflow");
 
         let (size, unit) = match self.prefix_kind {
             PrefixKind::Bin => {
@@ -144,7 +149,7 @@ impl FileSize {
                     (format!("{}", self.bytes), format!("{unit}"))
                 } else {
                     // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if self.bytes <= 10_u64.pow(power) {
+                    if self.bytes <= 10_u64.checked_pow(power).unwrap_or(u64::MAX) {
                         (format!("{}", self.bytes), format!("{}", BinPrefix::Base))
                     } else {
                         (
@@ -163,7 +168,7 @@ impl FileSize {
                     (format!("{}", self.bytes), format!("{unit}"))
                 } else {
                     // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if 10_u64.pow(power) >= base_value {
+                    if 10_u64.checked_pow(power).unwrap_or(u64::MAX) >= base_value {
                         (format!("{}", self.bytes), format!("{}", SiPrefix::Base))
                     } else {
                         (

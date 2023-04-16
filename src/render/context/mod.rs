@@ -54,8 +54,8 @@ pub struct Context {
     pub no_ignore: bool,
 
     /// Follow symlinks and consider their disk usage
-    #[arg(short = 'f', long = "follow")]
-    pub follow_links: bool,
+    #[arg(short = 'f', long)]
+    pub follow: bool,
 
     /// Display file icons
     #[arg(short = 'I', long)]
@@ -68,6 +68,10 @@ pub struct Context {
     /// Show extended metadata and attributes
     #[arg(short, long)]
     pub long: bool,
+
+    /// Display numeric permissions
+    #[arg(long, requires = "long")]
+    pub octal: bool,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
@@ -142,6 +146,9 @@ pub struct Context {
 
     #[clap(skip = tty::stdout_is_tty())]
     pub stdout_is_tty: bool,
+
+    #[clap(skip = usize::default())]
+    pub max_du_width: usize,
 }
 
 impl Context {
@@ -297,5 +304,13 @@ impl Context {
             let file_name = dir_entry.file_name().to_string_lossy();
             re.is_match(&file_name)
         }))
+    }
+
+    /// Setter for `total_du`.
+    pub fn set_total_du(&mut self, size: u64) {
+        if size == 0 {
+            return;
+        }
+        self.max_du_width = crate::utils::num_integral(size);
     }
 }

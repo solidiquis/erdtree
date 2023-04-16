@@ -141,10 +141,7 @@ impl Display for Tree<Report> {
 
         file_count_data.push(Self::compute_file_count(root, tree));
 
-        let total_du_width = root_node
-            .file_size()
-            .map_or_else(|| String::from("0"), |fs| format!("{}", fs.bytes))
-            .len();
+        let total_du_width = ctx.max_du_width;
 
         let (total_du, root_unit) = du_info(root_node);
 

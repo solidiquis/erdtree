@@ -97,7 +97,7 @@ impl Display for FileMode {
     }
 }
 
-/// For the octal representation of the file type and class permisssions.
+/// For the octal representation of permissions
 impl Octal for FileMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let modes_mask = self.st_mode & !u32::from(libc::S_IFMT);
@@ -115,12 +115,12 @@ impl TryFrom<u32> for FileMode {
         let group_permissions = ClassPermissions::group_permissions_from(st_mode);
         let other_permissions = ClassPermissions::other_permissions_from(st_mode);
 
-        Ok(Self {
+        Ok(Self::new(
             st_mode,
             file_type,
             user_permissions,
             group_permissions,
             other_permissions,
-        })
+        ))
     }
 }

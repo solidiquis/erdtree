@@ -1,7 +1,6 @@
 use super::styles::error::Error as StyleError;
 use crate::{
-    fs::permissions::error::Error as PermissionsError,
-    render::context::error::Error as CtxError,
+    fs::permissions::error::Error as PermissionsError, render::context::error::Error as CtxError,
 };
 use ignore::Error as IgnoreError;
 use std::io::Error as IoError;

@@ -66,8 +66,11 @@ where
     }
 
     /// Initiates file-system traversal and [Tree construction].
-    pub fn try_init(ctx: Context) -> Result<Self> {
+    pub fn try_init(mut ctx: Context) -> Result<Self> {
         let (inner, root) = Self::traverse(&ctx)?;
+
+        let total_du = inner[root].get().file_size().map_or(0, |size| size.bytes);
+        ctx.set_total_du(total_du);
 
         let tree = Self::new(inner, root, ctx);
 
@@ -292,7 +295,7 @@ impl TryFrom<&Context> for WalkParallel {
         let mut builder = WalkBuilder::new(root);
 
         builder
-            .follow_links(ctx.follow_links)
+            .follow_links(ctx.follow)
             .git_ignore(!ctx.no_ignore)
             .hidden(!ctx.hidden)
             .threads(ctx.threads)

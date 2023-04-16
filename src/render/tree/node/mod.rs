@@ -1,19 +1,18 @@
 use crate::{
     fs::{
-        permissions::{FileMode, SymbolicNotation},
         inode::Inode,
+        permissions::{FileMode, SymbolicNotation},
         xattr::ExtendedAttr,
     },
-    icons::{self, get_default_icon, icon_from_ext, icon_from_file_name, icon_from_file_type},
+    icons,
     render::{
         context::Context,
         disk_usage::file_size::{DiskUsage, FileSize},
-        styles::{get_ls_colors, get_permissions_theme},
+        styles::get_ls_colors,
         tree::error::Error,
     },
-    tty,
 };
-use ansi_term::{ANSIGenericString, Color, Style};
+use ansi_term::Style;
 use ignore::DirEntry;
 use lscolors::Style as LS_Style;
 use std::{
@@ -29,6 +28,12 @@ use xattr::XAttrs;
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
+/// For building the actual output.
+pub mod output;
+
+/// All methods of [Node] that pertain to styling the output.
+pub mod style;
+
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
 /// uses ANSI colors determined by the file-type and `LS_COLORS`.
@@ -39,7 +44,6 @@ pub struct Node {
     metadata: Metadata,
     file_size: Option<FileSize>,
     style: Option<Style>,
-    icon: Option<Cow<'static, str>>,
     symlink_target: Option<PathBuf>,
     inode: Option<Inode>,
 
@@ -54,7 +58,6 @@ impl Node {
         metadata: Metadata,
         file_size: Option<FileSize>,
         style: Option<Style>,
-        icon: Option<Cow<'static, str>>,
         symlink_target: Option<PathBuf>,
         inode: Option<Inode>,
         xattrs: Option<XAttrs>,
@@ -64,7 +67,6 @@ impl Node {
             metadata,
             file_size,
             style,
-            icon,
             symlink_target,
             inode,
             xattrs,
@@ -77,13 +79,17 @@ impl Node {
         self.dir_entry.file_name()
     }
 
+    pub const fn dir_entry(&self) -> &DirEntry {
+        &self.dir_entry
+    }
+
     /// Get depth level of [Node].
     pub fn depth(&self) -> usize {
         self.dir_entry.depth()
     }
 
     /// Gets the underlying [Inode] of the entry.
-    pub fn inode(&self) -> Option<Inode> {
+    pub const fn inode(&self) -> Option<Inode> {
         self.inode
     }
 
@@ -140,30 +146,11 @@ impl Node {
         self.file_size = Some(size);
     }
 
-    /// Grabs a reference to `icon`.
-    pub fn icon(&self) -> Option<&str> {
-        self.icon.as_deref()
-    }
-
     /// Attempts to return an instance of [FileMode] for the display of symbolic permissions.
     pub fn mode(&self) -> Result<FileMode, Error> {
         let permissions = self.metadata.permissions();
         let file_mode = permissions.try_mode_symbolic_notation()?;
         Ok(file_mode)
-    }
-
-    /// Stylizes input, `entity` based on `LS_COLORS`. If `style` is `None` then the entity is
-    /// returned unmodified.
-    fn stylize<'a>(&self, entity: Cow<'a, str>) -> Cow<'a, str> {
-        if let Some(Style {
-            foreground: Some(ref fg),
-            ..
-        }) = self.style
-        {
-            Cow::from(fg.bold().paint(entity).to_string())
-        } else {
-            entity
-        }
     }
 
     /// Whether or not [Node] has extended attributes.
@@ -172,22 +159,12 @@ impl Node {
     /// this scenario a lot, but we will want to optimize this bad boy by removing the `xattr`
     /// crate and just query for the existence of xattrs ourselves.
     fn has_xattrs(&self) -> bool {
-        let count = self.xattrs
+        let count = self
+            .xattrs
             .as_ref()
-            .map(|xattrs| xattrs.clone().count())
-            .unwrap_or(0);
+            .map_or(0, |xattrs| xattrs.clone().count());
 
         count > 0
-    }
-
-    /// Stylizes symlink name for display.
-    fn stylize_link_name(&self) -> Option<Cow<'_, str>> {
-        self.symlink_target_file_name().map(|name| {
-            let file_name = self.file_name_lossy();
-            let styled_name = self.stylize(file_name);
-            let target_name = Color::Red.paint(format!("\u{2192} {}", name.to_string_lossy()));
-            Cow::from(format!("{styled_name} {target_name}"))
-        })
     }
 
     /// General method for printing a `Node`. The `Display` (and `ToString`) traits are not used,
@@ -207,42 +184,13 @@ impl Node {
     /// Note the two spaces to the left of the first character of the number -- even if never used,
     /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
     pub fn display(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
-        let size = self
-            .file_size()
-            .map_or_else(|| FileSize::empty_string(ctx), |size| size.format(true));
-
-        let icon = self.icon().unwrap_or("");
-
-        let icon_padding = if icon.len() > 1 { icon.len() - 1 } else { 0 };
-
-        let file_name = if ctx.no_color() {
-            self.file_name().to_string_lossy()
+        let out = if ctx.no_color() {
+            output::compute(self, prefix, ctx)
         } else {
-            self.stylize_link_name().unwrap_or_else(|| {
-                let file_name = self.file_name_lossy();
-                self.stylize(file_name)
-            })
+            output::compute_with_color(self, prefix, ctx)
         };
 
-        if ctx.long {
-            let mut mode = if self.has_xattrs() {
-                format!("{}@", self.mode().unwrap())
-            } else {
-                format!("{} ", self.mode().unwrap())
-            };
-
-            if !ctx.no_color() {
-                mode = Self::style_permissions(&mode)
-            }
-
-            write!(
-                f,
-                "{mode:mode_len$}{size} {prefix}{icon:<icon_padding$}{file_name}",
-                mode_len = mode.len() + 2,
-            )
-        } else {
-            write!(f, "{size} {prefix}{icon:<icon_padding$}{file_name}")
-        }
+        write!(f, "{out}")
     }
 
     /// Unix file identifiers that you'd find in the `ls -l` command.
@@ -291,88 +239,12 @@ impl Node {
         Some(iden)
     }
 
-    /// Styles the symbolic notation file permissions.
-    fn style_permissions(perm_str: &str) -> String {
-        let theme = get_permissions_theme().unwrap();
-
-        perm_str
-            .chars()
-            .flat_map(|ch| {
-                theme.get(&ch).map(|color| {
-                    let chstr = ch.to_string();
-                    color.paint(chstr).to_string()
-                })
-            })
-            .collect::<String>()
-    }
-
-    /// Attempts to compute icon with given parameters. Icon will be colorless if stdout isn't a
-    /// tty or if `no_color` is true.
-    ///
-    /// The precedent from highest to lowest in terms of which parameters determine the icon used
-    /// is as followed: file-type, file-extension, and then file-name. If an icon cannot be
-    /// computed the fall-back default icon is used.
-    ///
-    /// If a directory entry is a link and the link target is provided, the link target will be
-    /// used to determine the icon.
-    fn compute_icon(
-        entry: &DirEntry,
-        link_target: Option<&PathBuf>,
-        style: Option<Style>,
-        no_color: bool,
-    ) -> Option<Cow<'static, str>> {
-        let icon = entry
-            .file_type()
-            .and_then(icon_from_file_type)
-            .map(Cow::from);
-
-        let paint_icon = |icon| match style {
-            Some(Style {
-                foreground: Some(fg),
-                ..
-            }) if tty::stdout_is_tty() && !no_color => {
-                let ansi_string: ANSIGenericString<str> = fg.bold().paint(icon);
-                let styled_icon = ansi_string.to_string();
-                Some(Cow::from(styled_icon))
-            }
-
-            _ => Some(icon),
-        };
-
-        if let Some(icon) = icon {
-            return paint_icon(icon);
-        }
-
-        let ext = match link_target {
-            Some(target) if entry.path_is_symlink() => target.extension(),
-            _ => entry.path().extension(),
-        };
-
-        let icon = ext.and_then(icon_from_ext).map(|attrs| {
-            if no_color || !tty::stdout_is_tty() {
-                Cow::from(attrs.1)
-            } else {
-                Cow::from(icons::col(attrs.0, attrs.1))
-            }
-        });
-
-        if icon.is_some() {
-            return icon;
-        }
-
-        let icon = icon_from_file_name(entry.file_name())
-            .map(Cow::from)
-            .and_then(paint_icon);
-
-        if icon.is_some() {
-            return icon;
-        }
-
+    /// See [icons::compute].
+    fn compute_icon(&self, no_color: bool) -> Cow<'static, str> {
         if no_color {
-            Some(Cow::from(get_default_icon().1))
+            icons::compute(self.dir_entry(), self.symlink_target_path())
         } else {
-            let (code, icon) = get_default_icon();
-            Some(Cow::from(icons::col(code, icon)))
+            icons::compute_with_color(self.dir_entry(), self.symlink_target_path(), self.style)
         }
     }
 }
@@ -406,13 +278,6 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             _ => None,
         };
 
-        let icon = if ctx.icons {
-            let no_color = ctx.no_color();
-            Self::compute_icon(&dir_entry, link_target.as_ref(), style, no_color)
-        } else {
-            None
-        };
-
         let inode = Inode::try_from(&metadata).ok();
 
         let xattrs = if ctx.long {
@@ -426,10 +291,9 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             metadata,
             file_size,
             style,
-            icon,
             link_target,
             inode,
-            xattrs
+            xattrs,
         ))
     }
 }

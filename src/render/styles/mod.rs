@@ -43,6 +43,9 @@ static DU_THEME: OnceCell<HashMap<&'static str, Style>> = OnceCell::new();
 /// Runtime evaluated static that contains styles for permissions.
 static PERMISSIONS_THEME: OnceCell<HashMap<char, Style>> = OnceCell::new();
 
+/// Runtime evaluated static that contains style for octal permissions.
+static OCTAL_PERMISSIONS_STYLE: OnceCell<Style> = OnceCell::new();
+
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
 
@@ -82,7 +85,16 @@ pub fn get_link_theme() -> Result<&'static ThemesMap, Error<'static>> {
 
 /// Getter for [PERMISSIONS_THEME]. Returns an error if not initialized.
 pub fn get_permissions_theme() -> Result<&'static HashMap<char, Style>, Error<'static>> {
-    PERMISSIONS_THEME.get().ok_or(Error::Uninitialized("PERMISSIONS_THEME"))
+    PERMISSIONS_THEME
+        .get()
+        .ok_or(Error::Uninitialized("PERMISSIONS_THEME"))
+}
+
+/// Getter for [PERMISSIONS_THEME]. Returns an error if not initialized.
+pub fn get_octal_permissions_style() -> Result<&'static Style, Error<'static>> {
+    OCTAL_PERMISSIONS_STYLE
+        .get()
+        .ok_or(Error::Uninitialized("OCTAL_PERMISSIONS_STYLE"))
 }
 
 /// Initializes [LS_COLORS] by reading in the `LS_COLORS` environment variable. If it isn't set, a
@@ -143,6 +155,7 @@ fn init_themes() {
     let permissions_theme = hash! {
         '-' => Color::Purple.normal(),
         'd' => Color::Blue.bold(),
+        'l' => Color::Red.bold(),
         'r' => Color::Green.bold(),
         'w' => Color::Yellow.bold(),
         'x' | 's' | 'S' | 't' | 'T' => Color::Red.bold(),
@@ -151,4 +164,10 @@ fn init_themes() {
     };
 
     PERMISSIONS_THEME.set(permissions_theme).unwrap();
+
+    let octal_permissions_style = Color::Purple.bold();
+
+    OCTAL_PERMISSIONS_STYLE
+        .set(octal_permissions_style)
+        .unwrap();
 }
