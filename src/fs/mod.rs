@@ -8,6 +8,10 @@ pub mod inode;
 #[cfg(unix)]
 pub mod permissions;
 
+#[cfg(unix)]
+/// Determining whether or not a file has extended attributes.
+pub mod xattr;
+
 /// Returns the path to the target of the soft link. Returns `None` if provided `dir_entry` isn't a
 /// symlink.
 pub fn symlink_target(dir_entry: &DirEntry) -> Option<PathBuf> {

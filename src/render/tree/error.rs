@@ -9,7 +9,7 @@ use std::io::Error as IoError;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
-    ContextError(#[from] CtxError),
+    Context(#[from] CtxError),
 
     #[error("{0}")]
     DirNotFound(String),

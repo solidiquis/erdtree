@@ -2,6 +2,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Unknown file type.")]
+    #[error("Encountered an unknown file type.")]
     UnknownFileType,
 }
