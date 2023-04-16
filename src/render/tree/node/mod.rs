@@ -8,7 +8,7 @@ use crate::{
     render::{
         context::Context,
         disk_usage::file_size::{DiskUsage, FileSize},
-        styles::get_ls_colors,
+        styles::{get_ls_colors, get_permissions_theme},
         tree::error::Error,
     },
     tty,
@@ -167,6 +167,10 @@ impl Node {
     }
 
     /// Whether or not [Node] has extended attributes.
+    ///
+    /// TODO: Cloning can potentially be expensive here, but practically speaking we won't run into
+    /// this scenario a lot, but we will want to optimize this bad boy by removing the `xattr`
+    /// crate and just query for the existence of xattrs ourselves.
     fn has_xattrs(&self) -> bool {
         let count = self.xattrs
             .as_ref()
@@ -221,13 +225,21 @@ impl Node {
         };
 
         if ctx.long {
-            let mode = if self.has_xattrs() {
+            let mut mode = if self.has_xattrs() {
                 format!("{}@", self.mode().unwrap())
             } else {
-                format!("{}", self.mode().unwrap())
+                format!("{} ", self.mode().unwrap())
             };
 
-            write!(f, "{mode:12}{size} {prefix}{icon:<icon_padding$}{file_name}")
+            if !ctx.no_color() {
+                mode = Self::style_permissions(&mode)
+            }
+
+            write!(
+                f,
+                "{mode:mode_len$}{size} {prefix}{icon:<icon_padding$}{file_name}",
+                mode_len = mode.len() + 2,
+            )
         } else {
             write!(f, "{size} {prefix}{icon:<icon_padding$}{file_name}")
         }
@@ -277,6 +289,21 @@ impl Node {
         };
 
         Some(iden)
+    }
+
+    /// Styles the symbolic notation file permissions.
+    fn style_permissions(perm_str: &str) -> String {
+        let theme = get_permissions_theme().unwrap();
+
+        perm_str
+            .chars()
+            .flat_map(|ch| {
+                theme.get(&ch).map(|color| {
+                    let chstr = ch.to_string();
+                    color.paint(chstr).to_string()
+                })
+            })
+            .collect::<String>()
     }
 
     /// Attempts to compute icon with given parameters. Icon will be colorless if stdout isn't a

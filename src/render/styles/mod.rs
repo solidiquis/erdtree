@@ -1,5 +1,5 @@
 use crate::hash;
-use ansi_term::Color;
+use ansi_term::{Color, Style};
 use error::Error;
 use lscolors::LsColors;
 use once_cell::sync::OnceCell;
@@ -38,7 +38,10 @@ static TREE_THEME: OnceCell<ThemesMap> = OnceCell::new();
 static LINK_THEME: OnceCell<ThemesMap> = OnceCell::new();
 
 /// Runtime evaluated static that contains styles for disk usage output.
-static DU_THEME: OnceCell<HashMap<&'static str, Color>> = OnceCell::new();
+static DU_THEME: OnceCell<HashMap<&'static str, Style>> = OnceCell::new();
+
+/// Runtime evaluated static that contains styles for permissions.
+static PERMISSIONS_THEME: OnceCell<HashMap<char, Style>> = OnceCell::new();
 
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
@@ -63,7 +66,7 @@ pub fn get_ls_colors() -> Result<&'static LsColors, Error<'static>> {
 }
 
 /// Getter for [DU_THEME]. Returns an error if not initialized.
-pub fn get_du_theme() -> Result<&'static HashMap<&'static str, Color>, Error<'static>> {
+pub fn get_du_theme() -> Result<&'static HashMap<&'static str, Style>, Error<'static>> {
     DU_THEME.get().ok_or(Error::Uninitialized("DU_THEME"))
 }
 
@@ -75,6 +78,11 @@ pub fn get_tree_theme() -> Result<&'static ThemesMap, Error<'static>> {
 /// Getter for [LINK_THEME]. Returns an error if not initialized.
 pub fn get_link_theme() -> Result<&'static ThemesMap, Error<'static>> {
     LINK_THEME.get().ok_or(Error::Uninitialized("LINK_THEME"))
+}
+
+/// Getter for [PERMISSIONS_THEME]. Returns an error if not initialized.
+pub fn get_permissions_theme() -> Result<&'static HashMap<char, Style>, Error<'static>> {
+    PERMISSIONS_THEME.get().ok_or(Error::Uninitialized("PERMISSIONS_THEME"))
 }
 
 /// Initializes [LS_COLORS] by reading in the `LS_COLORS` environment variable. If it isn't set, a
@@ -123,12 +131,24 @@ fn init_themes() {
     LINK_THEME.set(link_theme).unwrap();
 
     let du_theme = hash! {
-        "B" => Color::Cyan,
-        "KB" | "KiB" => Color::Yellow,
-        "MB" | "MiB" => Color::Green,
-        "GB" | "GiB" => Color::Red,
-        "TB" | "TiB" => Color::Blue
+        "B" => Color::Cyan.bold(),
+        "KB" | "KiB" => Color::Yellow.bold(),
+        "MB" | "MiB" => Color::Green.bold(),
+        "GB" | "GiB" => Color::Red.bold(),
+        "TB" | "TiB" => Color::Blue.bold()
     };
 
     DU_THEME.set(du_theme).unwrap();
+
+    let permissions_theme = hash! {
+        '-' => Color::Purple.normal(),
+        'd' => Color::Blue.bold(),
+        'r' => Color::Green.bold(),
+        'w' => Color::Yellow.bold(),
+        'x' | 's' | 'S' | 't' | 'T' => Color::Red.bold(),
+        '@' => Color::Cyan.bold(),
+        ' ' => Color::White.normal()
+    };
+
+    PERMISSIONS_THEME.set(permissions_theme).unwrap();
 }
