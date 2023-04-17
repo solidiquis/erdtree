@@ -145,6 +145,9 @@ pub struct Context {
 
     #[clap(skip = usize::default())]
     pub max_du_width: usize,
+
+    #[clap(skip = usize::default())]
+    pub max_nlink_width: usize,
 }
 
 impl Context {
@@ -302,11 +305,19 @@ impl Context {
         }))
     }
 
-    /// Setter for `total_du`.
-    pub fn set_total_du(&mut self, size: u64) {
+    /// Setter for `max_du_width` to inform formatters what the width of the disk usage column
+    /// should be.
+    pub fn set_max_du_width(&mut self, size: u64) {
         if size == 0 {
             return;
         }
         self.max_du_width = crate::utils::num_integral(size);
+    }
+
+    /// Setter for `max_nlink_width` which is used to inform formatters what the width of the
+    /// `nlink` column should be.
+    pub fn set_max_nlink_width(&mut self, nlink: u64) {
+        // `nlink` shouldn't be big so we shouldn't worry about truncation.
+        self.max_nlink_width = crate::utils::num_integral(nlink);
     }
 }

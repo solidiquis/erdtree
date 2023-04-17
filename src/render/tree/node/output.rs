@@ -22,10 +22,14 @@ pub fn compute_with_color(node: &Node, prefix: &str, ctx: &Context) -> String {
         };
 
         let oct = Node::style_octal_permissions(&mode);
+        let ino = presenters::ino(node.ino());
+        let nlink = presenters::nlink(node.nlink(), ctx);
 
         format!(
-            "{oct} {sym:mode_len$}{size} {prefix}{padded_icon}{file_name}",
-            mode_len = sym.len() + 1,
+            "{ino:<ino_padding$}{oct:<oct_padding$}{sym:<mode_padding$}{nlink} {size} {prefix}{padded_icon}{file_name}",
+            ino_padding = ino.len() + 1,
+            oct_padding = oct.len() + 1,
+            mode_padding = sym.len() + 1,
         )
     } else {
         format!("{size} {prefix}{padded_icon}{file_name}")
@@ -66,7 +70,13 @@ pub fn compute(node: &Node, prefix: &str, ctx: &Context) -> String {
 
 /// Helper functions to build each component of the output.
 mod presenters {
-    use crate::render::{context::Context, disk_usage::file_size::FileSize, tree::Node};
+    use crate::render::{
+        context::Context,
+        disk_usage::file_size::FileSize,
+        styles,
+        tree::Node
+    };
+    use std::borrow::Cow;
 
     #[inline]
     /// Builds the disk usage portion of the output.
@@ -86,6 +96,34 @@ mod presenters {
             format!("{icon:<padding$}")
         } else {
             String::new()
+        }
+    }
+
+    #[inline]
+    /// Builds the `ino` portion of the output
+    pub(super) fn ino(ino: Option<u64>) -> Cow<'static, str> {
+        let out = ino
+            .map(|num| Cow::from(format!("{num}")))
+            .unwrap_or(Cow::from(styles::PLACEHOLDER));
+
+        if let Some(style) = styles::get_ino_style().ok() {
+            Cow::from(style.paint(out).to_string())
+        } else {
+            out
+        }
+    }
+
+    #[inline]
+    /// Builds the `nlink` portion of the output
+    pub(super) fn nlink(nlink: Option<u64>, ctx: &Context) -> Cow<'static, str> {
+        let out = nlink
+            .map(|num| Cow::from(format!("{num:>width$}", width = ctx.max_nlink_width)))
+            .unwrap_or(Cow::from(format!("{:>width$}", styles::PLACEHOLDER, width = ctx.max_nlink_width)));
+
+        if let Some(style) = styles::get_nlink_style().ok() {
+            Cow::from(style.paint(out).to_string())
+        } else {
+            out
         }
     }
 }

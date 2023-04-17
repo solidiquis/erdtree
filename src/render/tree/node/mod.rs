@@ -93,6 +93,16 @@ impl Node {
         self.inode
     }
 
+    /// Returns the underlying `ino` of the [DirEntry].
+    pub fn ino(&self) -> Option<u64> {
+        self.inode.map(|inode| inode.ino)
+    }
+
+    /// Returns the underlying `nlink` of the [DirEntry].
+    pub fn nlink(&self) -> Option<u64> {
+        self.inode.map(|inode| inode.nlink)
+    }
+
     /// Converts `OsStr` to `String`; if fails does a lossy conversion replacing non-Unicode
     /// sequences with Unicode replacement scalar values.
     pub fn file_name_lossy(&self) -> Cow<'_, str> {

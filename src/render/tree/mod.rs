@@ -69,8 +69,13 @@ where
     pub fn try_init(mut ctx: Context) -> Result<Self> {
         let (inner, root) = Self::traverse(&ctx)?;
 
-        let total_du = inner[root].get().file_size().map_or(0, |size| size.bytes);
-        ctx.set_total_du(total_du);
+        let max_du_width = inner[root].get().file_size().map_or(0, |size| size.bytes);
+        ctx.set_max_du_width(max_du_width);
+
+        if ctx.long {
+            let max_nlink = Self::compute_max_nlink(root, &inner, &ctx);
+            ctx.set_max_nlink_width(max_nlink);
+        }
 
         let tree = Self::new(inner, root, ctx);
 
@@ -273,6 +278,9 @@ where
         }
     }
 
+    /// Compute total number of files for a single directory without recurring into child
+    /// directories. Files are grouped into three categories: directories, regular files, and
+    /// symlinks.
     fn compute_file_count(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
         let mut count = FileCount::default();
 
@@ -281,6 +289,29 @@ where
         }
 
         count
+    }
+
+    /// Among the files to be printed, this will seek out the [Node] whose underling inode contains
+    /// the highest `nlink` which is used for determining the width of the nlink column for the
+    /// `--long` output.
+    fn compute_max_nlink(root: NodeId, tree: &Arena<Node>, ctx: &Context) -> u64 {
+        let max_depth = ctx.level();
+
+        root.descendants(tree).fold(0, |max, i| {
+            let node = tree[i].get();
+
+            if node.depth() > max_depth {
+                return max;
+            }
+
+            let nlink = node.nlink().unwrap_or(0);
+
+            if nlink > max {
+                nlink
+            } else {
+                max 
+            }
+        })
     }
 }
 

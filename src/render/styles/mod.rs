@@ -52,6 +52,12 @@ static OCTAL_PERMISSIONS_STYLE: OnceCell<Style> = OnceCell::new();
 /// Runtime evaluated static that contains style for the general use placeholder "-".
 static PLACEHOLDER_STYLE: OnceCell<Style> = OnceCell::new();
 
+/// Runtime evaluated static that contains style for inode number i.e. `ino`.
+static INO_STYLE: OnceCell<Style> = OnceCell::new();
+
+/// Runtime evaluated static that contains style for number of hardlinks i.e. `nlink`.
+static NLINK_STYLE: OnceCell<Style> = OnceCell::new();
+
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
 
@@ -110,6 +116,20 @@ pub fn get_placeholder_style() -> Result<&'static Style, Error<'static>> {
         .ok_or(Error::Uninitialized("PLACEHOLDER_STYLE"))
 }
 
+/// Getter for [INO_STYLE]. Returns an error if not initialized.
+pub fn get_ino_style() -> Result<&'static Style, Error<'static>> {
+    INO_STYLE
+        .get()
+        .ok_or(Error::Uninitialized("INO_STYLE"))
+}
+
+/// Getter for [NLINK_STYLE]. Returns an error if not initialized.
+pub fn get_nlink_style() -> Result<&'static Style, Error<'static>> {
+    NLINK_STYLE
+        .get()
+        .ok_or(Error::Uninitialized("NLINK_STYLE"))
+}
+
 /// Initializes [LS_COLORS] by reading in the `LS_COLORS` environment variable. If it isn't set, a
 /// default determined by `lscolors` crate will be used.
 fn init_ls_colors() {
@@ -144,7 +164,6 @@ fn init_themes() {
         "uprt" => format!("{}", Color::Purple.paint(UPRT)),
         "vtrt" => format!("{}", Color::Purple.paint(VTRT))
     };
-
     TREE_THEME.set(theme).unwrap();
 
     let link_theme = hash! {
@@ -152,7 +171,6 @@ fn init_themes() {
         "uprt" => format!("{}", Color::Red.paint(UPRT)),
         "vtrt" => format!("{}", Color::Red.paint(VTRT))
     };
-
     LINK_THEME.set(link_theme).unwrap();
 
     let du_theme = hash! {
@@ -162,7 +180,6 @@ fn init_themes() {
         "GB" | "GiB" => Color::Red.bold(),
         "TB" | "TiB" => Color::Blue.bold()
     };
-
     DU_THEME.set(du_theme).unwrap();
 
     let permissions_theme = hash! {
@@ -175,16 +192,19 @@ fn init_themes() {
         '@' => Color::Cyan.bold(),
         ' ' => Color::White.normal()
     };
-
     PERMISSIONS_THEME.set(permissions_theme).unwrap();
 
     let octal_permissions_style = Color::Purple.bold();
-
     OCTAL_PERMISSIONS_STYLE
         .set(octal_permissions_style)
         .unwrap();
 
     let placeholder_style = Color::Purple.normal();
-
     PLACEHOLDER_STYLE.set(placeholder_style).unwrap();
+
+    let ino_style = Color::Cyan.bold();
+    INO_STYLE.set(ino_style).unwrap();
+
+    let nlink_style = Color::Red.bold();
+    NLINK_STYLE.set(nlink_style).unwrap();
 }
