@@ -8,6 +8,9 @@ use std::collections::HashMap;
 /// Errors for this module.
 pub mod error;
 
+/// Used as general placeholder for an empty field.
+pub const PLACEHOLDER: &str = "-";
+
 /// Used for padding between tree branches.
 pub const SEP: &str = "   ";
 
@@ -45,6 +48,9 @@ static PERMISSIONS_THEME: OnceCell<HashMap<char, Style>> = OnceCell::new();
 
 /// Runtime evaluated static that contains style for octal permissions.
 static OCTAL_PERMISSIONS_STYLE: OnceCell<Style> = OnceCell::new();
+
+/// Runtime evaluated static that contains style for the general use placeholder "-".
+static PLACEHOLDER_STYLE: OnceCell<Style> = OnceCell::new();
 
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
@@ -90,11 +96,18 @@ pub fn get_permissions_theme() -> Result<&'static HashMap<char, Style>, Error<'s
         .ok_or(Error::Uninitialized("PERMISSIONS_THEME"))
 }
 
-/// Getter for [PERMISSIONS_THEME]. Returns an error if not initialized.
+/// Getter for [OCTAL_PERMISSIONS_STYLE]. Returns an error if not initialized.
 pub fn get_octal_permissions_style() -> Result<&'static Style, Error<'static>> {
     OCTAL_PERMISSIONS_STYLE
         .get()
         .ok_or(Error::Uninitialized("OCTAL_PERMISSIONS_STYLE"))
+}
+
+/// Getter for [PLACEHOLDER_STYLE]. Returns an error if not initialized.
+pub fn get_placeholder_style() -> Result<&'static Style, Error<'static>> {
+    PLACEHOLDER_STYLE
+        .get()
+        .ok_or(Error::Uninitialized("PLACEHOLDER_STYLE"))
 }
 
 /// Initializes [LS_COLORS] by reading in the `LS_COLORS` environment variable. If it isn't set, a
@@ -170,4 +183,8 @@ fn init_themes() {
     OCTAL_PERMISSIONS_STYLE
         .set(octal_permissions_style)
         .unwrap();
+
+    let placeholder_style = Color::Purple.normal();
+
+    PLACEHOLDER_STYLE.set(placeholder_style).unwrap();
 }

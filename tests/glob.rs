@@ -22,7 +22,7 @@ fn glob() {
                83   B ├─ necronomicon.txt
               161   B ├─ nemesis.txt
               100   B ├─ nylarlathotep.txt
-                      └─ the_yellow_king
+                    - └─ the_yellow_king
 
            3 directories, 5 files"
         )
@@ -42,8 +42,8 @@ fn glob_negative() {
         ]),
         indoc!(
             "143   B data
-                   ├─ dream_cycle
-                   ├─ lipsum
+                 - ├─ dream_cycle
+                 - ├─ lipsum
            143   B └─ the_yellow_king
            143   B    └─ cassildas_song.md
 
@@ -72,7 +72,7 @@ fn glob_case_insensitive() {
                 83   B ├─ necronomicon.txt
                161   B ├─ nemesis.txt
                100   B ├─ nylarlathotep.txt
-                       └─ the_yellow_king
+                     - └─ the_yellow_king
 
             3 directories, 5 files"
         )
@@ -99,7 +99,7 @@ fn iglob() {
                 83   B ├─ necronomicon.txt
                161   B ├─ nemesis.txt
                100   B ├─ nylarlathotep.txt
-                       └─ the_yellow_king
+                     - └─ the_yellow_king
 
             3 directories, 5 files"
         )

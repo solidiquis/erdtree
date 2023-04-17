@@ -33,6 +33,7 @@ impl Node {
             let styled_name = Self::stylize(link_name, style);
             let target_name =
                 Color::Red.paint(format!("\u{2192} {}", target_name.to_string_lossy()));
+
             Cow::from(format!("{styled_name} {target_name}"))
         } else {
             let link = link_name.to_string_lossy();

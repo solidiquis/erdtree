@@ -69,10 +69,6 @@ pub struct Context {
     #[arg(short, long)]
     pub long: bool,
 
-    /// Display numeric permissions
-    #[arg(long, requires = "long")]
-    pub octal: bool,
-
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
     pub pattern: Option<String>,

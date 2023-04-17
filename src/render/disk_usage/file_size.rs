@@ -1,8 +1,11 @@
 use super::units::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
-use crate::{render::styles::get_du_theme, Context};
+use crate::{
+    render::styles::{self, get_du_theme, get_placeholder_style},
+    Context,
+};
 use clap::ValueEnum;
 use filesize::PathExt;
-use std::{fs::Metadata, ops::AddAssign, path::Path};
+use std::{borrow::Cow, fs::Metadata, ops::AddAssign, path::Path};
 
 /// Represents either logical or physical size and handles presentation.
 #[derive(Clone, Debug)]
@@ -115,7 +118,20 @@ impl FileSize {
         if ctx.suppress_size {
             String::new()
         } else {
-            format!("{:len$}", "", len = Self::empty_string_len(ctx))
+            let (placeholder, extra_padding) = get_placeholder_style().map_or_else(
+                |_| (Cow::from(styles::PLACEHOLDER), 0),
+                |style| {
+                    let placeholder = Cow::from(style.paint(styles::PLACEHOLDER).to_string());
+                    let padding = placeholder.len() - 1;
+                    (placeholder, padding)
+                },
+            );
+
+            format!(
+                "{:>len$}",
+                placeholder,
+                len = Self::empty_string_len(ctx) + extra_padding
+            )
         }
     }
 

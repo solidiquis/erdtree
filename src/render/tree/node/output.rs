@@ -15,21 +15,17 @@ pub fn compute_with_color(node: &Node, prefix: &str, ctx: &Context) -> String {
     if ctx.long {
         let mode = node.mode().unwrap();
 
-        let sym_permissions = if node.has_xattrs() {
+        let sym = if node.has_xattrs() {
             Node::style_sym_permissions(&format!("{}@", &mode))
         } else {
             Node::style_sym_permissions(&format!("{} ", &mode))
         };
 
-        let oct_permissions = if ctx.octal {
-            Node::style_octal_permissions(&mode)
-        } else {
-            String::new()
-        };
+        let oct = Node::style_octal_permissions(&mode);
 
         format!(
-            "{oct_permissions} {sym_permissions:mode_len$}{size} {prefix}{padded_icon}{file_name}",
-            mode_len = sym_permissions.len() + 1,
+            "{oct} {sym:mode_len$}{size} {prefix}{padded_icon}{file_name}",
+            mode_len = sym.len() + 1,
         )
     } else {
         format!("{size} {prefix}{padded_icon}{file_name}")
@@ -51,15 +47,17 @@ pub fn compute(node: &Node, prefix: &str, ctx: &Context) -> String {
     if ctx.long {
         let mode = node.mode().unwrap();
 
-        let sym_permissions = if node.has_xattrs() {
+        let sym = if node.has_xattrs() {
             format!("{mode}@")
         } else {
             format!("{mode} ")
         };
 
+        let oct = format!("{mode:04o}");
+
         format!(
-            "{sym_permissions:mode_len$}{size} {prefix}{padded_icon}{file_name}",
-            mode_len = sym_permissions.len() + 1,
+            "{oct} {sym:mode_len$}{size} {prefix}{padded_icon}{file_name}",
+            mode_len = sym.len() + 1,
         )
     } else {
         format!("{size} {prefix}{padded_icon}{file_name}")

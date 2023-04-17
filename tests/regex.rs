@@ -15,7 +15,7 @@ fn regex() {
                 83   B ├─ necronomicon.txt
                161   B ├─ nemesis.txt
                100   B ├─ nylarlathotep.txt
-                       └─ the_yellow_king
+                     - └─ the_yellow_king
 
             3 directories, 5 files"
         )
