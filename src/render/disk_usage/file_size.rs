@@ -113,9 +113,8 @@ impl FileSize {
         }
     }
 
-    /// Returns spaces times the length of a file size, formatted with the given options
-    /// " " * len(123.45 KiB)
-    pub fn empty_string(ctx: &Context) -> String {
+    /// Returns a placeholder or empty string. 
+    pub fn placeholder(ctx: &Context) -> String {
         if ctx.suppress_size {
             String::new()
         } else {

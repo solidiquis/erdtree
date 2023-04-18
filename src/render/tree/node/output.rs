@@ -80,7 +80,7 @@ mod presenters {
     #[inline]
     pub(super) fn size(node: &Node, ctx: &Context) -> String {
         node.file_size().map_or_else(
-            || FileSize::empty_string(ctx),
+            || FileSize::placeholder(ctx),
             |size| size.format(ctx.max_du_width),
         )
     }
