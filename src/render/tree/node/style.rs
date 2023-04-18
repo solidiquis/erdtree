@@ -3,10 +3,10 @@ use ansi_term::{Color, Style};
 use std::{borrow::Cow, ffi::OsStr};
 
 #[cfg(unix)]
-use crate::fs::permissions::FileMode;
-
-#[cfg(unix)]
-use crate::render::styles::{get_octal_permissions_style, get_permissions_theme};
+use crate::{
+    fs::permissions::FileMode,
+    render::styles::{get_octal_permissions_style, get_permissions_theme},
+};
 
 impl Node {
     /// Stylizes input, `entity` based on `LS_COLORS`. If `style` is `None` then the entity is
@@ -46,25 +46,35 @@ impl Node {
 
     /// Styles the symbolic notation file permissions.
     #[cfg(unix)]
-    pub(super) fn style_sym_permissions(perm_str: &str) -> String {
-        let theme = get_permissions_theme().unwrap();
+    pub(super) fn style_sym_permissions(mode: &FileMode, has_xattrs: bool) -> String {
+        let sym = if has_xattrs {
+            format!("{mode}@")
+        } else {
+            format!("{mode} ")
+        };
 
-        perm_str
-            .chars()
-            .filter_map(|ch| {
-                theme.get(&ch).map(|color| {
-                    let chstr = ch.to_string();
-                    color.paint(chstr).to_string()
+        if let Ok(theme) = get_permissions_theme() {
+            sym.chars()
+                .filter_map(|ch| {
+                    theme.get(&ch).map(|color| {
+                        let chstr = ch.to_string();
+                        color.paint(chstr).to_string()
+                    })
                 })
-            })
-            .collect::<String>()
+                .collect::<String>()
+        } else {
+            sym
+        }
     }
 
+    /// Styles the numeric octal format of permissions.
     #[cfg(unix)]
     pub(super) fn style_octal_permissions(mode: &FileMode) -> String {
-        get_octal_permissions_style()
-            .unwrap()
-            .paint(format!("{mode:04o}"))
-            .to_string()
+        let oct = format!("{mode:04o}");
+        if let Ok(style) = get_octal_permissions_style() {
+            style.paint(oct).to_string()
+        } else {
+            oct
+        }
     }
 }

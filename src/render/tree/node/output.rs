@@ -22,9 +22,9 @@ pub fn compute(node: &Node, prefix: &str, ctx: &Context) -> String {
         let perms = if ctx.octal {
             Node::style_octal_permissions(&mode)
         } else if node.has_xattrs() {
-            Node::style_sym_permissions(&format!("{}@", &mode))
+            Node::style_sym_permissions(&mode, true)
         } else {
-            Node::style_sym_permissions(&format!("{} ", &mode))
+            Node::style_sym_permissions(&mode, false)
         };
 
         let ino = presenters::num(node.ino(), ctx.max_ino_width, styles::get_ino_style);
