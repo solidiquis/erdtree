@@ -79,9 +79,11 @@ pub struct Context {
     #[arg(long, requires = "long")]
     pub octal: bool,
 
+    // WARNING: `time` should require `--long` but unfortunately a default value still gets set
+    // which causes `init` to fail so for now it will just do nothing if set by the user.
     /// Which kind of timestamp to use
     #[cfg(unix)]
-    #[arg(long, requires = "long", value_enum, default_value_t = time::Stamp::default())]
+    #[arg(long, value_enum, default_value_t = time::Stamp::default())]
     pub time: time::Stamp,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files

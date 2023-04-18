@@ -86,8 +86,8 @@ impl FileSize {
         let HumanReadableComponents { size, unit } = Self::human_readable_components(self);
         let color = du_themes.and_then(|th| th.get(unit.as_str()));
 
-        let max_padded = max_size_width + 4;
-        let current_padded = self.scale + 4;
+        let max_padded = max_size_width + 5;
+        let current_padded = self.scale + 5;
 
         let padded_total_width = if current_padded > max_padded {
             max_padded
@@ -123,7 +123,7 @@ impl FileSize {
                 |_| (Cow::from(styles::PLACEHOLDER), 0),
                 |style| {
                     let placeholder = Cow::from(style.paint(styles::PLACEHOLDER).to_string());
-                    let padding = placeholder.len() - 1;
+                    let padding = placeholder.len();
                     (placeholder, padding)
                 },
             );
