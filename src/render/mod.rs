@@ -10,5 +10,5 @@ pub mod disk_usage;
 /// contents.
 pub mod tree;
 
-/// Controls color output.
+/// Global styles.
 pub mod styles;

@@ -1,9 +1,5 @@
 use crate::{
-    fs::{
-        inode::Inode,
-        permissions::{FileMode, SymbolicNotation},
-        xattr::ExtendedAttr,
-    },
+    fs::inode::Inode,
     icons,
     render::{
         context::Context,
@@ -23,6 +19,14 @@ use std::{
     fs::{FileType, Metadata},
     path::{Path, PathBuf},
 };
+
+#[cfg(unix)]
+use crate::fs::{
+    permissions::{FileMode, SymbolicNotation},
+    xattr::ExtendedAttr,
+};
+
+#[cfg(unix)]
 use xattr::XAttrs;
 
 /// Ordering and sorting rules for [Node].
@@ -31,7 +35,7 @@ pub mod cmp;
 /// For building the actual output.
 pub mod output;
 
-/// All methods of [Node] that pertain to styling the output.
+/// Styling utilities for a [Node].
 pub mod style;
 
 /// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
@@ -47,7 +51,7 @@ pub struct Node {
     symlink_target: Option<PathBuf>,
     inode: Option<Inode>,
 
-    /// Will always be `None` on incompatible platforms.
+    #[cfg(unix)]
     xattrs: Option<XAttrs>,
 }
 
@@ -60,7 +64,8 @@ impl Node {
         style: Option<Style>,
         symlink_target: Option<PathBuf>,
         inode: Option<Inode>,
-        xattrs: Option<XAttrs>,
+
+        #[cfg(unix)] xattrs: Option<XAttrs>,
     ) -> Self {
         Self {
             dir_entry,
@@ -69,6 +74,8 @@ impl Node {
             style,
             symlink_target,
             inode,
+
+            #[cfg(unix)]
             xattrs,
         }
     }
@@ -88,6 +95,21 @@ impl Node {
         self.dir_entry.depth()
     }
 
+    /// Gets the number of blocks used by the underlying [DirEntry]. Returns `None` in the case of
+    /// no blocks allocated like in the case of directories.
+    #[cfg(unix)]
+    pub fn blocks(&self) -> Option<u64> {
+        use std::os::unix::fs::MetadataExt;
+
+        let blocks = self.metadata.blocks();
+
+        if blocks == 0 {
+            None
+        } else {
+            Some(blocks)
+        }
+    }
+
     /// Gets the underlying [Inode] of the entry.
     pub const fn inode(&self) -> Option<Inode> {
         self.inode
@@ -101,14 +123,6 @@ impl Node {
     /// Returns the underlying `nlink` of the [DirEntry].
     pub fn nlink(&self) -> Option<u64> {
         self.inode.map(|inode| inode.nlink)
-    }
-
-    /// Converts `OsStr` to `String`; if fails does a lossy conversion replacing non-Unicode
-    /// sequences with Unicode replacement scalar values.
-    pub fn file_name_lossy(&self) -> Cow<'_, str> {
-        self.file_name()
-            .to_str()
-            .map_or_else(|| self.file_name().to_string_lossy(), Cow::from)
     }
 
     /// Returns `true` if node is a directory.
@@ -157,6 +171,7 @@ impl Node {
     }
 
     /// Attempts to return an instance of [FileMode] for the display of symbolic permissions.
+    #[cfg(unix)]
     pub fn mode(&self) -> Result<FileMode, Error> {
         let permissions = self.metadata.permissions();
         let file_mode = permissions.try_mode_symbolic_notation()?;
@@ -168,6 +183,7 @@ impl Node {
     /// TODO: Cloning can potentially be expensive here, but practically speaking we won't run into
     /// this scenario a lot, but we will want to optimize this bad boy by removing the `xattr`
     /// crate and just query for the existence of xattrs ourselves.
+    #[cfg(unix)]
     fn has_xattrs(&self) -> bool {
         let count = self
             .xattrs
@@ -194,13 +210,7 @@ impl Node {
     /// Note the two spaces to the left of the first character of the number -- even if never used,
     /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
     pub fn display(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
-        let out = if ctx.no_color() {
-            output::compute(self, prefix, ctx)
-        } else {
-            output::compute_with_color(self, prefix, ctx)
-        };
-
-        write!(f, "{out}")
+        write!(f, "{}", output::compute(self, prefix, ctx))
     }
 
     /// Unix file identifiers that you'd find in the `ls -l` command.
@@ -290,6 +300,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let inode = Inode::try_from(&metadata).ok();
 
+        #[cfg(unix)]
         let xattrs = if ctx.long {
             dir_entry.get_xattrs()
         } else {
@@ -303,6 +314,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             style,
             link_target,
             inode,
+            #[cfg(unix)]
             xattrs,
         ))
     }

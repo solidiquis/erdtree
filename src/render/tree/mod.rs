@@ -69,12 +69,17 @@ where
     pub fn try_init(mut ctx: Context) -> Result<Self> {
         let (inner, root) = Self::traverse(&ctx)?;
 
-        let max_du_width = inner[root].get().file_size().map_or(0, |size| size.bytes);
+        let max_du_width = Self::compute_max_du_column_width(root, &inner);
         ctx.set_max_du_width(max_du_width);
 
+        #[cfg(unix)]
         if ctx.long {
-            let max_nlink = Self::compute_max_nlink(root, &inner, &ctx);
-            ctx.set_max_nlink_width(max_nlink);
+            let (max_nlink_width, max_ino_width, max_block_width) =
+                Self::compute_max_column_widths(root, &inner, &ctx);
+
+            ctx.set_max_nlink_width(max_nlink_width);
+            ctx.set_max_ino_width(max_ino_width);
+            ctx.set_max_block_width(max_block_width);
         }
 
         let tree = Self::new(inner, root, ctx);
@@ -291,27 +296,57 @@ where
         count
     }
 
-    /// Among the files to be printed, this will seek out the [Node] whose underling inode contains
-    /// the highest `nlink` which is used for determining the width of the nlink column for the
-    /// `--long` output.
-    fn compute_max_nlink(root: NodeId, tree: &Arena<Node>, ctx: &Context) -> u64 {
+    fn compute_max_du_column_width(root: NodeId, tree: &Arena<Node>) -> usize {
+        tree[root]
+            .get()
+            .file_size()
+            .map(|size| size.bytes)
+            .map_or(0, crate::utils::num_integral)
+    }
+
+    #[cfg(unix)]
+    fn compute_max_column_widths(
+        root: NodeId,
+        tree: &Arena<Node>,
+        ctx: &Context,
+    ) -> (usize, usize, usize) {
+        let mut max_nlink = 0;
+        let mut max_ino = 0;
+        let mut max_blocks = 0;
+
         let max_depth = ctx.level();
 
-        root.descendants(tree).fold(0, |max, i| {
-            let node = tree[i].get();
+        for id in root.descendants(tree) {
+            let node = tree[id].get();
 
             if node.depth() > max_depth {
-                return max;
+                continue;
             }
 
-            let nlink = node.nlink().unwrap_or(0);
-
-            if nlink > max {
-                nlink
-            } else {
-                max 
+            if let Some(ino) = node.ino() {
+                if ino > max_ino {
+                    max_ino = ino;
+                }
             }
-        })
+
+            if let Some(nlink) = node.nlink() {
+                if nlink > max_nlink {
+                    max_nlink = nlink;
+                }
+            }
+
+            if let Some(blocks) = node.blocks() {
+                if blocks > max_blocks {
+                    max_blocks = blocks;
+                }
+            }
+        }
+
+        let max_nlink_width = crate::utils::num_integral(max_nlink);
+        let max_ino_width = crate::utils::num_integral(max_ino);
+        let max_block_width = crate::utils::num_integral(max_blocks);
+
+        (max_nlink_width, max_ino_width, max_block_width)
     }
 }
 

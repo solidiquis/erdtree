@@ -66,8 +66,14 @@ pub struct Context {
     level: Option<usize>,
 
     /// Show extended metadata and attributes
+    #[cfg(unix)]
     #[arg(short, long)]
     pub long: bool,
+
+    /// Show permissions in numeric octal format instead of symbolic
+    #[cfg(unix)]
+    #[arg(long, requires = "long")]
+    pub octal: bool,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
@@ -137,17 +143,35 @@ pub struct Context {
     #[arg(long)]
     pub suppress_size: bool,
 
+    //////////////////////////
+    /* INTERNAL USAGE BELOW */
+    //////////////////////////
+    /// Is stdin in a tty?
     #[clap(skip = tty::stdin_is_tty())]
     pub stdin_is_tty: bool,
 
+    /// Is stdin in a tty?
     #[clap(skip = tty::stdout_is_tty())]
     pub stdout_is_tty: bool,
 
+    /// Restricts column width of disk usage
     #[clap(skip = usize::default())]
     pub max_du_width: usize,
 
+    /// Restricts column width of nlink for long view.
     #[clap(skip = usize::default())]
+    #[cfg(unix)]
     pub max_nlink_width: usize,
+
+    /// Restricts column width of ino for long view.
+    #[clap(skip = usize::default())]
+    #[cfg(unix)]
+    pub max_ino_width: usize,
+
+    /// Restricts column width of block for long view.
+    #[clap(skip = usize::default())]
+    #[cfg(unix)]
+    pub max_block_width: usize,
 }
 
 impl Context {
@@ -307,17 +331,28 @@ impl Context {
 
     /// Setter for `max_du_width` to inform formatters what the width of the disk usage column
     /// should be.
-    pub fn set_max_du_width(&mut self, size: u64) {
-        if size == 0 {
-            return;
-        }
-        self.max_du_width = crate::utils::num_integral(size);
+    pub fn set_max_du_width(&mut self, width: usize) {
+        self.max_du_width = width;
     }
 
     /// Setter for `max_nlink_width` which is used to inform formatters what the width of the
     /// `nlink` column should be.
-    pub fn set_max_nlink_width(&mut self, nlink: u64) {
-        // `nlink` shouldn't be big so we shouldn't worry about truncation.
-        self.max_nlink_width = crate::utils::num_integral(nlink);
+    #[cfg(unix)]
+    pub fn set_max_nlink_width(&mut self, width: usize) {
+        self.max_nlink_width = width;
+    }
+
+    /// Setter for `max_ino_width` which is used to inform formatters what the width of the
+    /// `ino` column should be.
+    #[cfg(unix)]
+    pub fn set_max_ino_width(&mut self, width: usize) {
+        self.max_ino_width = width;
+    }
+
+    /// Setter for `max_block_width` which is used to inform formatters what the width of the
+    /// `block` column should be.
+    #[cfg(unix)]
+    pub fn set_max_block_width(&mut self, width: usize) {
+        self.max_block_width = width;
     }
 }

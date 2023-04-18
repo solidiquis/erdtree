@@ -95,6 +95,7 @@ impl FileSize {
             current_padded
         };
 
+        #[allow(clippy::option_if_let_else)]
         match color {
             Some(col) => match self.prefix_kind {
                 PrefixKind::Bin => col

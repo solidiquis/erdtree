@@ -1,10 +1,12 @@
 use super::Node;
-use crate::{
-    fs::permissions::FileMode,
-    render::styles::{get_octal_permissions_style, get_permissions_theme},
-};
 use ansi_term::{Color, Style};
 use std::{borrow::Cow, ffi::OsStr};
+
+#[cfg(unix)]
+use crate::fs::permissions::FileMode;
+
+#[cfg(unix)]
+use crate::render::styles::{get_octal_permissions_style, get_permissions_theme};
 
 impl Node {
     /// Stylizes input, `entity` based on `LS_COLORS`. If `style` is `None` then the entity is
@@ -43,6 +45,7 @@ impl Node {
     }
 
     /// Styles the symbolic notation file permissions.
+    #[cfg(unix)]
     pub(super) fn style_sym_permissions(perm_str: &str) -> String {
         let theme = get_permissions_theme().unwrap();
 
@@ -57,6 +60,7 @@ impl Node {
             .collect::<String>()
     }
 
+    #[cfg(unix)]
     pub(super) fn style_octal_permissions(mode: &FileMode) -> String {
         get_octal_permissions_style()
             .unwrap()
