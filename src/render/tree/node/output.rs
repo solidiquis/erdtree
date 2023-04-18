@@ -1,10 +1,9 @@
 use crate::render::{context::Context, tree::node::Node};
 
 #[cfg(unix)]
-use crate::render::styles;
-
-#[cfg(unix)]
 pub fn compute(node: &Node, prefix: &str, ctx: &Context) -> String {
+    use crate::render::styles;
+
     let size = presenters::size(node, ctx);
     let padded_icon = presenters::padded_icon(node, ctx);
 
