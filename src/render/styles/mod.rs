@@ -62,6 +62,10 @@ static INO_STYLE: OnceCell<Style> = OnceCell::new();
 #[cfg(unix)]
 static NLINK_STYLE: OnceCell<Style> = OnceCell::new();
 
+/// Runtime evaluated static that contains style for datetime column.
+#[cfg(unix)]
+static DATETIME_STYLE: OnceCell<Style> = OnceCell::new();
+
 /// Runtime evaluated static that contains style for number of blocks of a directory entry i.e.
 /// `blocks`.
 #[cfg(unix)]
@@ -155,6 +159,15 @@ pub fn get_block_style() -> Result<&'static Style, Error<'static>> {
     BLOCK_STYLE.get().ok_or(Error::Uninitialized("BLOCK_STYLE"))
 }
 
+/// Getter for [DATETIME_STYLE]. Returns an error if not initialized.
+#[cfg(unix)]
+#[inline]
+pub fn get_datetime_style() -> Result<&'static Style, Error<'static>> {
+    DATETIME_STYLE
+        .get()
+        .ok_or(Error::Uninitialized("DATETIME_STYLE"))
+}
+
 /// Initializes [LS_COLORS] by reading in the `LS_COLORS` environment variable. If it isn't set, a
 /// default determined by `lscolors` crate will be used.
 fn init_ls_colors() {
@@ -209,6 +222,9 @@ fn init_themes_for_long_view() {
 
     let block_style = Color::White.bold();
     BLOCK_STYLE.set(block_style).unwrap();
+
+    let datetime_style = Color::Purple.bold();
+    DATETIME_STYLE.set(datetime_style).unwrap();
 }
 
 /// Initializes all color themes.

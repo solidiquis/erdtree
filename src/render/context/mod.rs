@@ -23,6 +23,10 @@ pub mod error;
 /// Printing order kinds.
 pub mod sort;
 
+/// Different types of timestamps available in long view.
+#[cfg(unix)]
+pub mod time;
+
 /// Unit tests for [Context]
 #[cfg(test)]
 mod test;
@@ -74,6 +78,11 @@ pub struct Context {
     #[cfg(unix)]
     #[arg(long, requires = "long")]
     pub octal: bool,
+
+    /// Which kind of timestamp to use
+    #[cfg(unix)]
+    #[arg(long, requires = "long", value_enum, default_value_t = time::Stamp::default())]
+    pub time: time::Stamp,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]

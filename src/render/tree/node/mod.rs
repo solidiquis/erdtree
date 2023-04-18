@@ -18,6 +18,7 @@ use std::{
     fmt::{self, Formatter},
     fs::{FileType, Metadata},
     path::{Path, PathBuf},
+    time::SystemTime,
 };
 
 #[cfg(unix)]
@@ -108,6 +109,21 @@ impl Node {
         } else {
             Some(blocks)
         }
+    }
+
+    /// Timestamp of when file was last modified.
+    pub fn modified(&self) -> Option<SystemTime> {
+        self.metadata.modified().ok()
+    }
+
+    /// Timestamp of when file was created.
+    pub fn created(&self) -> Option<SystemTime> {
+        self.metadata.created().ok()
+    }
+
+    /// Timestamp of when file was last accessed.
+    pub fn accessed(&self) -> Option<SystemTime> {
+        self.metadata.accessed().ok()
     }
 
     /// Gets the underlying [Inode] of the entry.

@@ -25,6 +25,7 @@ path = "src/main.rs"
 
 [dependencies]
 ansi_term = "0.12.1"
+chrono = "0.4.24"
 clap = { version = "4.1.1", features = ["derive"] }
 clap_complete = "4.1.1"
 filesize = "0.2.0"
