@@ -120,7 +120,7 @@ impl FileSize {
             String::new()
         } else {
             let (placeholder, extra_padding) = get_placeholder_style().map_or_else(
-                |_| (Cow::from(styles::PLACEHOLDER), 0),
+                |_| (Cow::from(styles::PLACEHOLDER), 1),
                 |style| {
                     let placeholder = Cow::from(style.paint(styles::PLACEHOLDER).to_string());
                     let padding = placeholder.len();
