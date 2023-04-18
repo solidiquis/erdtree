@@ -113,7 +113,7 @@ impl FileSize {
         }
     }
 
-    /// Returns a placeholder or empty string. 
+    /// Returns a placeholder or empty string.
     pub fn placeholder(ctx: &Context) -> String {
         if ctx.suppress_size {
             String::new()

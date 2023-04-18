@@ -25,7 +25,7 @@ mod test {
             out,
             indoc!(
                 "143   B the_yellow_king
-                   143   B └─ cassildas_song.md
+                    143   B └─ cassildas_song.md
 
                 1 file"
             ),

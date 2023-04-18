@@ -16,13 +16,13 @@ fn prune() {
         ]),
         indoc!(
             "1.07 KiB data
-               308   B ├─ dream_cycle
-               308   B │  └─ polaris.txt
-               446   B ├─ lipsum
-               446   B │  └─ lipsum.txt
-                83   B ├─ necronomicon.txt
-               161   B ├─ nemesis.txt
-               100   B └─ nylarlathotep.txt
+                308   B ├─ dream_cycle
+                308   B │  └─ polaris.txt
+                446   B ├─ lipsum
+                446   B │  └─ lipsum.txt
+                 83   B ├─ necronomicon.txt
+                161   B ├─ nemesis.txt
+                100   B └─ nylarlathotep.txt
 
             2 directories, 5 files"
         )
