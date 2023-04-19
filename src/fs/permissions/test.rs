@@ -24,7 +24,7 @@ fn test_symbolic_notation() -> Result<(), Box<dyn Error>> {
     assert_eq!(&other.triad, &PermissionsTriad::Read);
 
     let rwx = format!("{file_mode}");
-    assert_eq!(rwx, "-rw-r--r--");
+    assert_eq!(rwx, ".rw-r--r--");
 
     let octal = format!("{:o}", file_mode);
     assert_eq!(octal, "644");
@@ -47,7 +47,7 @@ fn test_symbolic_notation_special_attr() -> Result<(), Box<dyn Error>> {
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
-    assert_eq!(rwx, "-rw-r--r-T");
+    assert_eq!(rwx, ".rw-r--r-T");
 
     let octal = format!("{:o}", file_mode);
     assert_eq!(octal, "1644");
@@ -57,7 +57,7 @@ fn test_symbolic_notation_special_attr() -> Result<(), Box<dyn Error>> {
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
-    assert_eq!(rwx, "-rw-r-Sr--");
+    assert_eq!(rwx, ".rw-r-Sr--");
 
     let octal = format!("{:o}", file_mode);
     assert_eq!(octal, "2644");
@@ -67,7 +67,7 @@ fn test_symbolic_notation_special_attr() -> Result<(), Box<dyn Error>> {
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
-    assert_eq!(rwx, "-rwSr--r--");
+    assert_eq!(rwx, ".rwSr--r--");
 
     let octal = format!("{:o}", file_mode);
     assert_eq!(octal, "4644");
@@ -77,7 +77,7 @@ fn test_symbolic_notation_special_attr() -> Result<(), Box<dyn Error>> {
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
-    assert_eq!(rwx, "-rwSr-Sr-T");
+    assert_eq!(rwx, ".rwSr-Sr-T");
 
     let octal = format!("{:o}", file_mode);
     assert_eq!(octal, "7644");
@@ -87,7 +87,7 @@ fn test_symbolic_notation_special_attr() -> Result<(), Box<dyn Error>> {
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
-    assert_eq!(rwx, "-rwsrwsrwt");
+    assert_eq!(rwx, ".rwsrwsrwt");
 
     let octal = format!("{:o}", file_mode);
     assert_eq!(octal, "7777");
