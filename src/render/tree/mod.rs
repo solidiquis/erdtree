@@ -198,7 +198,7 @@ where
         tree: &mut Arena<Node>,
         current_node_id: NodeId,
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
-        node_comparator: &Box<NodeComparator>,
+        node_comparator: &NodeComparator,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();

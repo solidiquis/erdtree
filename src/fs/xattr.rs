@@ -1,6 +1,5 @@
 use ignore::DirEntry;
-use std::{io, path::Path};
-use xattr::XAttrs;
+use std::{os::unix::ffi::OsStrExt, path::Path, ptr};
 
 /// Allow extended attributes to be queried directly from the directory entry.
 impl ExtendedAttr for DirEntry {
@@ -13,13 +12,36 @@ impl ExtendedAttr for DirEntry {
 pub trait ExtendedAttr {
     fn path(&self) -> &Path;
 
-    /// Query the extended attribute and return an error if something goes wrong.
-    fn try_get_xattrs(&self) -> io::Result<XAttrs> {
-        xattr::list(self.path())
+    /// Queries the filesystem to check if there exists extended attributes for the implementor's
+    /// path.
+    fn has_xattrs(&self) -> bool {
+        unsafe { has_xattrs(self.path()) }
     }
+}
 
-    /// Query the extended attribute and return `None` if something goes.
-    fn get_xattrs(&self) -> Option<XAttrs> {
-        xattr::list(self.path()).ok()
-    }
+/// Checks to see if a directory entry referred to by `path` has extended attributes.
+#[cfg(target_os = "macos")]
+unsafe fn has_xattrs(path: &Path) -> bool {
+    use libc::{c_char, listxattr};
+
+    let path_ptr = {
+        let slice = path.as_os_str().as_bytes();
+        let slice_ptr = slice.as_ptr();
+        slice_ptr.cast::<c_char>()
+    };
+
+    0 < listxattr(path_ptr, ptr::null_mut::<c_char>(), 0, 0)
+}
+
+#[cfg(target_os = "linux")]
+unsafe fn has_xattrs(path: &Path) -> bool {
+    use libc::{c_char, listxattr};
+
+    let path_ptr = {
+        let slice = path.as_os_str().as_bytes();
+        let slice_ptr = slice.as_ptr();
+        slice_ptr.cast::<*const c_char>()
+    };
+
+    0 < listxattr(path_ptr, ptr::null_mut::<c_char>(), 0)
 }

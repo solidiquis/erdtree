@@ -39,7 +39,6 @@ thiserror = "1.0.40"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.141"
-xattr = "1.0"
 
 [dev-dependencies]
 indoc = "2.0.0"

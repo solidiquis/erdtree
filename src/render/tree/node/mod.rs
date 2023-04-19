@@ -27,9 +27,6 @@ use crate::fs::{
     xattr::ExtendedAttr,
 };
 
-#[cfg(unix)]
-use xattr::XAttrs;
-
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
@@ -53,7 +50,7 @@ pub struct Node {
     inode: Option<Inode>,
 
     #[cfg(unix)]
-    xattrs: Option<XAttrs>,
+    has_xattrs: bool,
 }
 
 impl Node {
@@ -66,7 +63,7 @@ impl Node {
         symlink_target: Option<PathBuf>,
         inode: Option<Inode>,
 
-        #[cfg(unix)] xattrs: Option<XAttrs>,
+        #[cfg(unix)] has_xattrs: bool,
     ) -> Self {
         Self {
             dir_entry,
@@ -75,9 +72,8 @@ impl Node {
             style,
             symlink_target,
             inode,
-
             #[cfg(unix)]
-            xattrs,
+            has_xattrs,
         }
     }
 
@@ -196,18 +192,9 @@ impl Node {
     }
 
     /// Whether or not [Node] has extended attributes.
-    ///
-    /// TODO: Cloning can potentially be expensive here, but practically speaking we won't run into
-    /// this scenario a lot, but we will want to optimize this bad boy by removing the `xattr`
-    /// crate and just query for the existence of xattrs ourselves.
     #[cfg(unix)]
-    fn has_xattrs(&self) -> bool {
-        let count = self
-            .xattrs
-            .as_ref()
-            .map_or(0, |xattrs| xattrs.clone().count());
-
-        count > 0
+    const fn has_xattrs(&self) -> bool {
+        self.has_xattrs
     }
 
     /// Formats the [Node] for the tree presentation.
@@ -262,10 +249,10 @@ impl TryFrom<(DirEntry, &Context)> for Node {
         let inode = Inode::try_from(&metadata).ok();
 
         #[cfg(unix)]
-        let xattrs = if ctx.long {
-            dir_entry.get_xattrs()
+        let has_xattrs = if ctx.long {
+            dir_entry.has_xattrs()
         } else {
-            None
+            false
         };
 
         Ok(Self::new(
@@ -276,7 +263,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             link_target,
             inode,
             #[cfg(unix)]
-            xattrs,
+            has_xattrs,
         ))
     }
 }
