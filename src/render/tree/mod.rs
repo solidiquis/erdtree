@@ -7,7 +7,7 @@ use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
 use indextree::{Arena, NodeId};
-use node::Node;
+use node::{cmp::NodeComparator, Node};
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
@@ -167,8 +167,9 @@ where
                 }
 
                 let root = root_id.ok_or(Error::MissingRoot)?;
+                let node_comparator = node::cmp::comparator(ctx);
 
-                Self::assemble_tree(&mut tree, root, &mut branches, ctx);
+                Self::assemble_tree(&mut tree, root, &mut branches, &node_comparator, ctx);
 
                 if ctx.prune {
                     Self::prune_directories(root, &mut tree);
@@ -197,6 +198,7 @@ where
         tree: &mut Arena<Node>,
         current_node_id: NodeId,
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
+        node_comparator: &Box<NodeComparator>,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
@@ -214,7 +216,7 @@ where
             };
 
             if is_dir {
-                Self::assemble_tree(tree, index, branches, ctx);
+                Self::assemble_tree(tree, index, branches, node_comparator, ctx);
             }
 
             if let Some(file_size) = tree[index].get().file_size() {
@@ -229,7 +231,7 @@ where
         children.sort_by(|id_a, id_b| {
             let node_a = tree[*id_a].get();
             let node_b = tree[*id_b].get();
-            node::cmp::comparator(ctx)(node_a, node_b)
+            node_comparator(node_a, node_b)
         });
 
         // Append children to current node.
