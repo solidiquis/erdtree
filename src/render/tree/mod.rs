@@ -7,7 +7,7 @@ use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
 use indextree::{Arena, NodeId};
-use node::Node;
+use node::{cmp::NodeComparator, Node};
 use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
@@ -39,7 +39,6 @@ pub mod node;
 mod visitor;
 
 /// Virtual data structure that represents local file-system hierarchy.
-#[derive(Debug)]
 pub struct Tree<T>
 where
     T: display::TreeVariant,
@@ -67,8 +66,21 @@ where
     }
 
     /// Initiates file-system traversal and [Tree construction].
-    pub fn init(ctx: Context) -> Result<Self> {
+    pub fn try_init(mut ctx: Context) -> Result<Self> {
         let (inner, root) = Self::traverse(&ctx)?;
+
+        let max_du_width = Self::compute_max_du_column_width(root, &inner);
+        ctx.set_max_du_width(max_du_width);
+
+        #[cfg(unix)]
+        if ctx.long {
+            let (max_nlink_width, max_ino_width, max_block_width) =
+                Self::compute_max_column_widths(root, &inner, &ctx);
+
+            ctx.set_max_nlink_width(max_nlink_width);
+            ctx.set_max_ino_width(max_ino_width);
+            ctx.set_max_block_width(max_block_width);
+        }
 
         let tree = Self::new(inner, root, ctx);
 
@@ -155,8 +167,9 @@ where
                 }
 
                 let root = root_id.ok_or(Error::MissingRoot)?;
+                let node_comparator = node::cmp::comparator(ctx);
 
-                Self::assemble_tree(&mut tree, root, &mut branches, ctx);
+                Self::assemble_tree(&mut tree, root, &mut branches, &node_comparator, ctx);
 
                 if ctx.prune {
                     Self::prune_directories(root, &mut tree);
@@ -185,6 +198,7 @@ where
         tree: &mut Arena<Node>,
         current_node_id: NodeId,
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
+        node_comparator: &NodeComparator,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
@@ -202,7 +216,7 @@ where
             };
 
             if is_dir {
-                Self::assemble_tree(tree, index, branches, ctx);
+                Self::assemble_tree(tree, index, branches, node_comparator, ctx);
             }
 
             if let Some(file_size) = tree[index].get().file_size() {
@@ -214,14 +228,11 @@ where
             tree[current_node_id].get_mut().set_file_size(dir_size);
         }
 
-        // Sort if sorting specified
-        if let Some(func) = node::cmp::comparator(ctx) {
-            children.sort_by(|id_a, id_b| {
-                let node_a = tree[*id_a].get();
-                let node_b = tree[*id_b].get();
-                func(node_a, node_b)
-            });
-        }
+        children.sort_by(|id_a, id_b| {
+            let node_a = tree[*id_a].get();
+            let node_b = tree[*id_b].get();
+            node_comparator(node_a, node_b)
+        });
 
         // Append children to current node.
         for child_id in children {
@@ -271,6 +282,9 @@ where
         }
     }
 
+    /// Compute total number of files for a single directory without recurring into child
+    /// directories. Files are grouped into three categories: directories, regular files, and
+    /// symlinks.
     fn compute_file_count(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
         let mut count = FileCount::default();
 
@@ -279,6 +293,59 @@ where
         }
 
         count
+    }
+
+    fn compute_max_du_column_width(root: NodeId, tree: &Arena<Node>) -> usize {
+        tree[root]
+            .get()
+            .file_size()
+            .map(|size| size.bytes)
+            .map_or(0, crate::utils::num_integral)
+    }
+
+    #[cfg(unix)]
+    fn compute_max_column_widths(
+        root: NodeId,
+        tree: &Arena<Node>,
+        ctx: &Context,
+    ) -> (usize, usize, usize) {
+        let mut max_nlink = 0;
+        let mut max_ino = 0;
+        let mut max_blocks = 0;
+
+        let max_depth = ctx.level();
+
+        for id in root.descendants(tree) {
+            let node = tree[id].get();
+
+            if node.depth() > max_depth {
+                continue;
+            }
+
+            if let Some(ino) = node.ino() {
+                if ino > max_ino {
+                    max_ino = ino;
+                }
+            }
+
+            if let Some(nlink) = node.nlink() {
+                if nlink > max_nlink {
+                    max_nlink = nlink;
+                }
+            }
+
+            if let Some(blocks) = node.blocks() {
+                if blocks > max_blocks {
+                    max_blocks = blocks;
+                }
+            }
+        }
+
+        let max_nlink_width = crate::utils::num_integral(max_nlink);
+        let max_ino_width = crate::utils::num_integral(max_ino);
+        let max_block_width = crate::utils::num_integral(max_blocks);
+
+        (max_nlink_width, max_ino_width, max_block_width)
     }
 }
 
@@ -293,7 +360,7 @@ impl TryFrom<&Context> for WalkParallel {
         let mut builder = WalkBuilder::new(root);
 
         builder
-            .follow_links(ctx.follow_links)
+            .follow_links(ctx.follow)
             .git_ignore(!ctx.no_ignore)
             .hidden(!ctx.hidden)
             .threads(ctx.threads)

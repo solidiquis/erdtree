@@ -23,6 +23,10 @@ pub mod error;
 /// Printing order kinds.
 pub mod sort;
 
+/// Different types of timestamps available in long view.
+#[cfg(unix)]
+pub mod time;
+
 /// Unit tests for [Context]
 #[cfg(test)]
 mod test;
@@ -53,17 +57,42 @@ pub struct Context {
     #[arg(short = 'i', long)]
     pub no_ignore: bool,
 
+    /// Print disk usage information in plain format without the ASCII tree
+    #[arg(short = 'F', long)]
+    pub flat: bool,
+
+    /// Print human-readable disk usage in report
+    #[arg(long, requires = "flat")]
+    pub human: bool,
+
+    /// Follow symlinks and consider their disk usage
+    #[arg(short = 'f', long)]
+    pub follow: bool,
+
     /// Display file icons
     #[arg(short = 'I', long)]
     pub icons: bool,
 
-    /// Follow symlinks and consider their disk usage
-    #[arg(short = 'L', long = "follow")]
-    pub follow_links: bool,
-
     /// Maximum depth to display
-    #[arg(short, long, value_name = "NUM")]
+    #[arg(short = 'L', long, value_name = "NUM")]
     level: Option<usize>,
+
+    /// Show extended metadata and attributes
+    #[cfg(unix)]
+    #[arg(short, long)]
+    pub long: bool,
+
+    /// Show permissions in numeric octal format instead of symbolic
+    #[cfg(unix)]
+    #[arg(long, requires = "long")]
+    pub octal: bool,
+
+    // WARNING: `time` should require `--long` but unfortunately a default value still gets set
+    // which causes `init` to fail so for now it will just do nothing if set by the user.
+    /// Which kind of timestamp to use
+    #[cfg(unix)]
+    #[arg(long, value_enum, default_value_t = time::Stamp::default())]
+    pub time: time::Stamp,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
@@ -85,18 +114,6 @@ pub struct Context {
     #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
     pub scale: usize,
 
-    /// Print disk usage information in plain format without ASCII tree
-    #[arg(short, long)]
-    pub report: bool,
-
-    /// Print human-readable disk usage in report
-    #[arg(long, requires = "report")]
-    pub human: bool,
-
-    /// Print file-name in report as opposed to full path
-    #[arg(long, requires = "report")]
-    pub file_name: bool,
-
     /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
     pub sort: SortType,
@@ -106,7 +123,7 @@ pub struct Context {
     pub dirs_first: bool,
 
     /// Number of threads to use
-    #[arg(short, long, default_value_t = 3)]
+    #[arg(short = 'T', long, default_value_t = 3)]
     pub threads: usize,
 
     /// Report disk usage in binary or SI units
@@ -133,11 +150,35 @@ pub struct Context {
     #[arg(long)]
     pub suppress_size: bool,
 
+    //////////////////////////
+    /* INTERNAL USAGE BELOW */
+    //////////////////////////
+    /// Is stdin in a tty?
     #[clap(skip = tty::stdin_is_tty())]
     pub stdin_is_tty: bool,
 
+    /// Is stdin in a tty?
     #[clap(skip = tty::stdout_is_tty())]
     pub stdout_is_tty: bool,
+
+    /// Restricts column width of disk usage
+    #[clap(skip = usize::default())]
+    pub max_du_width: usize,
+
+    /// Restricts column width of nlink for long view.
+    #[clap(skip = usize::default())]
+    #[cfg(unix)]
+    pub max_nlink_width: usize,
+
+    /// Restricts column width of ino for long view.
+    #[clap(skip = usize::default())]
+    #[cfg(unix)]
+    pub max_ino_width: usize,
+
+    /// Restricts column width of block for long view.
+    #[clap(skip = usize::default())]
+    #[cfg(unix)]
+    pub max_block_width: usize,
 }
 
 impl Context {
@@ -213,11 +254,16 @@ impl Context {
         self.no_color || !self.stdout_is_tty
     }
 
-    /// Returns reference to the path of the root directory to be traversed.
+    /// Returns [Path] of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
         self.dir
             .as_ref()
             .map_or_else(|| Path::new("."), |pb| pb.as_path())
+    }
+
+    /// Returns canonical [Path] of the root directory to be traversed.
+    pub fn dir_canonical(&self) -> PathBuf {
+        std::fs::canonicalize(self.dir()).unwrap_or_else(|_| self.dir().to_path_buf())
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file
@@ -293,5 +339,32 @@ impl Context {
             let file_name = dir_entry.file_name().to_string_lossy();
             re.is_match(&file_name)
         }))
+    }
+
+    /// Setter for `max_du_width` to inform formatters what the width of the disk usage column
+    /// should be.
+    pub fn set_max_du_width(&mut self, width: usize) {
+        self.max_du_width = width;
+    }
+
+    /// Setter for `max_nlink_width` which is used to inform formatters what the width of the
+    /// `nlink` column should be.
+    #[cfg(unix)]
+    pub fn set_max_nlink_width(&mut self, width: usize) {
+        self.max_nlink_width = width;
+    }
+
+    /// Setter for `max_ino_width` which is used to inform formatters what the width of the
+    /// `ino` column should be.
+    #[cfg(unix)]
+    pub fn set_max_ino_width(&mut self, width: usize) {
+        self.max_ino_width = width;
+    }
+
+    /// Setter for `max_block_width` which is used to inform formatters what the width of the
+    /// `block` column should be.
+    #[cfg(unix)]
+    pub fn set_max_block_width(&mut self, width: usize) {
+        self.max_block_width = width;
     }
 }

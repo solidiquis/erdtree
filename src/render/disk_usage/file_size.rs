@@ -1,8 +1,11 @@
 use super::units::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
-use crate::{render::styles::get_du_theme, Context};
+use crate::{
+    render::styles::{self, get_du_theme, get_placeholder_style},
+    Context,
+};
 use clap::ValueEnum;
 use filesize::PathExt;
-use std::{fs::Metadata, ops::AddAssign, path::Path};
+use std::{borrow::Cow, fs::Metadata, ops::AddAssign, path::Path};
 
 /// Represents either logical or physical size and handles presentation.
 #[derive(Clone, Debug)]
@@ -65,52 +68,64 @@ impl FileSize {
             .map(|bytes| Self::new(bytes, DiskUsage::Physical, prefix_kind, scale))
     }
 
-    /// Transforms the `FileSize` into a string.
-    /// `Display` / `ToString` traits not used in order to have control over alignment.
-    ///
-    /// `align` false makes strings such as
-    /// `123.45 KiB`
-    /// `1.23 MiB`
-    /// `12 B`
-    ///
-    /// `align` true makes strings such as
-    /// `123.45 KiB`
-    /// `  1.23 MiB`
-    /// `    12   B`
-    pub fn format(&self, align: bool) -> String {
+    /// Formats the [FileSize] in a human readable format.
+    pub fn format_human_readable(&self, max_size_width: usize) -> String {
         let du_themes = get_du_theme().ok();
 
         let HumanReadableComponents { size, unit } = Self::human_readable_components(self);
         let color = du_themes.and_then(|th| th.get(unit.as_str()));
 
+        let max_padded = max_size_width + 5;
+        let current_padded = self.scale + 5;
+
+        let padded_total_width = if current_padded > max_padded {
+            max_padded
+        } else {
+            current_padded
+        };
+
+        #[allow(clippy::option_if_let_else)]
         match color {
-            Some(col) if align => match self.prefix_kind {
+            Some(col) => match self.prefix_kind {
                 PrefixKind::Bin => col
-                    .paint(format!("{size:>len$} {unit:>3}", len = self.scale + 4))
+                    .paint(format!("{size:>padded_total_width$} {unit:>3}"))
                     .to_string(),
                 PrefixKind::Si => col
-                    .paint(format!("{size:>len$} {unit:>2}", len = self.scale + 4))
+                    .paint(format!("{size:>padded_total_width$} {unit:>2}"))
                     .to_string(),
             },
 
-            Some(col) => col.paint(format!("{size} {unit}")).to_string(),
-
-            None if align => match self.prefix_kind {
-                PrefixKind::Bin => format!("{size:>len$} {unit:>3}", len = self.scale + 4),
-                PrefixKind::Si => format!("{size:>len$} {unit:>2}", len = self.scale + 4),
+            None => match self.prefix_kind {
+                PrefixKind::Bin => format!("{size:>padded_total_width$} {unit:>3}"),
+                PrefixKind::Si => format!("{size:>padded_total_width$} {unit:>2}"),
             },
-
-            _ => format!("{size} {unit}"),
         }
     }
 
-    /// Returns spaces times the length of a file size, formatted with the given options
-    /// " " * len(123.45 KiB)
-    pub fn empty_string(ctx: &Context) -> String {
+    /// Formats [FileSize] for presentation.
+    pub fn format(&self, max_size_width: usize) -> String {
+        format!("{:<width$}B", self.bytes, width = max_size_width + 1)
+    }
+
+    /// Returns a placeholder or empty string.
+    pub fn placeholder(ctx: &Context) -> String {
         if ctx.suppress_size {
             String::new()
         } else {
-            format!("{:len$}", "", len = Self::empty_string_len(ctx))
+            let (placeholder, extra_padding) = get_placeholder_style().map_or_else(
+                |_| (Cow::from(styles::PLACEHOLDER), 1),
+                |style| {
+                    let placeholder = Cow::from(style.paint(styles::PLACEHOLDER).to_string());
+                    let padding = placeholder.len();
+                    (placeholder, padding)
+                },
+            );
+
+            format!(
+                "{:>len$}",
+                placeholder,
+                len = Self::empty_string_len(ctx) + extra_padding
+            )
         }
     }
 
@@ -133,7 +148,7 @@ impl FileSize {
     pub fn human_readable_components(&self) -> HumanReadableComponents {
         let fbytes = self.bytes as f64;
         let scale = self.scale;
-        let power = u32::try_from(scale).unwrap();
+        let power = u32::try_from(scale).expect("Provided scale caused an overflow");
 
         let (size, unit) = match self.prefix_kind {
             PrefixKind::Bin => {
@@ -144,7 +159,7 @@ impl FileSize {
                     (format!("{}", self.bytes), format!("{unit}"))
                 } else {
                     // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if self.bytes <= 10_u64.pow(power) {
+                    if self.bytes <= 10_u64.checked_pow(power).unwrap_or(u64::MAX) {
                         (format!("{}", self.bytes), format!("{}", BinPrefix::Base))
                     } else {
                         (
@@ -163,7 +178,7 @@ impl FileSize {
                     (format!("{}", self.bytes), format!("{unit}"))
                 } else {
                     // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if 10_u64.pow(power) >= base_value {
+                    if 10_u64.checked_pow(power).unwrap_or(u64::MAX) >= base_value {
                         (format!("{}", self.bytes), format!("{}", SiPrefix::Base))
                     } else {
                         (

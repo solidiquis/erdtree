@@ -1,7 +1,7 @@
 use std::{convert::TryFrom, fs::Metadata};
 
 /// Represents a file's underlying inode.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Inode {
     pub ino: u64,
     pub dev: u64,

@@ -3,13 +3,16 @@ use crate::render::context::error::Error as CtxError;
 use ignore::Error as IgnoreError;
 use std::io::Error as IoError;
 
+#[cfg(unix)]
+use crate::fs::permissions::error::Error as PermissionsError;
+
 /// Errors that may occur while traversing or construction of [`Tree`].
 ///
 /// [`Tree`]: super::Tree
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
-    ContextError(#[from] CtxError),
+    Context(#[from] CtxError),
 
     #[error("{0}")]
     DirNotFound(String),
@@ -28,6 +31,10 @@ pub enum Error {
 
     #[error("{0}")]
     PathCanonicalization(#[from] IoError),
+
+    #[cfg(unix)]
+    #[error("{0}")]
+    Persmissions(#[from] PermissionsError),
 
     #[error("{0}")]
     UninitializedTheme(#[from] StyleError<'static>),

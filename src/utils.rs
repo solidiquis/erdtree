@@ -22,6 +22,7 @@ macro_rules! hash {
 }
 
 /// Ensure every item in a `Vec` is unique.
+#[inline]
 pub fn uniq<T>(items: Vec<T>) -> Vec<T>
 where
     T: Eq + Hash + ToOwned,
@@ -33,4 +34,13 @@ where
         .into_iter()
         .filter(|item| set.insert(item.to_owned()))
         .collect::<Vec<T>>()
+}
+
+/// How many integral digits are there?
+#[inline]
+pub const fn num_integral(value: u64) -> usize {
+    if value == 0 {
+        return 0;
+    }
+    value.ilog10() as usize + 1
 }

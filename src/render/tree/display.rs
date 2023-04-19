@@ -1,17 +1,9 @@
 use crate::render::{
-    disk_usage::{
-        file_size::{FileSize, HumanReadableComponents},
-        units::PrefixKind,
-    },
     styles,
-    tree::{count::FileCount, node::Node, Tree},
+    tree::{count::FileCount, Tree},
 };
 use indextree::NodeId;
-use std::{
-    ffi::OsStr,
-    fmt::{self, Display, Formatter},
-    path::Path,
-};
+use std::fmt::{self, Display, Formatter};
 
 /// Empty trait used to constrain generic parameter `display_variant` of [Tree].
 pub trait TreeVariant {}
@@ -20,10 +12,10 @@ pub trait TreeVariant {}
 pub struct Regular {}
 
 /// For generating plain-text report of disk usage without ASCII tree.
-pub struct Report {}
+pub struct Flat {}
 
 impl TreeVariant for Regular {}
-impl TreeVariant for Report {}
+impl TreeVariant for Flat {}
 
 impl Display for Tree<Regular> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -39,7 +31,7 @@ impl Display for Tree<Regular> {
         let mut display_node = |node_id: NodeId, prefix: &str| -> fmt::Result {
             let node = inner[node_id].get();
 
-            node.display(f, prefix, ctx)?;
+            node.tree_display(f, prefix, ctx)?;
             file_count_data.push(Self::compute_file_count(node_id, inner));
 
             writeln!(f)
@@ -108,95 +100,25 @@ impl Display for Tree<Regular> {
     }
 }
 
-impl Display for Tree<Report> {
+impl Display for Tree<Flat> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let tree = self.inner();
         let root = self.root();
         let ctx = self.context();
         let max_depth = ctx.level();
-        let dir = ctx.dir();
-        let prefix_kind = ctx.unit;
         let mut file_count_data = vec![];
 
-        let du_info = |node: &Node| {
-            if ctx.human {
-                let HumanReadableComponents { size, unit } = node.file_size().map_or_else(
-                    HumanReadableComponents::default,
-                    FileSize::human_readable_components,
-                );
+        let descendants = root.descendants(tree);
 
-                (size, unit)
-            } else {
-                let size = node
-                    .file_size()
-                    .map_or_else(|| String::from("0"), |fs| format!("{}", fs.bytes));
-
-                let unit = String::from("B");
-
-                (size, unit)
-            }
-        };
-
-        let root_node = tree[root].get();
-
-        file_count_data.push(Self::compute_file_count(root, tree));
-
-        let total_du_width = root_node
-            .file_size()
-            .map_or_else(|| String::from("0"), |fs| format!("{}", fs.bytes))
-            .len();
-
-        let (total_du, root_unit) = du_info(root_node);
-
-        let width_du_col = if ctx.human {
-            total_du_width
-                + root_unit.len()
-                + if matches!(prefix_kind, PrefixKind::Bin) {
-                    3
-                } else {
-                    1
-                }
-        } else {
-            total_du_width + 2
-        };
-
-        let root_du_info = format!("{total_du} {root_unit}");
-        let root_iden = root_node.file_type_identifier().unwrap_or("-");
-
-        let root_name = <OsStr as AsRef<Path>>::as_ref(root_node.file_name()).display();
-
-        writeln!(
-            f,
-            "{root_iden}   {root_du_info:>width_du_col$}   {root_name}"
-        )?;
-
-        let base_path = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
-
-        for node_id in root.descendants(tree).skip(1) {
+        for node_id in descendants {
             let node = tree[node_id].get();
-
-            file_count_data.push(Self::compute_file_count(node_id, tree));
 
             if node.depth() > max_depth {
                 continue;
             }
 
-            let (du, unit) = du_info(node);
-            let du_info = format!("{du} {unit}");
-            let ft_iden = node.file_type_identifier().unwrap_or("-");
-
-            let file = if ctx.file_name {
-                <OsStr as AsRef<Path>>::as_ref(node.file_name()).display()
-            } else {
-                let full_path = node.path();
-
-                full_path
-                    .strip_prefix(&base_path)
-                    .unwrap_or(full_path)
-                    .display()
-            };
-
-            writeln!(f, "{ft_iden}   {du_info:>width_du_col$}   {file}")?;
+            node.flat_display(f, ctx)?;
+            file_count_data.push(Self::compute_file_count(node_id, tree));
         }
 
         if !file_count_data.is_empty() {

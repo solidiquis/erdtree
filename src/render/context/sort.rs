@@ -8,12 +8,9 @@ pub enum SortType {
     Name,
 
     /// Sort entries by size smallest to largest, top to bottom
+    #[default]
     Size,
 
     /// Sort entries by size largest to smallest, bottom to top
     SizeRev,
-
-    /// Do not sort entries
-    #[default]
-    None,
 }

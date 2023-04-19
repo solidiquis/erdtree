@@ -8,15 +8,15 @@ fn sort_name() {
         utils::run_cmd(&["--sort", "name", "tests/data"]),
         indoc!(
             "1.21 KiB data
-               308   B ├─ dream_cycle
-               308   B │  └─ polaris.txt
-               446   B ├─ lipsum
-               446   B │  └─ lipsum.txt
-                83   B ├─ necronomicon.txt
-               161   B ├─ nemesis.txt
-               100   B ├─ nylarlathotep.txt
-               143   B └─ the_yellow_king
-               143   B    └─ cassildas_song.md
+                308   B ├─ dream_cycle
+                308   B │  └─ polaris.txt
+                446   B ├─ lipsum
+                446   B │  └─ lipsum.txt
+                 83   B ├─ necronomicon.txt
+                161   B ├─ nemesis.txt
+                100   B ├─ nylarlathotep.txt
+                143   B └─ the_yellow_king
+                143   B    └─ cassildas_song.md
 
             3 directories, 6 files"
         ),
@@ -30,15 +30,15 @@ fn sort_name_dir_first() {
         utils::run_cmd(&["--sort", "name", "--dirs-first", "tests/data"]),
         indoc!(
             "1.21 KiB data
-               308   B ├─ dream_cycle
-               308   B │  └─ polaris.txt
-               446   B ├─ lipsum
-               446   B │  └─ lipsum.txt
-               143   B ├─ the_yellow_king
-               143   B │  └─ cassildas_song.md
-                83   B ├─ necronomicon.txt
-               161   B ├─ nemesis.txt
-               100   B └─ nylarlathotep.txt
+                308   B ├─ dream_cycle
+                308   B │  └─ polaris.txt
+                446   B ├─ lipsum
+                446   B │  └─ lipsum.txt
+                143   B ├─ the_yellow_king
+                143   B │  └─ cassildas_song.md
+                 83   B ├─ necronomicon.txt
+                161   B ├─ nemesis.txt
+                100   B └─ nylarlathotep.txt
 
             3 directories, 6 files"
         ),
@@ -52,15 +52,15 @@ fn sort_size() {
         utils::run_cmd(&["--sort", "size", "tests/data"]),
         indoc!(
             "1.21 KiB data
-                83   B ├─ necronomicon.txt
-               100   B ├─ nylarlathotep.txt
-               143   B ├─ the_yellow_king
-               143   B │  └─ cassildas_song.md
-               161   B ├─ nemesis.txt
-               308   B ├─ dream_cycle
-               308   B │  └─ polaris.txt
-               446   B └─ lipsum
-               446   B    └─ lipsum.txt
+                 83   B ├─ necronomicon.txt
+                100   B ├─ nylarlathotep.txt
+                143   B ├─ the_yellow_king
+                143   B │  └─ cassildas_song.md
+                161   B ├─ nemesis.txt
+                308   B ├─ dream_cycle
+                308   B │  └─ polaris.txt
+                446   B └─ lipsum
+                446   B    └─ lipsum.txt
 
             3 directories, 6 files"
         ),
@@ -74,15 +74,15 @@ fn sort_size_dir_first() {
         utils::run_cmd(&["--sort", "size", "--dirs-first", "tests/data"]),
         indoc!(
             "1.21 KiB data
-               143   B ├─ the_yellow_king
-               143   B │  └─ cassildas_song.md
-               308   B ├─ dream_cycle
-               308   B │  └─ polaris.txt
-               446   B ├─ lipsum
-               446   B │  └─ lipsum.txt
-                83   B ├─ necronomicon.txt
-               100   B ├─ nylarlathotep.txt
-               161   B └─ nemesis.txt
+                143   B ├─ the_yellow_king
+                143   B │  └─ cassildas_song.md
+                308   B ├─ dream_cycle
+                308   B │  └─ polaris.txt
+                446   B ├─ lipsum
+                446   B │  └─ lipsum.txt
+                 83   B ├─ necronomicon.txt
+                100   B ├─ nylarlathotep.txt
+                161   B └─ nemesis.txt
 
             3 directories, 6 files"
         ),
