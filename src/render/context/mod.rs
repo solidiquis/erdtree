@@ -41,6 +41,10 @@ pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
+    /// Turn on colorization always
+    #[arg(short = 'C', long)]
+    pub force_color: bool,
+
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
@@ -248,9 +252,15 @@ impl Context {
         Self::from_arg_matches(&user_args).map_err(Error::ArgParse)
     }
 
-    /// Determines whether or not it's appropriate to display color in output based on `--no-color`
-    /// and whether or not stdout is connected to a tty.
+    /// Determines whether or not it's appropriate to display color in output based on
+    /// `--no-color`, `--force-color`, and whether or not stdout is connected to a tty.
+    ///
+    /// If `--force-color` is true then this will always evaluate to `false`.
     pub const fn no_color(&self) -> bool {
+        if self.force_color {
+            return false
+        }
+
         self.no_color || !self.stdout_is_tty
     }
 
