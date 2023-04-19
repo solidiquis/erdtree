@@ -17,7 +17,7 @@ impl FileType {
     pub const fn identifier(&self) -> char {
         match self {
             Self::Directory => 'd',
-            Self::File => '-',
+            Self::File => '.',
             Self::Symlink => 'l',
             Self::Fifo => 'p',
             Self::Socket => 's',

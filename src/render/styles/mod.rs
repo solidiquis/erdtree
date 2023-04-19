@@ -198,7 +198,7 @@ fn init_plain() {
 #[inline]
 fn init_themes_for_long_view() {
     let permissions_theme = hash! {
-        '-' => Color::Purple.normal(),
+        '-' | '.' => Color::Purple.normal(),
         'd' => Color::Blue.bold(),
         'l' => Color::Red.bold(),
         'r' => Color::Green.bold(),
