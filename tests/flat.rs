@@ -3,9 +3,9 @@ use indoc::indoc;
 mod utils;
 
 #[test]
-fn report() {
+fn flat() {
     assert_eq!(
-        utils::run_cmd(&["--report", "--sort", "name", "tests/data"]),
+        utils::run_cmd(&["--flat", "--sort", "name", "tests/data"]),
         indoc!(
             "1241 B   data
             308  B   dream_cycle
@@ -24,9 +24,9 @@ fn report() {
 }
 
 #[test]
-fn report_human() {
+fn flat_human() {
     assert_eq!(
-        utils::run_cmd(&["--report", "--human", "--sort", "name", "tests/data"]),
+        utils::run_cmd(&["--flat", "--human", "--sort", "name", "tests/data"]),
         indoc!(
             "1.21 KiB   data
               308   B   dream_cycle
@@ -45,9 +45,9 @@ fn report_human() {
 }
 
 #[test]
-fn report_with_level() {
+fn flat_with_level() {
     assert_eq!(
-        utils::run_cmd(&["--report", "--level", "1", "--sort", "name", "tests/data"]),
+        utils::run_cmd(&["--flat", "--level", "1", "--sort", "name", "tests/data"]),
         indoc!(
             "1241 B   data
             308  B   dream_cycle
@@ -64,12 +64,12 @@ fn report_with_level() {
 
 #[test]
 #[should_panic]
-fn report_requires_human() {
+fn flat_requires_human() {
     utils::run_cmd(&["--human"]);
 }
 
 #[test]
 #[should_panic]
-fn report_requires_file_name() {
+fn flat_requires_file_name() {
     utils::run_cmd(&["--file-name"]);
 }

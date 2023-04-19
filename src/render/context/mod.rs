@@ -57,6 +57,14 @@ pub struct Context {
     #[arg(short = 'i', long)]
     pub no_ignore: bool,
 
+    /// Print disk usage information in plain format without the ASCII tree
+    #[arg(short = 'F', long)]
+    pub flat: bool,
+
+    /// Print human-readable disk usage in report
+    #[arg(long, requires = "flat")]
+    pub human: bool,
+
     /// Follow symlinks and consider their disk usage
     #[arg(short = 'f', long)]
     pub follow: bool,
@@ -106,14 +114,6 @@ pub struct Context {
     #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
     pub scale: usize,
 
-    /// Print disk usage information in plain format without ASCII tree
-    #[arg(short, long)]
-    pub report: bool,
-
-    /// Print human-readable disk usage in report
-    #[arg(long, requires = "report")]
-    pub human: bool,
-
     /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
     pub sort: SortType,
@@ -123,7 +123,7 @@ pub struct Context {
     pub dirs_first: bool,
 
     /// Number of threads to use
-    #[arg(short, long, default_value_t = 3)]
+    #[arg(short = 'T', long, default_value_t = 3)]
     pub threads: usize,
 
     /// Report disk usage in binary or SI units

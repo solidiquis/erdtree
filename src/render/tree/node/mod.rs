@@ -203,7 +203,7 @@ impl Node {
     }
 
     /// Formats the [Node] for the report presentation.
-    pub fn report_display(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
+    pub fn flat_display(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
         self.report(f, ctx)
     }
 

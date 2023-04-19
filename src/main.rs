@@ -23,7 +23,7 @@ use clap::CommandFactory;
 use render::{
     context::Context,
     tree::{
-        display::{Regular, Report},
+        display::{Flat, Regular},
         Tree,
     },
 };
@@ -63,8 +63,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     render::styles::init(ctx.no_color());
 
-    if ctx.report {
-        let tree = Tree::<Report>::try_init(ctx)?;
+    if ctx.flat {
+        let tree = Tree::<Flat>::try_init(ctx)?;
         println!("{tree}");
     } else {
         let tree = Tree::<Regular>::try_init(ctx)?;

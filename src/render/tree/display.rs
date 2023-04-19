@@ -12,10 +12,10 @@ pub trait TreeVariant {}
 pub struct Regular {}
 
 /// For generating plain-text report of disk usage without ASCII tree.
-pub struct Report {}
+pub struct Flat {}
 
 impl TreeVariant for Regular {}
-impl TreeVariant for Report {}
+impl TreeVariant for Flat {}
 
 impl Display for Tree<Regular> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -100,7 +100,7 @@ impl Display for Tree<Regular> {
     }
 }
 
-impl Display for Tree<Report> {
+impl Display for Tree<Flat> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let tree = self.inner();
         let root = self.root();
@@ -117,7 +117,7 @@ impl Display for Tree<Report> {
                 continue;
             }
 
-            node.report_display(f, ctx)?;
+            node.flat_display(f, ctx)?;
             file_count_data.push(Self::compute_file_count(node_id, tree));
         }
 
