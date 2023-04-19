@@ -10,9 +10,7 @@ pub fn comparator(ctx: &Context) -> Box<NodeComparator> {
     let sort_type = ctx.sort;
 
     if ctx.dirs_first {
-        return Box::new(move |a, b| {
-            dir_comparator(a, b, base_comparator(sort_type))
-        });
+        return Box::new(move |a, b| dir_comparator(a, b, base_comparator(sort_type)));
     }
 
     base_comparator(sort_type)
@@ -28,11 +26,7 @@ fn base_comparator(sort_type: SortType) -> Box<NodeComparator> {
 }
 
 /// Orders directories first. Provides a fallback if inputs are not directories.
-fn dir_comparator(
-    a: &Node,
-    b: &Node,
-    fallback: impl Fn(&Node, &Node) -> Ordering,
-) -> Ordering {
+fn dir_comparator(a: &Node, b: &Node, fallback: impl Fn(&Node, &Node) -> Ordering) -> Ordering {
     match (a.is_dir(), b.is_dir()) {
         (true, false) => Ordering::Less,
         (false, true) => Ordering::Greater,

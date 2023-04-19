@@ -7,7 +7,7 @@ fn report() {
     assert_eq!(
         utils::run_cmd(&["--report", "--sort", "name", "tests/data"]),
         indoc!(
-           "1241 B   data
+            "1241 B   data
             308  B   dream_cycle
             308  B   dream_cycle/polaris.txt
             446  B   lipsum
@@ -49,7 +49,7 @@ fn report_with_level() {
     assert_eq!(
         utils::run_cmd(&["--report", "--level", "1", "--sort", "name", "tests/data"]),
         indoc!(
-           "1241 B   data
+            "1241 B   data
             308  B   dream_cycle
             446  B   lipsum
             83   B   necronomicon.txt

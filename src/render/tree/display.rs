@@ -114,7 +114,7 @@ impl Display for Tree<Report> {
             let node = tree[node_id].get();
 
             if node.depth() > max_depth {
-                continue
+                continue;
             }
 
             node.report_display(f, ctx)?;

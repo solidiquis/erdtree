@@ -7,10 +7,14 @@ use std::{
 impl Node {
     /// Formats the [Node] for the tree view.
     #[cfg(unix)]
-    pub(super) fn tree(&self, f: &mut Formatter, prefix: Option<&str>, ctx: &Context) -> fmt::Result {
+    pub(super) fn tree(
+        &self,
+        f: &mut Formatter,
+        prefix: Option<&str>,
+        ctx: &Context,
+    ) -> fmt::Result {
         let size = presenters::format_size(self, ctx);
         let padded_icon = presenters::format_padded_icon(self, ctx);
-
 
         let file_name = self.symlink_target_file_name().map_or_else(
             || Self::stylize(self.file_name(), self.style),
@@ -23,7 +27,13 @@ impl Node {
         let pre = prefix.unwrap_or("");
 
         if ctx.long {
-            let presenters::LongAttrs { ino, perms, nlink, blocks, timestamp } = presenters::format_long(self, ctx);
+            let presenters::LongAttrs {
+                ino,
+                perms,
+                nlink,
+                blocks,
+                timestamp,
+            } = presenters::format_long(self, ctx);
 
             write!(
                 f,
@@ -39,7 +49,7 @@ impl Node {
     /// Formats the [Node] for a plain report view.
     #[cfg(unix)]
     pub(super) fn report(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
-        use std::{path::Path, ffi::OsStr};
+        use std::{ffi::OsStr, path::Path};
 
         let size = if ctx.human {
             presenters::format_size(self, ctx)
@@ -58,10 +68,7 @@ impl Node {
             } else {
                 node_path
                     .strip_prefix(ctx.dir_canonical())
-                    .map_or_else(
-                        |_| self.path().to_string_lossy(),
-                        Path::to_string_lossy,
-                    )
+                    .map_or_else(|_| self.path().to_string_lossy(), Path::to_string_lossy)
             }
         };
 
@@ -74,7 +81,7 @@ impl Node {
             perms,
             nlink,
             blocks,
-            timestamp
+            timestamp,
         } = presenters::format_long(self, ctx);
 
         writeln!(
@@ -95,7 +102,8 @@ impl Node {
         };
 
         let file = {
-            let path = self.path()
+            let path = self
+                .path()
                 .strip_prefix(ctx.dir_canonical())
                 .unwrap_or_else(|_| self.path());
 
@@ -107,7 +115,12 @@ impl Node {
 
     /// Formats the [Node] for the tree view.
     #[cfg(not(unix))]
-    pub(super) fn tree(&self, f: &mut Formatter, prefix: Option<&str>, ctx: &Context) -> fmt::Result {
+    pub(super) fn tree(
+        &self,
+        f: &mut Formatter,
+        prefix: Option<&str>,
+        ctx: &Context,
+    ) -> fmt::Result {
         let size = presenters::format_size(self, ctx);
         let padded_icon = presenters::format_padded_icon(self, ctx);
         let pre = prefix.unwrap_or("");
@@ -127,10 +140,7 @@ impl Node {
 /// Helper functions to build each component of the output.
 mod presenters {
     use crate::render::{
-        context::Context,
-        disk_usage::file_size::FileSize,
-        styles::get_du_theme,
-        tree::Node
+        context::Context, disk_usage::file_size::FileSize, styles::get_du_theme, tree::Node,
     };
 
     #[cfg(unix)]
@@ -159,7 +169,6 @@ mod presenters {
     #[cfg(unix)]
     #[inline]
     pub(super) fn format_long(node: &Node, ctx: &Context) -> LongAttrs {
-
         let mode = node.mode().unwrap();
 
         let perms = if ctx.octal {
@@ -181,7 +190,13 @@ mod presenters {
         let blocks = format_num(node.blocks(), ctx.max_block_width, styles::get_block_style);
         let timestamp = format_datetime(datetime);
 
-        LongAttrs { ino, perms, nlink, blocks, timestamp }
+        LongAttrs {
+            ino,
+            perms,
+            nlink,
+            blocks,
+            timestamp,
+        }
     }
 
     /// Builds the disk usage portion of the output.
@@ -207,7 +222,7 @@ mod presenters {
                     || size.format(ctx.max_du_width),
                     |style| style.paint(size.format(ctx.max_du_width)).to_string(),
                 )
-            }
+            },
         )
     }
 
@@ -226,7 +241,11 @@ mod presenters {
     /// Builds a numeric portion of the output.
     #[cfg(unix)]
     #[inline]
-    pub(super) fn format_num(num: Option<u64>, max_width: usize, style_getter: StyleGetter) -> String {
+    pub(super) fn format_num(
+        num: Option<u64>,
+        max_width: usize,
+        style_getter: StyleGetter,
+    ) -> String {
         let out = num
             .map(|num| format!("{num:>max_width$}"))
             .unwrap_or(format!("{PLACEHOLDER:>max_width$}"));
