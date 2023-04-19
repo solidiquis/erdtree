@@ -33,8 +33,8 @@ use xattr::XAttrs;
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
-/// For building the actual output.
-pub mod output;
+/// Methods format the [Node] for display variants.
+pub mod display;
 
 /// Styling utilities for a [Node].
 pub mod style;
@@ -171,7 +171,8 @@ impl Node {
         self.path().parent()
     }
 
-    /// Returns a reference to `path`.
+    /// Returns a reference to `path`. If the underlying [DirEntry] is a symlink then the path of
+    /// the symlink shall be returned.
     pub fn path(&self) -> &Path {
         self.dir_entry.path()
     }
@@ -209,70 +210,14 @@ impl Node {
         count > 0
     }
 
-    /// General method for printing a `Node`. The `Display` (and `ToString`) traits are not used,
-    /// to give more control over the output.
-    ///
-    /// Format a node for display with size on the right.
-    ///
-    /// Example:
-    /// `| Some Directory (12.3 KiB)`
-    ///
-    ///
-    /// Format a node for display with size on the left.
-    ///
-    /// Example:
-    /// `  1.23 MiB | Some File`
-    ///
-    /// Note the two spaces to the left of the first character of the number -- even if never used,
-    /// numbers are padded to 3 digits to the left of the decimal (and ctx.scale digits after)
-    pub fn display(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
-        write!(f, "{}", output::compute(self, prefix, ctx))
+    /// Formats the [Node] for the tree presentation.
+    pub fn tree_display(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
+        self.tree(f, Some(prefix), ctx)
     }
 
-    /// Unix file identifiers that you'd find in the `ls -l` command.
-    #[cfg(unix)]
-    pub fn file_type_identifier(&self) -> Option<&str> {
-        use std::os::unix::fs::FileTypeExt;
-
-        let file_type = self.file_type()?;
-
-        let iden = if file_type.is_dir() {
-            "d"
-        } else if file_type.is_file() {
-            "-"
-        } else if file_type.is_symlink() {
-            "l"
-        } else if file_type.is_fifo() {
-            "p"
-        } else if file_type.is_socket() {
-            "s"
-        } else if file_type.is_char_device() {
-            "c"
-        } else if file_type.is_block_device() {
-            "b"
-        } else {
-            return None;
-        };
-
-        Some(iden)
-    }
-
-    /// File identifiers.
-    #[cfg(not(unix))]
-    pub fn file_type_identifier(&self) -> Option<&str> {
-        let file_type = self.file_type()?;
-
-        let iden = if file_type.is_dir() {
-            "d"
-        } else if file_type.is_file() {
-            "-"
-        } else if file_type.is_symlink() {
-            "l"
-        } else {
-            return None;
-        };
-
-        Some(iden)
+    /// Formats the [Node] for the report presentation.
+    pub fn report_display(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
+        self.report(f, ctx)
     }
 
     /// See [icons::compute].

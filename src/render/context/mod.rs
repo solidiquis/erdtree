@@ -114,10 +114,6 @@ pub struct Context {
     #[arg(long, requires = "report")]
     pub human: bool,
 
-    /// Print file-name in report as opposed to full path
-    #[arg(long, requires = "report")]
-    pub file_name: bool,
-
     /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
     pub sort: SortType,
@@ -258,11 +254,16 @@ impl Context {
         self.no_color || !self.stdout_is_tty
     }
 
-    /// Returns reference to the path of the root directory to be traversed.
+    /// Returns [Path] of the root directory to be traversed.
     pub fn dir(&self) -> &Path {
         self.dir
             .as_ref()
             .map_or_else(|| Path::new("."), |pb| pb.as_path())
+    }
+
+    /// Returns canonical [Path] of the root directory to be traversed.
+    pub fn dir_canonical(&self) -> PathBuf {
+        std::fs::canonicalize(self.dir()).unwrap_or_else(|_| self.dir().to_path_buf())
     }
 
     /// The max depth to print. Note that all directories are fully traversed to compute file

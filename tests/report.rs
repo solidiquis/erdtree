@@ -7,18 +7,18 @@ fn report() {
     assert_eq!(
         utils::run_cmd(&["--report", "--sort", "name", "tests/data"]),
         indoc!(
-            "d   1241 B   data
-             d    308 B   dream_cycle
-             -    308 B   dream_cycle/polaris.txt
-             d    446 B   lipsum
-             -    446 B   lipsum/lipsum.txt
-             -     83 B   necronomicon.txt
-             -    161 B   nemesis.txt
-             -    100 B   nylarlathotep.txt
-             d    143 B   the_yellow_king
-             -    143 B   the_yellow_king/cassildas_song.md
- 
-             3 directories, 6 files"
+           "1241 B   data
+            308  B   dream_cycle
+            308  B   dream_cycle/polaris.txt
+            446  B   lipsum
+            446  B   lipsum/lipsum.txt
+            83   B   necronomicon.txt
+            161  B   nemesis.txt
+            100  B   nylarlathotep.txt
+            143  B   the_yellow_king
+            143  B   the_yellow_king/cassildas_song.md
+
+            3 directories, 6 files"
         )
     )
 }
@@ -28,18 +28,18 @@ fn report_human() {
     assert_eq!(
         utils::run_cmd(&["--report", "--human", "--sort", "name", "tests/data"]),
         indoc!(
-            "d     1.21 KiB   data
-            d        308 B   dream_cycle
-            -        308 B   dream_cycle/polaris.txt
-            d        446 B   lipsum
-            -        446 B   lipsum/lipsum.txt
-            -         83 B   necronomicon.txt
-            -        161 B   nemesis.txt
-            -        100 B   nylarlathotep.txt
-            d        143 B   the_yellow_king
-            -        143 B   the_yellow_king/cassildas_song.md
+            "1.21 KiB   data
+              308   B   dream_cycle
+              308   B   dream_cycle/polaris.txt
+              446   B   lipsum
+              446   B   lipsum/lipsum.txt
+               83   B   necronomicon.txt
+              161   B   nemesis.txt
+              100   B   nylarlathotep.txt
+              143   B   the_yellow_king
+              143   B   the_yellow_king/cassildas_song.md
 
-            3 directories, 6 files"
+          3 directories, 6 files"
         )
     )
 }
@@ -49,13 +49,13 @@ fn report_with_level() {
     assert_eq!(
         utils::run_cmd(&["--report", "--level", "1", "--sort", "name", "tests/data"]),
         indoc!(
-            "d   1241 B   data
-            d    308 B   dream_cycle
-            d    446 B   lipsum
-            -     83 B   necronomicon.txt
-            -    161 B   nemesis.txt
-            -    100 B   nylarlathotep.txt
-            d    143 B   the_yellow_king
+           "1241 B   data
+            308  B   dream_cycle
+            446  B   lipsum
+            83   B   necronomicon.txt
+            161  B   nemesis.txt
+            100  B   nylarlathotep.txt
+            143  B   the_yellow_king
 
             3 directories, 6 files"
         )

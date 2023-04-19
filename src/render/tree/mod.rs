@@ -226,14 +226,11 @@ where
             tree[current_node_id].get_mut().set_file_size(dir_size);
         }
 
-        // Sort if sorting specified
-        if let Some(func) = node::cmp::comparator(ctx) {
-            children.sort_by(|id_a, id_b| {
-                let node_a = tree[*id_a].get();
-                let node_b = tree[*id_b].get();
-                func(node_a, node_b)
-            });
-        }
+        children.sort_by(|id_a, id_b| {
+            let node_a = tree[*id_a].get();
+            let node_b = tree[*id_b].get();
+            node::cmp::comparator(ctx)(node_a, node_b)
+        });
 
         // Append children to current node.
         for child_id in children {

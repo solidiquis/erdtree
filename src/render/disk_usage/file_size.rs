@@ -68,19 +68,8 @@ impl FileSize {
             .map(|bytes| Self::new(bytes, DiskUsage::Physical, prefix_kind, scale))
     }
 
-    /// Transforms the `FileSize` into a string.
-    /// `Display` / `ToString` traits not used in order to have control over alignment.
-    ///
-    /// `align` false makes strings such as
-    /// `123.45 KiB`
-    /// `1.23 MiB`
-    /// `12 B`
-    ///
-    /// `align` true makes strings such as
-    /// `123.45 KiB`
-    /// `  1.23 MiB`
-    /// `    12   B`
-    pub fn format(&self, max_size_width: usize) -> String {
+    /// Formats the [FileSize] in a human readable format.
+    pub fn format_human_readable(&self, max_size_width: usize) -> String {
         let du_themes = get_du_theme().ok();
 
         let HumanReadableComponents { size, unit } = Self::human_readable_components(self);
@@ -111,6 +100,11 @@ impl FileSize {
                 PrefixKind::Si => format!("{size:>padded_total_width$} {unit:>2}"),
             },
         }
+    }
+
+    /// Formats [FileSize] for presentation.
+    pub fn format(&self, max_size_width: usize) -> String {
+        format!("{:<width$}B", self.bytes, width = max_size_width + 1)
     }
 
     /// Returns a placeholder or empty string.
