@@ -3,7 +3,7 @@ use crate::tty;
 use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
 use error::Error;
 use ignore::{
-    overrides::{Override, OverrideBuilder},
+    overrides::OverrideBuilder,
     DirEntry,
 };
 use regex::Regex;
@@ -282,32 +282,6 @@ impl Context {
         self.level.unwrap_or(usize::MAX)
     }
 
-    /// Ignore file overrides.
-    pub fn overrides(&self) -> Result<Override, Error> {
-        let mut builder = OverrideBuilder::new(self.dir());
-
-        if self.no_git {
-            builder.add("!.git")?;
-        }
-
-        if !self.glob && !self.iglob {
-            let builder = builder.build()?;
-            return Ok(builder);
-        }
-
-        if self.iglob {
-            builder.case_insensitive(true).unwrap();
-        }
-
-        if let Some(ref p) = self.pattern {
-            builder.add(p)?;
-        }
-
-        let builder = builder.build()?;
-
-        Ok(builder)
-    }
-
     /// Used to pick either from config or user args when constructing [Context].
     fn pick_args_from(id: &str, matches: &ArgMatches, args: &mut Vec<OsString>) {
         if let Ok(Some(raw)) = matches.try_get_raw(id) {
@@ -325,16 +299,10 @@ impl Context {
         }
     }
 
-    /// Returns a closure that is used to determine if a non-directory directory entry matches the
-    /// provided regular expression. If there is a match then that entry will be included in the
-    /// output.
+    /// Predicate used for filtering via regular expressions.
     pub fn regex_predicate(
         &self,
     ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
-        if self.iglob || self.glob {
-            return Err(Error::RegexDisabled);
-        }
-
         let Some(pattern) = self.pattern.as_ref() else {
             return Err(Error::PatternNotProvided);
         };
@@ -349,6 +317,52 @@ impl Context {
             let file_name = dir_entry.file_name().to_string_lossy();
             re.is_match(&file_name)
         }))
+    }
+
+    /// Predicate used for filtering via globs.
+    pub fn glob_predicate(
+        &self
+    ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
+        let mut builder = OverrideBuilder::new(self.dir());
+
+        if self.no_git {
+            builder.add("!.git")?;
+        }
+
+        let mut negated_glob = false;
+
+        let overrides = if !self.glob && !self.iglob {
+            builder.build()?
+        } else {
+            if self.iglob {
+                builder.case_insensitive(true).unwrap();
+            }
+
+            if let Some(ref glob) = self.pattern {
+                negated_glob = glob.trim_start().starts_with("!");
+                builder.add(glob.trim_start_matches('!'))?;
+            }
+
+            builder.build()?
+        };
+
+        let predicate = Box::new(move |dir_entry: &DirEntry| {
+            let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
+
+            if is_dir {
+                return true
+            }
+
+            let mat = overrides.matched(dir_entry.path(), is_dir);
+
+            if negated_glob {
+                !mat.is_whitelist()
+            } else {
+                mat.is_whitelist()
+            }
+        });
+
+        Ok(predicate)
     }
 
     /// Setter for `max_du_width` to inform formatters what the width of the disk usage column

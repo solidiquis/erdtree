@@ -1,7 +1,7 @@
 use crate::{
     fs::inode::Inode,
     render::{
-        context::{error::Error as CtxError, Context},
+        context::Context,
         disk_usage::file_size::FileSize,
         styles,
     },
@@ -375,17 +375,13 @@ impl TryFrom<&Context> for WalkParallel {
             .follow_links(ctx.follow)
             .git_ignore(!ctx.no_ignore)
             .hidden(!ctx.hidden)
-            .threads(ctx.threads)
-            .overrides(ctx.overrides()?);
+            .threads(ctx.threads);
 
-        match ctx.regex_predicate() {
-            Err(error) => {
-                if let CtxError::InvalidRegularExpression(e) = error {
-                    return Err(Error::from(CtxError::InvalidRegularExpression(e)));
-                }
-            }
-            Ok(predicate) => {
-                builder.filter_entry(predicate);
+        if ctx.pattern.is_some() {
+            if ctx.glob || ctx.iglob {
+                builder.filter_entry(ctx.glob_predicate()?);
+            } else {
+                builder.filter_entry(ctx.regex_predicate()?);
             }
         }
 
