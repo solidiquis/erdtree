@@ -26,7 +26,7 @@ fn hardlink() -> Result<(), Box<dyn Error>> {
     assert_eq!(
         out,
         indoc!(
-            "157   B hardlinks
+           "157   B hardlinks
             157   B ├─ curwin.hpl
             157   B └─ kadath.txt
 
