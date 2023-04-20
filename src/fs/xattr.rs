@@ -19,7 +19,8 @@ pub trait ExtendedAttr {
     }
 }
 
-/// Checks to see if a directory entry referred to by `path` has extended attributes.
+/// Checks to see if a directory entry referred to by `path` has extended attributes. If the file
+/// at the provided `path` is symlink the file it points to is interrogated.
 unsafe fn has_xattrs(path: &Path) -> bool {
     use libc::{c_char, listxattr};
 
