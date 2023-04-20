@@ -325,10 +325,6 @@ impl Context {
     ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
         let mut builder = OverrideBuilder::new(self.dir());
 
-        if self.no_git {
-            builder.add("!.git")?;
-        }
-
         let mut negated_glob = false;
 
         let overrides = if !self.glob && !self.iglob {
