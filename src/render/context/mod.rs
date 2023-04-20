@@ -3,7 +3,7 @@ use crate::tty;
 use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
 use error::Error;
 use ignore::{
-    overrides::OverrideBuilder,
+    overrides::{OverrideBuilder, Override},
     DirEntry,
 };
 use regex::Regex;
@@ -363,6 +363,17 @@ impl Context {
         });
 
         Ok(predicate)
+    }
+
+    /// Special override to toggle the visibility of the git directory.
+    pub fn no_git_override(&self) -> Result<Override, Error> {
+        let mut builder = OverrideBuilder::new(self.dir());
+
+        if self.no_git {
+            builder.add("!.git")?;
+        }
+        
+        Ok(builder.build()?)
     }
 
     /// Setter for `max_du_width` to inform formatters what the width of the disk usage column

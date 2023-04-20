@@ -375,6 +375,7 @@ impl TryFrom<&Context> for WalkParallel {
             .follow_links(ctx.follow)
             .git_ignore(!ctx.no_ignore)
             .hidden(!ctx.hidden)
+            .overrides(ctx.no_git_override()?)
             .threads(ctx.threads);
 
         if ctx.pattern.is_some() {
