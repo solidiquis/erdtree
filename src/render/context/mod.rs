@@ -328,15 +328,22 @@ impl Context {
         let mut negated_glob = false;
 
         let overrides = if !self.glob && !self.iglob {
-            builder.build()?
+            // Shouldn't really ever be hit but placing here as a safeguard.
+            return Err(Error::EmptyGlob)
         } else {
             if self.iglob {
                 builder.case_insensitive(true).unwrap();
             }
 
             if let Some(ref glob) = self.pattern {
-                negated_glob = glob.trim_start().starts_with("!");
-                builder.add(glob.trim_start_matches('!'))?;
+                let trim = glob.trim_start();
+                negated_glob = trim.starts_with("!");
+
+                if negated_glob {
+                    builder.add(trim.trim_start_matches('!'))?;
+                } else {
+                    builder.add(trim)?;
+                }
             }
 
             builder.build()?
