@@ -2,6 +2,7 @@ use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
 use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
 use error::Error;
+use file::FileType;
 use ignore::{
     overrides::{OverrideBuilder, Override},
     DirEntry,
@@ -19,6 +20,9 @@ pub mod config;
 
 /// [Context] related errors.
 pub mod error;
+
+/// Common cross-platform file-types.
+pub mod file;
 
 /// Printing order kinds.
 pub mod sort;
@@ -65,7 +69,7 @@ pub struct Context {
     #[arg(short = 'F', long)]
     pub flat: bool,
 
-    /// Print human-readable disk usage in report
+    /// Print human-readable disk usage in flat display
     #[arg(long, requires = "flat")]
     pub human: bool,
 
@@ -109,6 +113,10 @@ pub struct Context {
     /// Enables case-insensitive glob based searching
     #[arg(long, requires = "pattern")]
     pub iglob: bool,
+
+    /// Restrict regex or glob search to a particular file-type
+    #[arg(short = 't', long, requires = "pattern", value_enum, default_value_t = FileType::default())]
+    pub file_type: FileType,
 
     /// Remove empty directories from output
     #[arg(short = 'P', long)]
@@ -157,6 +165,7 @@ pub struct Context {
     //////////////////////////
     /* INTERNAL USAGE BELOW */
     //////////////////////////
+
     /// Is stdin in a tty?
     #[clap(skip = tty::stdin_is_tty())]
     pub stdin_is_tty: bool,
@@ -332,7 +341,7 @@ impl Context {
             return Err(Error::EmptyGlob)
         } else {
             if self.iglob {
-                builder.case_insensitive(true).unwrap();
+                builder.case_insensitive(true)?;
             }
 
             if let Some(ref glob) = self.pattern {
@@ -349,23 +358,47 @@ impl Context {
             builder.build()?
         };
 
-        let predicate = Box::new(move |dir_entry: &DirEntry| {
-            let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
+        let file_type = self.file_type;
 
-            if is_dir {
-                return true
-            }
+        match file_type {
+            FileType::Dir => return Ok(Box::new(move |dir_entry: &DirEntry| { 
+                let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
-            let mat = overrides.matched(dir_entry.path(), is_dir);
+                if is_dir {
+                    return true
+                }
+                let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides);
 
-            if negated_glob {
-                !mat.is_whitelist()
-            } else {
-                mat.is_whitelist()
-            }
-        });
+                if negated_glob {
+                    !matched
+                } else {
+                    matched
+                }
+            })),
 
-        Ok(predicate)
+            _ => return Ok(Box::new(move |dir_entry: &DirEntry| {
+                let entry_type = dir_entry.file_type();
+                let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
+
+                if is_dir {
+                    return true
+                }
+
+                match file_type {
+                    FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => return false,
+                    _ => (),
+                }
+
+                let matched = overrides.matched(dir_entry.path(), false);
+
+                if negated_glob {
+                    !matched.is_whitelist()
+                } else {
+                    matched.is_whitelist()
+                }
+            })),
+        }
     }
 
     /// Special override to toggle the visibility of the git directory.
@@ -404,5 +437,12 @@ impl Context {
     #[cfg(unix)]
     pub fn set_max_block_width(&mut self, width: usize) {
         self.max_block_width = width;
+    }
+
+    /// Do any of the components of a path match the provided glob? This is used for ensuring that
+    /// all children of a directory that a glob targets gets captured.
+    #[inline]
+    fn ancestor_glob_match(path: &Path, ovr: &Override) -> bool {
+        path.components().any(|c| ovr.matched(c, false).is_whitelist())
     }
 }
