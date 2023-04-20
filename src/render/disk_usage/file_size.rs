@@ -35,6 +35,9 @@ pub enum DiskUsage {
 }
 
 impl FileSize {
+    /// The amount of padding we need to reserve to the left of the disk usage.
+    const LEFT_PADDING: usize = 5;
+
     /// Initializes a [FileSize].
     pub const fn new(
         bytes: u64,
@@ -75,8 +78,8 @@ impl FileSize {
         let HumanReadableComponents { size, unit } = Self::human_readable_components(self);
         let color = du_themes.and_then(|th| th.get(unit.as_str()));
 
-        let max_padded = max_size_width + 5;
-        let current_padded = self.scale + 5;
+        let max_padded = max_size_width + Self::LEFT_PADDING;
+        let current_padded = self.scale + Self::LEFT_PADDING;
 
         let padded_total_width = if current_padded > max_padded {
             max_padded
@@ -124,24 +127,26 @@ impl FileSize {
             format!(
                 "{:>len$}",
                 placeholder,
-                len = Self::empty_string_len(ctx) + extra_padding
+                len = Self::placeholder_padding(ctx) + extra_padding
             )
         }
     }
 
-    const fn empty_string_len(ctx: &Context) -> usize {
-        // 3 places before the decimal
-        // 1 for the decimal
-        // ctx.scale after the decimal
-        // 1 space before unit
-        // 2/3 spaces per unit, depending
-        3 + 1
-            + ctx.scale
-            + 1
-            + match ctx.unit {
-                PrefixKind::Bin => 3,
-                PrefixKind::Si => 2,
-            }
+    /// Base amount of padding to use for the placeholder.
+    fn placeholder_padding(ctx: &Context) -> usize {
+        let unit_len = match ctx.unit {
+            PrefixKind::Bin => 3,
+            PrefixKind::Si => 2,
+        };
+
+        let max_pad = Self::LEFT_PADDING + ctx.max_du_width + unit_len;
+        let padding = Self::LEFT_PADDING + ctx.scale + unit_len;
+
+        if padding > max_pad {
+            max_pad
+        } else {
+            padding
+        }
     }
 
     /// Returns a tuple of the human readable size and prefix.

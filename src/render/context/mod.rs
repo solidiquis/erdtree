@@ -69,7 +69,7 @@ pub struct Context {
     #[arg(long, requires = "flat")]
     pub human: bool,
 
-    /// Follow symlinks and consider their disk usage
+    /// Follow symlinks
     #[arg(short = 'f', long)]
     pub follow: bool,
 
