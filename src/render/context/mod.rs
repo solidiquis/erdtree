@@ -255,10 +255,10 @@ impl Context {
     /// Determines whether or not it's appropriate to display color in output based on
     /// `--no-color`, `--force-color`, and whether or not stdout is connected to a tty.
     ///
-    /// If `--force-color` is true then this will always evaluate to `false`.
+    /// If `--force-color` is `true` then this will always evaluate to `false`.
     pub const fn no_color(&self) -> bool {
         if self.force_color {
-            return false
+            return false;
         }
 
         self.no_color || !self.stdout_is_tty

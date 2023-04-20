@@ -194,9 +194,9 @@ impl FileSize {
     }
 }
 
-impl AddAssign<u64> for FileSize {
-    fn add_assign(&mut self, rhs: u64) {
-        self.bytes += rhs;
+impl AddAssign<&Self> for FileSize {
+    fn add_assign(&mut self, rhs: &Self) {
+        self.bytes += rhs.bytes;
     }
 }
 

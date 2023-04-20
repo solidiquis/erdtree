@@ -1,7 +1,10 @@
-use crate::render::{
-    context::{error::Error as CtxError, Context},
-    disk_usage::file_size::FileSize,
-    styles,
+use crate::{
+    fs::inode::Inode,
+    render::{
+        context::{error::Error as CtxError, Context},
+        disk_usage::file_size::FileSize,
+        styles,
+    },
 };
 use count::FileCount;
 use error::Error;
@@ -128,8 +131,6 @@ where
             let res = s.spawn(move || {
                 let mut tree = Arena::new();
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
-                let mut inodes = HashSet::new();
-
                 let mut root_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
@@ -142,13 +143,6 @@ where
 
                         if node.depth() == 0 {
                             root_id = Some(tree.new_node(node));
-                            continue;
-                        }
-                    }
-
-                    // If a hard-link is already accounted for, skip all subsequent ones.
-                    if let Some(inode) = node.inode() {
-                        if inode.nlink > 1 && !inodes.insert(inode) {
                             continue;
                         }
                     }
@@ -168,8 +162,16 @@ where
 
                 let root = root_id.ok_or(Error::MissingRoot)?;
                 let node_comparator = node::cmp::comparator(ctx);
+                let mut inodes = HashSet::new();
 
-                Self::assemble_tree(&mut tree, root, &mut branches, &node_comparator, ctx);
+                Self::assemble_tree(
+                    &mut tree,
+                    root,
+                    &mut branches,
+                    &node_comparator,
+                    &mut inodes,
+                    ctx,
+                );
 
                 if ctx.prune {
                     Self::prune_directories(root, &mut tree);
@@ -199,6 +201,7 @@ where
         current_node_id: NodeId,
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
         node_comparator: &NodeComparator,
+        inode_set: &mut HashSet<Inode>,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
@@ -216,11 +219,20 @@ where
             };
 
             if is_dir {
-                Self::assemble_tree(tree, index, branches, node_comparator, ctx);
+                Self::assemble_tree(tree, index, branches, node_comparator, inode_set, ctx);
             }
 
-            if let Some(file_size) = tree[index].get().file_size() {
-                dir_size += file_size.bytes;
+            let node = tree[index].get();
+
+            // If a hard-link is already accounted for then don't increment parent dir size.
+            if let Some(inode) = node.inode() {
+                if inode.nlink > 1 && !inode_set.insert(inode) {
+                    continue;
+                }
+            }
+
+            if let Some(file_size) = node.file_size() {
+                dir_size += file_size;
             }
         }
 
