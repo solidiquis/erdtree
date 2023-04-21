@@ -10,6 +10,7 @@ use ignore::{
 use regex::Regex;
 use sort::SortType;
 use std::{
+    borrow::Borrow,
     convert::From,
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},
@@ -318,14 +319,36 @@ impl Context {
 
         let re = Regex::new(pattern)?;
 
-        Ok(Box::new(move |dir_entry: &DirEntry| {
-            if dir_entry.file_type().map_or(false, |ft| ft.is_dir()) {
-                return true;
-            }
+        let file_type = self.file_type;
 
-            let file_name = dir_entry.file_name().to_string_lossy();
-            re.is_match(&file_name)
-        }))
+        match file_type {
+            FileType::Dir => return Ok(Box::new(move |dir_entry: &DirEntry| { 
+                let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
+
+                if is_dir {
+                    return true
+                }
+
+                Self::ancestor_regex_match(dir_entry.path(), &re)
+            })),
+
+            _ => return Ok(Box::new(move |dir_entry: &DirEntry| {
+                let entry_type = dir_entry.file_type();
+                let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
+
+                if is_dir {
+                    return true
+                }
+
+                match file_type {
+                    FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => return false,
+                    _ => (),
+                }
+                let file_name = dir_entry.file_name().to_string_lossy();
+                re.is_match(&file_name)
+            })),
+        }
     }
 
     /// Predicate used for filtering via globs.
@@ -444,5 +467,11 @@ impl Context {
     #[inline]
     fn ancestor_glob_match(path: &Path, ovr: &Override) -> bool {
         path.components().any(|c| ovr.matched(c, false).is_whitelist())
+    }
+
+    /// Like [ancestor_glob_match] except uses [Regex] rather than [Override].
+    #[inline]
+    fn ancestor_regex_match(path: &Path, re: &Regex) -> bool {
+        path.components().any(|c| re.is_match(c.as_os_str().to_string_lossy().borrow()))
     }
 }
