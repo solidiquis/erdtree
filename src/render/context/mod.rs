@@ -10,9 +10,10 @@ use ignore::{
 use regex::Regex;
 use sort::SortType;
 use std::{
+    borrow::Borrow,
     convert::From,
     ffi::{OsStr, OsString},
-    path::{Path, PathBuf, MAIN_SEPARATOR},
+    path::{Path, PathBuf},
 };
 
 /// Operations to load in defaults from configuration file.
@@ -95,12 +96,10 @@ pub struct Context {
     #[arg(long, requires = "long")]
     pub octal: bool,
 
-    // WARNING: `time` should require `--long` but unfortunately a default value still gets set
-    // which causes `init` to fail so for now it will just do nothing if set by the user.
-    /// Which kind of timestamp to use
+    /// Which kind of timestamp to use; modified by default
     #[cfg(unix)]
-    #[arg(long, value_enum, default_value_t = time::Stamp::default())]
-    pub time: time::Stamp,
+    #[arg(long, value_enum, requires = "long")]
+    pub time: Option<time::Stamp>,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
@@ -115,8 +114,8 @@ pub struct Context {
     pub iglob: bool,
 
     /// Restrict regex or glob search to a particular file-type
-    #[arg(short = 't', long, requires = "pattern", value_enum, default_value_t = FileType::default())]
-    pub file_type: FileType,
+    #[arg(short = 't', long, requires = "pattern", value_enum)]
+    pub file_type: Option<FileType>,
 
     /// Remove empty directories from output
     #[arg(short = 'P', long)]
@@ -290,6 +289,16 @@ impl Context {
         self.level.unwrap_or(usize::MAX)
     }
 
+    /// Which timestamp type to use for long view; defaults to modified.
+    pub fn time(&self) -> time::Stamp {
+        self.time.unwrap_or_default()
+    }
+
+    /// Which filetype to filter on; defaults to regular file.
+    pub fn file_type(&self) -> FileType {
+        self.file_type.unwrap_or_default()
+    }
+
     /// Used to pick either from config or user args when constructing [Context].
     fn pick_args_from(id: &str, matches: &ArgMatches, args: &mut Vec<OsString>) {
         if let Ok(Some(raw)) = matches.try_get_raw(id) {
@@ -307,7 +316,11 @@ impl Context {
         }
     }
 
-    /// Predicate used for filtering via regular expressions and file-type.
+    /// Predicate used for filtering via regular expressions and file-type. When matching regular
+    /// files, directories will always be included since matched files will need to be bridged back
+    /// to the root node somehow. Empty sets not producing an output is handled by [`Tree`].
+    ///
+    /// [`Tree`]: crate::render::tree::Tree
     pub fn regex_predicate(
         &self,
     ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
@@ -317,18 +330,18 @@ impl Context {
 
         let re = Regex::new(pattern)?;
 
-        let file_type = self.file_type;
+        let file_type = self.file_type();
 
         match file_type {
             FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
-                let file_name = dir_entry.file_name().to_string_lossy();
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return re.is_match(&file_name);
+                    // Problem right here.
+                    return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
                 }
 
-                Self::ancestor_regex_match(dir_entry.path(), &re)
+                Self::ancestor_regex_match(dir_entry.path(), &re, 1)
             })),
 
             _ => Ok(Box::new(move |dir_entry: &DirEntry| {
@@ -382,16 +395,16 @@ impl Context {
             builder.build()?
         };
 
-        let file_type = self.file_type;
+        let file_type = self.file_type();
 
         match file_type {
             FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return overrides.matched(dir_entry.path(), true).is_whitelist();
+                    return Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
                 }
-                let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides);
+                let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides, 1);
 
                 if negated_glob {
                     !matched
@@ -468,22 +481,19 @@ impl Context {
     /// Do any of the components of a path match the provided glob? This is used for ensuring that
     /// all children of a directory that a glob targets gets captured.
     #[inline]
-    fn ancestor_glob_match(path: &Path, ovr: &Override) -> bool {
+    fn ancestor_glob_match(path: &Path, ovr: &Override, skip: usize) -> bool {
         path.components()
             .rev()
-            .skip(1)
+            .skip(skip)
             .any(|c| ovr.matched(c, false).is_whitelist())
     }
 
-    /// Like [ancestor_glob_match] except uses [Regex] rather than [Override].
+    /// Like [Self::ancestor_glob_match] except uses [Regex] rather than [Override].
     #[inline]
-    fn ancestor_regex_match(path: &Path, re: &Regex) -> bool {
-        path.components().rev().skip(1).any(|comp| {
-            re.is_match(
-                comp.as_os_str()
-                    .to_string_lossy()
-                    .trim_end_matches(MAIN_SEPARATOR),
-            )
-        })
+    fn ancestor_regex_match(path: &Path, re: &Regex, skip: usize) -> bool {
+        path.components()
+            .rev()
+            .skip(skip)
+            .any(|comp| re.is_match(comp.as_os_str().to_string_lossy().borrow()))
     }
 }

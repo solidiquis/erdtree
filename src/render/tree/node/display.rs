@@ -179,7 +179,7 @@ mod presenters {
             Node::style_sym_permissions(&mode, false)
         };
 
-        let datetime = match ctx.time {
+        let datetime = match ctx.time() {
             Stamp::Created => node.created(),
             Stamp::Accessed => node.accessed(),
             Stamp::Modified => node.modified(),

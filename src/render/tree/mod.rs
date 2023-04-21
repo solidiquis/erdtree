@@ -1,6 +1,10 @@
 use crate::{
     fs::inode::Inode,
-    render::{context::Context, disk_usage::file_size::FileSize, styles},
+    render::{
+        context::{file::FileType, Context},
+        disk_usage::file_size::FileSize,
+        styles,
+    },
 };
 use count::FileCount;
 use error::Error;
@@ -169,7 +173,7 @@ where
                     ctx,
                 );
 
-                if ctx.prune {
+                if ctx.prune || ctx.file_type != Some(FileType::Dir) {
                     Self::prune_directories(root, &mut tree);
                 }
 
