@@ -112,7 +112,7 @@ impl FileSize {
 
     /// Returns a placeholder or empty string.
     pub fn placeholder(ctx: &Context) -> String {
-        if ctx.suppress_size {
+        if ctx.suppress_size || ctx.max_du_width == 0 {
             String::new()
         } else {
             let (placeholder, extra_padding) = get_placeholder_style().map_or_else(
@@ -133,7 +133,7 @@ impl FileSize {
     }
 
     /// Base amount of padding to use for the placeholder.
-    fn placeholder_padding(ctx: &Context) -> usize {
+    const fn placeholder_padding(ctx: &Context) -> usize {
         let unit_len = match ctx.unit {
             PrefixKind::Bin => 3,
             PrefixKind::Si => 2,

@@ -41,7 +41,7 @@ mod render;
 /// Determine if standard streams are connected to a tty.
 mod tty;
 
-/// Common utilities.
+/// Common utilities across all modules.
 mod utils;
 
 fn main() -> ExitCode {

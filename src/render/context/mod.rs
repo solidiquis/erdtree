@@ -2,6 +2,7 @@ use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
 use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
 use error::Error;
+use file::FileType;
 use ignore::{
     overrides::{Override, OverrideBuilder},
     DirEntry,
@@ -9,6 +10,7 @@ use ignore::{
 use regex::Regex;
 use sort::SortType;
 use std::{
+    borrow::Borrow,
     convert::From,
     ffi::{OsStr, OsString},
     path::{Path, PathBuf},
@@ -19,6 +21,9 @@ pub mod config;
 
 /// [Context] related errors.
 pub mod error;
+
+/// Common cross-platform file-types.
+pub mod file;
 
 /// Printing order kinds.
 pub mod sort;
@@ -65,7 +70,7 @@ pub struct Context {
     #[arg(short = 'F', long)]
     pub flat: bool,
 
-    /// Print human-readable disk usage in report
+    /// Print human-readable disk usage in flat display
     #[arg(long, requires = "flat")]
     pub human: bool,
 
@@ -91,12 +96,10 @@ pub struct Context {
     #[arg(long, requires = "long")]
     pub octal: bool,
 
-    // WARNING: `time` should require `--long` but unfortunately a default value still gets set
-    // which causes `init` to fail so for now it will just do nothing if set by the user.
-    /// Which kind of timestamp to use
+    /// Which kind of timestamp to use; modified by default
     #[cfg(unix)]
-    #[arg(long, value_enum, default_value_t = time::Stamp::default())]
-    pub time: time::Stamp,
+    #[arg(long, value_enum, requires = "long")]
+    pub time: Option<time::Stamp>,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
@@ -109,6 +112,10 @@ pub struct Context {
     /// Enables case-insensitive glob based searching
     #[arg(long, requires = "pattern")]
     pub iglob: bool,
+
+    /// Restrict regex or glob search to a particular file-type
+    #[arg(short = 't', long, requires = "pattern", value_enum)]
+    pub file_type: Option<FileType>,
 
     /// Remove empty directories from output
     #[arg(short = 'P', long)]
@@ -282,30 +289,14 @@ impl Context {
         self.level.unwrap_or(usize::MAX)
     }
 
-    /// Ignore file overrides.
-    pub fn overrides(&self) -> Result<Override, Error> {
-        let mut builder = OverrideBuilder::new(self.dir());
+    /// Which timestamp type to use for long view; defaults to modified.
+    pub fn time(&self) -> time::Stamp {
+        self.time.unwrap_or_default()
+    }
 
-        if self.no_git {
-            builder.add("!.git")?;
-        }
-
-        if !self.glob && !self.iglob {
-            let builder = builder.build()?;
-            return Ok(builder);
-        }
-
-        if self.iglob {
-            builder.case_insensitive(true).unwrap();
-        }
-
-        if let Some(ref p) = self.pattern {
-            builder.add(p)?;
-        }
-
-        let builder = builder.build()?;
-
-        Ok(builder)
+    /// Which filetype to filter on; defaults to regular file.
+    pub fn file_type(&self) -> FileType {
+        self.file_type.unwrap_or_default()
     }
 
     /// Used to pick either from config or user args when constructing [Context].
@@ -325,30 +316,139 @@ impl Context {
         }
     }
 
-    /// Returns a closure that is used to determine if a non-directory directory entry matches the
-    /// provided regular expression. If there is a match then that entry will be included in the
-    /// output.
+    /// Predicate used for filtering via regular expressions and file-type. When matching regular
+    /// files, directories will always be included since matched files will need to be bridged back
+    /// to the root node somehow. Empty sets not producing an output is handled by [`Tree`].
+    ///
+    /// [`Tree`]: crate::render::tree::Tree
     pub fn regex_predicate(
         &self,
     ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
-        if self.iglob || self.glob {
-            return Err(Error::RegexDisabled);
-        }
-
         let Some(pattern) = self.pattern.as_ref() else {
             return Err(Error::PatternNotProvided);
         };
 
         let re = Regex::new(pattern)?;
 
-        Ok(Box::new(move |dir_entry: &DirEntry| {
-            if dir_entry.file_type().map_or(false, |ft| ft.is_dir()) {
-                return true;
+        let file_type = self.file_type();
+
+        match file_type {
+            FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
+                let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
+
+                if is_dir {
+                    // Problem right here.
+                    return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
+                }
+
+                Self::ancestor_regex_match(dir_entry.path(), &re, 1)
+            })),
+
+            _ => Ok(Box::new(move |dir_entry: &DirEntry| {
+                let entry_type = dir_entry.file_type();
+                let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
+
+                if is_dir {
+                    return true;
+                }
+
+                match file_type {
+                    FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
+                        return false
+                    }
+                    _ => (),
+                }
+                let file_name = dir_entry.file_name().to_string_lossy();
+                re.is_match(&file_name)
+            })),
+        }
+    }
+
+    /// Predicate used for filtering via globs and file-types.
+    pub fn glob_predicate(
+        &self,
+    ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
+        let mut builder = OverrideBuilder::new(self.dir());
+
+        let mut negated_glob = false;
+
+        let overrides = if !self.glob && !self.iglob {
+            // Shouldn't really ever be hit but placing here as a safeguard.
+            return Err(Error::EmptyGlob);
+        } else {
+            if self.iglob {
+                builder.case_insensitive(true)?;
             }
 
-            let file_name = dir_entry.file_name().to_string_lossy();
-            re.is_match(&file_name)
-        }))
+            if let Some(ref glob) = self.pattern {
+                let trim = glob.trim_start();
+                negated_glob = trim.starts_with('!');
+
+                if negated_glob {
+                    builder.add(trim.trim_start_matches('!'))?;
+                } else {
+                    builder.add(trim)?;
+                }
+            }
+
+            builder.build()?
+        };
+
+        let file_type = self.file_type();
+
+        match file_type {
+            FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
+                let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
+
+                if is_dir {
+                    return Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
+                }
+                let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides, 1);
+
+                if negated_glob {
+                    !matched
+                } else {
+                    matched
+                }
+            })),
+
+            _ => Ok(Box::new(move |dir_entry: &DirEntry| {
+                let entry_type = dir_entry.file_type();
+                let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
+
+                if is_dir {
+                    return true;
+                }
+
+                match file_type {
+                    FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
+                        return false
+                    }
+                    _ => (),
+                }
+
+                let matched = overrides.matched(dir_entry.path(), false);
+
+                if negated_glob {
+                    !matched.is_whitelist()
+                } else {
+                    matched.is_whitelist()
+                }
+            })),
+        }
+    }
+
+    /// Special override to toggle the visibility of the git directory.
+    pub fn no_git_override(&self) -> Result<Override, Error> {
+        let mut builder = OverrideBuilder::new(self.dir());
+
+        if self.no_git {
+            builder.add("!.git")?;
+        }
+
+        Ok(builder.build()?)
     }
 
     /// Setter for `max_du_width` to inform formatters what the width of the disk usage column
@@ -376,5 +476,24 @@ impl Context {
     #[cfg(unix)]
     pub fn set_max_block_width(&mut self, width: usize) {
         self.max_block_width = width;
+    }
+
+    /// Do any of the components of a path match the provided glob? This is used for ensuring that
+    /// all children of a directory that a glob targets gets captured.
+    #[inline]
+    fn ancestor_glob_match(path: &Path, ovr: &Override, skip: usize) -> bool {
+        path.components()
+            .rev()
+            .skip(skip)
+            .any(|c| ovr.matched(c, false).is_whitelist())
+    }
+
+    /// Like [Self::ancestor_glob_match] except uses [Regex] rather than [Override].
+    #[inline]
+    fn ancestor_regex_match(path: &Path, re: &Regex, skip: usize) -> bool {
+        path.components()
+            .rev()
+            .skip(skip)
+            .any(|comp| re.is_match(comp.as_os_str().to_string_lossy().borrow()))
     }
 }

@@ -8,16 +8,15 @@ fn regex() {
         utils::run_cmd(&["--sort", "name", "--pattern", r"\.txt$", "tests/data"]),
         indoc!(
             "1.07 KiB data
-                308   B ├─ dream_cycle
-                308   B │  └─ polaris.txt
-                446   B ├─ lipsum
-                446   B │  └─ lipsum.txt
-                 83   B ├─ necronomicon.txt
-                161   B ├─ nemesis.txt
-                100   B ├─ nylarlathotep.txt
-                      - └─ the_yellow_king
+            308   B ├─ dream_cycle
+            308   B │  └─ polaris.txt
+            446   B ├─ lipsum
+            446   B │  └─ lipsum.txt
+             83   B ├─ necronomicon.txt
+            161   B ├─ nemesis.txt
+            100   B └─ nylarlathotep.txt
 
-            3 directories, 5 files"
+        2 directories, 5 files"
         )
     );
 
@@ -38,6 +37,52 @@ fn regex() {
             1 directory, 1 file"
         )
     );
+}
+
+#[test]
+fn regex_file_type() {
+    assert_eq!(
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--pattern",
+            r"^dream.",
+            "--file-type",
+            "dir",
+            "tests/data"
+        ]),
+        indoc!(
+            "308   B data
+            308   B └─ dream_cycle
+            308   B    └─ polaris.txt
+
+        1 directory, 1 file"
+        )
+    );
+}
+
+#[should_panic]
+#[test]
+fn regex_empty_set_dir() {
+    // Trying to look for a regular file when file type is specified to be directory should result
+    // in an empty set which causes `main` to return an error.
+    utils::run_cmd(&[
+        "--sort",
+        "name",
+        "--pattern",
+        r"\.md$",
+        "--file-type",
+        "dir",
+        "tests/data",
+    ]);
+}
+
+#[should_panic]
+#[test]
+fn regex_empty_set_file() {
+    // Trying to look for a regular file when file type is specified to be directory should result
+    // in an empty set which causes `main` to return an error.
+    utils::run_cmd(&["--sort", "name", "--pattern", "weewoo", "tests/data"]);
 }
 
 #[should_panic]

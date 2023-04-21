@@ -1,7 +1,7 @@
 use crate::{
     fs::inode::Inode,
     render::{
-        context::{error::Error as CtxError, Context},
+        context::{file::FileType, Context},
         disk_usage::file_size::FileSize,
         styles,
     },
@@ -173,7 +173,7 @@ where
                     ctx,
                 );
 
-                if ctx.prune {
+                if ctx.prune || ctx.file_type != Some(FileType::Dir) {
                     Self::prune_directories(root, &mut tree);
                 }
 
@@ -375,17 +375,14 @@ impl TryFrom<&Context> for WalkParallel {
             .follow_links(ctx.follow)
             .git_ignore(!ctx.no_ignore)
             .hidden(!ctx.hidden)
-            .threads(ctx.threads)
-            .overrides(ctx.overrides()?);
+            .overrides(ctx.no_git_override()?)
+            .threads(ctx.threads);
 
-        match ctx.regex_predicate() {
-            Err(error) => {
-                if let CtxError::InvalidRegularExpression(e) = error {
-                    return Err(Error::from(CtxError::InvalidRegularExpression(e)));
-                }
-            }
-            Ok(predicate) => {
-                builder.filter_entry(predicate);
+        if ctx.pattern.is_some() {
+            if ctx.glob || ctx.iglob {
+                builder.filter_entry(ctx.glob_predicate()?);
+            } else {
+                builder.filter_entry(ctx.regex_predicate()?);
             }
         }
 
