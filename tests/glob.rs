@@ -105,3 +105,41 @@ fn iglob() {
         )
     )
 }
+
+#[test]
+fn glob_with_filetype() {
+    assert_eq!(
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--glob",
+            "--pattern",
+            "dream*",
+            "--file-type",
+            "dir",
+            "tests/data"
+        ]),
+        indoc!(
+            "308   B data
+            308   B └─ dream_cycle
+            308   B    └─ polaris.txt
+
+        1 directory, 1 file"
+        )
+    )
+}
+
+#[test]
+#[should_panic]
+fn glob_empty_set() {
+    utils::run_cmd(&[
+        "--sort",
+        "name",
+        "--glob",
+        "--pattern",
+        "*.txt",
+        "--file-type",
+        "dir",
+        "tests/data",
+    ]);
+}

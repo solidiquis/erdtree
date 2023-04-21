@@ -40,6 +40,44 @@ fn regex() {
     );
 }
 
+#[test]
+fn regex_file_type() {
+    assert_eq!(
+        utils::run_cmd(&[
+            "--sort",
+            "name",
+            "--pattern",
+            r"^dream.",
+            "--file-type",
+            "dir",
+            "tests/data"
+        ]),
+        indoc!(
+            "308   B data
+            308   B └─ dream_cycle
+            308   B    └─ polaris.txt
+
+        1 directory, 1 file"
+        )
+    );
+}
+
+#[should_panic]
+#[test]
+fn regex_empty_set() {
+    // Trying to look for a regular file when file type is specified to be directory should result
+    // in an empty set which causes `main` to return an error.
+    utils::run_cmd(&[
+        "--sort",
+        "name",
+        "--pattern",
+        r"\.md$",
+        "--file-type",
+        "dir",
+        "tests/data",
+    ]);
+}
+
 #[should_panic]
 #[test]
 fn invalid_regex() {

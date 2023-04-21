@@ -10,10 +10,9 @@ use ignore::{
 use regex::Regex;
 use sort::SortType;
 use std::{
-    borrow::Borrow,
     convert::From,
     ffi::{OsStr, OsString},
-    path::{Path, PathBuf},
+    path::{Path, PathBuf, MAIN_SEPARATOR},
 };
 
 /// Operations to load in defaults from configuration file.
@@ -322,10 +321,11 @@ impl Context {
 
         match file_type {
             FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
+                let file_name = dir_entry.file_name().to_string_lossy();
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return true;
+                    return re.is_match(&file_name);
                 }
 
                 Self::ancestor_regex_match(dir_entry.path(), &re)
@@ -389,7 +389,7 @@ impl Context {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return true;
+                    return overrides.matched(dir_entry.path(), true).is_whitelist();
                 }
                 let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides);
 
@@ -470,13 +470,20 @@ impl Context {
     #[inline]
     fn ancestor_glob_match(path: &Path, ovr: &Override) -> bool {
         path.components()
+            .rev()
+            .skip(1)
             .any(|c| ovr.matched(c, false).is_whitelist())
     }
 
     /// Like [ancestor_glob_match] except uses [Regex] rather than [Override].
     #[inline]
     fn ancestor_regex_match(path: &Path, re: &Regex) -> bool {
-        path.components()
-            .any(|c| re.is_match(c.as_os_str().to_string_lossy().borrow()))
+        path.components().rev().skip(1).any(|comp| {
+            re.is_match(
+                comp.as_os_str()
+                    .to_string_lossy()
+                    .trim_end_matches(MAIN_SEPARATOR),
+            )
+        })
     }
 }
