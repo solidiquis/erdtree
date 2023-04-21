@@ -133,7 +133,7 @@ impl FileSize {
     }
 
     /// Base amount of padding to use for the placeholder.
-    fn placeholder_padding(ctx: &Context) -> usize {
+    const fn placeholder_padding(ctx: &Context) -> usize {
         let unit_len = match ctx.unit {
             PrefixKind::Bin => 3,
             PrefixKind::Si => 2,

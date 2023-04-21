@@ -14,4 +14,3 @@ pub enum FileType {
     /// A symlink.
     Link,
 }
-

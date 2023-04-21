@@ -4,7 +4,7 @@ use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, 
 use error::Error;
 use file::FileType;
 use ignore::{
-    overrides::{OverrideBuilder, Override},
+    overrides::{Override, OverrideBuilder},
     DirEntry,
 };
 use regex::Regex;
@@ -166,7 +166,6 @@ pub struct Context {
     //////////////////////////
     /* INTERNAL USAGE BELOW */
     //////////////////////////
-
     /// Is stdin in a tty?
     #[clap(skip = tty::stdin_is_tty())]
     pub stdin_is_tty: bool,
@@ -309,7 +308,7 @@ impl Context {
         }
     }
 
-    /// Predicate used for filtering via regular expressions.
+    /// Predicate used for filtering via regular expressions and file-type.
     pub fn regex_predicate(
         &self,
     ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
@@ -322,27 +321,29 @@ impl Context {
         let file_type = self.file_type;
 
         match file_type {
-            FileType::Dir => return Ok(Box::new(move |dir_entry: &DirEntry| { 
+            FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return true
+                    return true;
                 }
 
                 Self::ancestor_regex_match(dir_entry.path(), &re)
             })),
 
-            _ => return Ok(Box::new(move |dir_entry: &DirEntry| {
+            _ => Ok(Box::new(move |dir_entry: &DirEntry| {
                 let entry_type = dir_entry.file_type();
                 let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return true
+                    return true;
                 }
 
                 match file_type {
                     FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
-                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => return false,
+                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
+                        return false
+                    }
                     _ => (),
                 }
                 let file_name = dir_entry.file_name().to_string_lossy();
@@ -351,9 +352,9 @@ impl Context {
         }
     }
 
-    /// Predicate used for filtering via globs.
+    /// Predicate used for filtering via globs and file-types.
     pub fn glob_predicate(
-        &self
+        &self,
     ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
         let mut builder = OverrideBuilder::new(self.dir());
 
@@ -361,7 +362,7 @@ impl Context {
 
         let overrides = if !self.glob && !self.iglob {
             // Shouldn't really ever be hit but placing here as a safeguard.
-            return Err(Error::EmptyGlob)
+            return Err(Error::EmptyGlob);
         } else {
             if self.iglob {
                 builder.case_insensitive(true)?;
@@ -369,7 +370,7 @@ impl Context {
 
             if let Some(ref glob) = self.pattern {
                 let trim = glob.trim_start();
-                negated_glob = trim.starts_with("!");
+                negated_glob = trim.starts_with('!');
 
                 if negated_glob {
                     builder.add(trim.trim_start_matches('!'))?;
@@ -384,11 +385,11 @@ impl Context {
         let file_type = self.file_type;
 
         match file_type {
-            FileType::Dir => return Ok(Box::new(move |dir_entry: &DirEntry| { 
+            FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return true
+                    return true;
                 }
                 let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides);
 
@@ -399,17 +400,19 @@ impl Context {
                 }
             })),
 
-            _ => return Ok(Box::new(move |dir_entry: &DirEntry| {
+            _ => Ok(Box::new(move |dir_entry: &DirEntry| {
                 let entry_type = dir_entry.file_type();
                 let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return true
+                    return true;
                 }
 
                 match file_type {
                     FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
-                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => return false,
+                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
+                        return false
+                    }
                     _ => (),
                 }
 
@@ -431,7 +434,7 @@ impl Context {
         if self.no_git {
             builder.add("!.git")?;
         }
-        
+
         Ok(builder.build()?)
     }
 
@@ -466,12 +469,14 @@ impl Context {
     /// all children of a directory that a glob targets gets captured.
     #[inline]
     fn ancestor_glob_match(path: &Path, ovr: &Override) -> bool {
-        path.components().any(|c| ovr.matched(c, false).is_whitelist())
+        path.components()
+            .any(|c| ovr.matched(c, false).is_whitelist())
     }
 
     /// Like [ancestor_glob_match] except uses [Regex] rather than [Override].
     #[inline]
     fn ancestor_regex_match(path: &Path, re: &Regex) -> bool {
-        path.components().any(|c| re.is_match(c.as_os_str().to_string_lossy().borrow()))
+        path.components()
+            .any(|c| re.is_match(c.as_os_str().to_string_lossy().borrow()))
     }
 }

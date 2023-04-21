@@ -1,10 +1,6 @@
 use crate::{
     fs::inode::Inode,
-    render::{
-        context::Context,
-        disk_usage::file_size::FileSize,
-        styles,
-    },
+    render::{context::Context, disk_usage::file_size::FileSize, styles},
 };
 use count::FileCount;
 use error::Error;
