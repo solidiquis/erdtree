@@ -38,7 +38,7 @@ mod icons;
 /// Tools and operations to display root-directory.
 mod render;
 
-/// Determine if standard streams are connected to a tty.
+/// Utilities relating to interacting with tty properties.
 mod tty;
 
 /// Common utilities across all modules.
