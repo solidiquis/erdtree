@@ -216,6 +216,7 @@ dependencies = [
  "strip-ansi-escapes",
  "tempfile",
  "thiserror",
+ "winapi",
 ]
 
 [[package]]
