@@ -29,6 +29,9 @@ use render::{
 };
 use std::{io::stdout, process::ExitCode};
 
+/// Operations to wrangle ANSI escaped strings.
+mod ansi;
+
 /// Filesystem operations.
 mod fs;
 

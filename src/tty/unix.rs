@@ -8,7 +8,6 @@ pub(super) unsafe fn win_width() -> Option<usize> {
     if libc::ioctl(tty_fd, libc::TIOCGWINSZ, winsize.as_mut_ptr()) != 0 {
         return None;
     }
-
     let libc::winsize { ws_col, .. } = winsize.assume_init();
 
     Some(usize::from(ws_col))
