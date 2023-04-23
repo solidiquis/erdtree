@@ -17,6 +17,9 @@ pub const SEP: &str = "   ";
 /// The `│` box drawing character.
 pub const VT: &str = "\u{2502}  ";
 
+/// The `┌─` box drawing character.
+pub const DRT: &str = "\u{250C}\u{2500} ";
+
 /// The `└─` box drawing characters.
 pub const UPRT: &str = "\u{2514}\u{2500} ";
 
@@ -232,6 +235,7 @@ fn init_themes() {
     let theme = hash! {
         "vt" => format!("{}", Color::Purple.paint(VT)),
         "uprt" => format!("{}", Color::Purple.paint(UPRT)),
+        "drt" => format!("{}", Color::Purple.paint(DRT)),
         "vtrt" => format!("{}", Color::Purple.paint(VTRT))
     };
     TREE_THEME.set(theme).unwrap();
@@ -239,6 +243,7 @@ fn init_themes() {
     let link_theme = hash! {
         "vt" => format!("{}", Color::Red.paint(VT)),
         "uprt" => format!("{}", Color::Red.paint(UPRT)),
+        "drt" => format!("{}", Color::Red.paint(DRT)),
         "vtrt" => format!("{}", Color::Red.paint(VTRT))
     };
     LINK_THEME.set(link_theme).unwrap();

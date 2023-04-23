@@ -23,7 +23,7 @@ use clap::CommandFactory;
 use render::{
     context::Context,
     tree::{
-        display::{Flat, Regular},
+        display::{Inverted, Flat, Regular},
         Tree,
     },
 };
@@ -70,7 +70,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let tree = Tree::<Flat>::try_init(ctx)?;
         println!("{tree}");
     } else {
-        let tree = Tree::<Regular>::try_init(ctx)?;
+        let tree = Tree::<Inverted>::try_init(ctx)?;
         println!("{tree}");
     }
 
