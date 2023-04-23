@@ -1,4 +1,7 @@
-use crate::render::{context::Context, tree::node::Node};
+use crate::{
+    ansi::AnsiEscaped,
+    render::{context::Context, tree::node::Node},
+};
 use std::{
     borrow::Cow,
     fmt::{self, Formatter},
@@ -26,7 +29,7 @@ impl Node {
 
         let pre = prefix.unwrap_or("");
 
-        if ctx.long {
+        let ln = if ctx.long {
             let presenters::LongAttrs {
                 ino,
                 perms,
@@ -35,14 +38,21 @@ impl Node {
                 timestamp,
             } = presenters::format_long(self, ctx);
 
-            write!(
-                f,
+            format!(
                 "{ino:<ino_padding$} {perms:<perms_padding$} {nlink} {blocks} {timestamp} {size} {pre}{padded_icon}{file_name}",
                 ino_padding = ino.len(),
                 perms_padding = perms.len(),
             )
         } else {
-            write!(f, "{size} {pre}{padded_icon}{file_name}")
+            format!("{size} {pre}{padded_icon}{file_name}")
+        };
+
+        if ctx.truncate && ctx.window_width.is_some() {
+            let window_width = ctx.window_width.unwrap();
+            let out = <str as AnsiEscaped>::truncate(&ln, window_width);
+            write!(f, "{out}")
+        } else {
+            write!(f, "{ln}")
         }
     }
 
@@ -72,24 +82,31 @@ impl Node {
             }
         };
 
-        if !ctx.long {
-            return writeln!(f, "{size}   {file}");
+        let ln = if ctx.long {
+            let presenters::LongAttrs {
+                ino,
+                perms,
+                nlink,
+                blocks,
+                timestamp,
+            } = presenters::format_long(self, ctx);
+
+            format!(
+                "{ino:<ino_padding$} {perms:<perms_padding$} {nlink} {blocks} {timestamp} {size}   {file}",
+                ino_padding = ino.len(),
+                perms_padding = perms.len(),
+            )
+        } else {
+            format!("{size}   {file}")
+        };
+
+        if ctx.truncate && ctx.window_width.is_some() {
+            let window_width = ctx.window_width.unwrap();
+            let out = <str as AnsiEscaped>::truncate(&ln, window_width);
+            writeln!(f, "{out}")
+        } else {
+            writeln!(f, "{ln}")
         }
-
-        let presenters::LongAttrs {
-            ino,
-            perms,
-            nlink,
-            blocks,
-            timestamp,
-        } = presenters::format_long(self, ctx);
-
-        writeln!(
-            f,
-            "{ino:<ino_padding$} {perms:<perms_padding$} {nlink} {blocks} {timestamp} {size}   {file}",
-            ino_padding = ino.len(),
-            perms_padding = perms.len(),
-        )
     }
 
     /// Formats the [Node] for a plain report view.
@@ -110,7 +127,15 @@ impl Node {
             Cow::from(path.display().to_string())
         };
 
-        writeln!(f, "{size}   {file}")
+        let ln = format!("{size}   {file}");
+
+        if ctx.truncate && ctx.window_width.is_some() {
+            let window_width = ctx.window_width.unwrap();
+            let out = <str as AnsiEscaped>::truncate(&ln, window_width);
+            writeln!(f, "{out}")
+        } else {
+            writeln!(f, "{ln}")
+        }
     }
 
     /// Formats the [Node] for the tree view.
@@ -133,7 +158,15 @@ impl Node {
             },
         );
 
-        write!(f, "{size} {pre}{padded_icon}{file_name}")
+        let ln = format!("{size} {pre}{padded_icon}{file_name}");
+
+        if ctx.truncate && ctx.window_width.is_some() {
+            let window_width = ctx.window_width.unwrap();
+            let out = <str as AnsiEscaped>::truncate(&ln, window_width);
+            write!(f, "{out}")
+        } else {
+            write!(f, "{ln}")
+        }
     }
 }
 

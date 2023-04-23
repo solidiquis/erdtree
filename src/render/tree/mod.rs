@@ -85,6 +85,10 @@ where
             ctx.set_max_block_width(max_block_width);
         }
 
+        if ctx.truncate {
+            ctx.set_window_width();
+        }
+
         let tree = Self::new(inner, root, ctx);
 
         if tree.is_stump() {

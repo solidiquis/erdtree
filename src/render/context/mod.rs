@@ -161,6 +161,10 @@ pub struct Context {
     #[arg(long)]
     pub suppress_size: bool,
 
+    /// Truncate output to fit terminal emulator window
+    #[arg(long)]
+    pub truncate: bool,
+
     //////////////////////////
     /* INTERNAL USAGE BELOW */
     //////////////////////////
@@ -176,20 +180,24 @@ pub struct Context {
     #[clap(skip = usize::default())]
     pub max_du_width: usize,
 
-    /// Restricts column width of nlink for long view.
+    /// Restricts column width of nlink for long view
     #[clap(skip = usize::default())]
     #[cfg(unix)]
     pub max_nlink_width: usize,
 
-    /// Restricts column width of ino for long view.
+    /// Restricts column width of ino for long view
     #[clap(skip = usize::default())]
     #[cfg(unix)]
     pub max_ino_width: usize,
 
-    /// Restricts column width of block for long view.
+    /// Restricts column width of block for long view
     #[clap(skip = usize::default())]
     #[cfg(unix)]
     pub max_block_width: usize,
+
+    /// Width of the terminal emulator's window
+    #[clap(skip)]
+    pub window_width: Option<usize>,
 }
 
 impl Context {
@@ -290,6 +298,7 @@ impl Context {
     }
 
     /// Which timestamp type to use for long view; defaults to modified.
+    #[cfg(unix)]
     pub fn time(&self) -> time::Stamp {
         self.time.unwrap_or_default()
     }
@@ -476,6 +485,11 @@ impl Context {
     #[cfg(unix)]
     pub fn set_max_block_width(&mut self, width: usize) {
         self.max_block_width = width;
+    }
+
+    /// Setter for `window_width` which is set to the current terminal emulator's window width.
+    pub fn set_window_width(&mut self) {
+        self.window_width = crate::tty::get_window_width(self.stdout_is_tty);
     }
 
     /// Do any of the components of a path match the provided glob? This is used for ensuring that
