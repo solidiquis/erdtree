@@ -30,7 +30,7 @@ use crate::fs::{
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
-/// Methods format the [Node] for display variants.
+/// Concerned with formating [Node]s for display variants.
 pub mod display;
 
 /// Styling utilities for a [Node].
@@ -202,9 +202,11 @@ impl Node {
         self.tree(f, Some(prefix), ctx)
     }
 
-    /// Formats the [Node] for the report presentation.
+    /// Formats the [Node] for the [`Flat`] presentation.
+    ///
+    /// [`Flat`]: crate::render::tree::display::Flat
     pub fn flat_display(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
-        self.report(f, ctx)
+        self.flat(f, ctx)
     }
 
     /// See [icons::compute].
