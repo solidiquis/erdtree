@@ -21,14 +21,7 @@ impl Node {
     ) -> fmt::Result {
         let size = presenters::format_size(self, ctx);
         let padded_icon = presenters::format_padded_icon(self, ctx);
-
-        let file_name = self.symlink_target_file_name().map_or_else(
-            || Self::stylize(self.file_name(), self.style),
-            |target_name| {
-                let link_name = self.file_name();
-                Self::stylize_link_name(link_name, target_name, self.style)
-            },
-        );
+        let file_name = presenters::file_name(self);
 
         let pre = prefix.unwrap_or("");
 

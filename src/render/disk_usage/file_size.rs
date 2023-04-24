@@ -133,6 +133,7 @@ impl FileSize {
     }
 
     /// Base amount of padding to use for the placeholder.
+    #[inline]
     const fn placeholder_padding(ctx: &Context) -> usize {
         let unit_len = match ctx.unit {
             PrefixKind::Bin => 3,
@@ -140,7 +141,7 @@ impl FileSize {
         };
 
         let max_pad = Self::LEFT_PADDING + ctx.max_du_width + unit_len;
-        let padding = Self::LEFT_PADDING + ctx.scale + unit_len;
+        let padding = Self::LEFT_PADDING + unit_len + if ctx.flat { 0 } else { 2 };
 
         if padding > max_pad {
             max_pad

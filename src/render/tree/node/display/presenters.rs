@@ -1,6 +1,7 @@
 use crate::render::{
     context::Context, disk_usage::file_size::FileSize, styles::get_du_theme, tree::Node,
 };
+use std::borrow::Cow;
 
 #[cfg(unix)]
 use crate::render::{
@@ -100,11 +101,7 @@ pub(super) fn format_padded_icon(node: &Node, ctx: &Context) -> String {
 /// Builds a numeric portion of the output.
 #[cfg(unix)]
 #[inline]
-pub(super) fn format_num(
-    num: Option<u64>,
-    max_width: usize,
-    style_getter: StyleGetter,
-) -> String {
+pub(super) fn format_num(num: Option<u64>, max_width: usize, style_getter: StyleGetter) -> String {
     let out = num
         .map(|num| format!("{num:>max_width$}"))
         .unwrap_or(format!("{PLACEHOLDER:>max_width$}"));
@@ -131,4 +128,15 @@ pub(super) fn format_datetime(datetime: Option<SystemTime>) -> String {
     } else {
         out
     }
+}
+
+#[inline]
+pub(super) fn file_name(node: &Node) -> Cow<str> {
+    node.symlink_target_file_name().map_or_else(
+        || Node::stylize(node.file_name(), node.style),
+        |target_name| {
+            let link_name = node.file_name();
+            Node::stylize_link_name(link_name, target_name, node.style)
+        },
+    )
 }
