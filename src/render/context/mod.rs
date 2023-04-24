@@ -149,6 +149,10 @@ pub struct Context {
     #[arg(long)]
     pub dirs_only: bool,
 
+    /// Print tree with the root directory at the topmost position
+    #[arg(long)]
+    pub inverted: bool,
+
     /// Print plainly without ANSI escapes
     #[arg(long)]
     pub no_color: bool,

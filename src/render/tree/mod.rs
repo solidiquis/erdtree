@@ -371,7 +371,8 @@ impl TryFrom<&Context> for WalkParallel {
     fn try_from(ctx: &Context) -> StdResult<Self, Self::Error> {
         let root_id = fs::canonicalize(ctx.dir())?;
 
-        fs::metadata(&root_id).map_err(|e| Error::DirNotFound(format!("{}: {e}", root_id.display())))?;
+        fs::metadata(&root_id)
+            .map_err(|e| Error::DirNotFound(format!("{}: {e}", root_id.display())))?;
 
         let mut builder = WalkBuilder::new(root_id);
 

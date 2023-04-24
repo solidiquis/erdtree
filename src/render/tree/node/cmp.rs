@@ -35,7 +35,7 @@ fn dir_comparator(a: &Node, b: &Node, fallback: impl Fn(&Node, &Node) -> Orderin
 }
 
 /// Comparator that sorts [Node]s by size, smallest to largest.
-fn size_comparator(a: &Node, b: &Node) -> Ordering {
+fn size_rev_comparator(a: &Node, b: &Node) -> Ordering {
     let a_size = a.file_size().map_or(0, |fs| fs.bytes);
     let b_size = b.file_size().map_or(0, |fs| fs.bytes);
 
@@ -43,7 +43,7 @@ fn size_comparator(a: &Node, b: &Node) -> Ordering {
 }
 
 /// Comparator that sorts [Node]s by size, largest to smallest.
-fn size_rev_comparator(a: &Node, b: &Node) -> Ordering {
+fn size_comparator(a: &Node, b: &Node) -> Ordering {
     let a_size = a.file_size().map_or(0, |fs| fs.bytes);
     let b_size = b.file_size().map_or(0, |fs| fs.bytes);
     b_size.cmp(&a_size)

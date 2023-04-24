@@ -12,6 +12,7 @@ pub fn run_cmd(args: &[&str]) -> String {
         "--disk-usage",
         "logical",
         "--no-config",
+        "--inverted",
     ]);
 
     for arg in args {

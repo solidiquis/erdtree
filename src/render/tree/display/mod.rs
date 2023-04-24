@@ -3,10 +3,7 @@ use crate::render::{
     tree::{count::FileCount, node::Node, Tree},
 };
 use indextree::{NodeEdge, NodeId};
-use std::{
-    borrow::Cow,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 /// Empty trait used to constrain generic parameter `display_variant` of [Tree].
 pub trait TreeVariant {}
@@ -24,10 +21,12 @@ impl TreeVariant for Regular {}
 impl TreeVariant for Flat {}
 impl TreeVariant for Inverted {}
 
-impl Display for Tree<Inverted> {
+/// Utilities to pick the appropriate theme to paint box drawing characters.
+mod theme;
+
+impl Display for Tree<Regular> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let ctx = self.context();
-
         let root_id = self.root_id;
         let arena = self.arena();
         let max_depth = ctx.level();
@@ -36,23 +35,23 @@ impl Display for Tree<Inverted> {
         let mut display_node = |node_id: NodeId, node: &Node, prefix: &str| -> fmt::Result {
             node.tree_display(f, prefix, ctx)?;
             file_count_data.push(Self::compute_file_count(node_id, arena));
-
             writeln!(f)
         };
 
-        let get_theme = |node: &Node| if node.is_symlink() {
-            styles::get_link_theme().unwrap()
+        let mut get_theme = if ctx.follow {
+            theme::link_theme_getter()
         } else {
-            styles::get_tree_theme().unwrap()
+            theme::regular_theme_getter()
         };
 
         let mut base_prefix_components = vec![""];
 
-        let mut tree_edges = root_id.reverse_traverse(arena).peekable();
+        let mut tree_edges = root_id.reverse_traverse(arena).skip(1).peekable();
 
         while let Some(node_edge) = tree_edges.next() {
             let current_node_id = match node_edge {
                 NodeEdge::Start(id) => id,
+
                 NodeEdge::End(id) => {
                     let current_node = arena[id].get();
 
@@ -60,31 +59,27 @@ impl Display for Tree<Inverted> {
                         continue;
                     }
 
-                    let theme = get_theme(&current_node);
+                    let theme = get_theme(current_node);
 
-                    let topmost_sibling = id.following_siblings(arena).skip(1).next().is_none();
+                    let topmost_sibling = id.following_siblings(arena).nth(1).is_none();
 
-                    if current_node.depth() > 0 {
-                        if topmost_sibling {
-                            base_prefix_components.push(styles::SEP)
-                        } else {
-                            base_prefix_components.push(theme.get("vt").unwrap())
-                        }
+                    if topmost_sibling {
+                        base_prefix_components.push(styles::SEP);
+                    } else {
+                        base_prefix_components.push(theme.get("vt").unwrap());
                     }
 
                     continue;
-                },
+                }
             };
 
             let current_node = arena[current_node_id].get();
 
             let node_depth = current_node.depth();
 
-            let mut current_prefix_components = Cow::from(&base_prefix_components);
+            let topmost_sibling = current_node_id.following_siblings(arena).nth(1).is_none();
 
-            let topmost_sibling = current_node_id.following_siblings(arena).skip(1).next().is_none();
-
-            let theme = get_theme(&current_node);
+            let theme = get_theme(current_node);
 
             if node_depth <= max_depth {
                 if node_depth == 0 {
@@ -95,7 +90,10 @@ impl Display for Tree<Inverted> {
                     } else {
                         theme.get("vtrt").unwrap()
                     };
-                    current_prefix_components.to_mut().push(prefix_part);
+
+                    let mut current_prefix_components = base_prefix_components.clone();
+
+                    current_prefix_components.push(prefix_part);
 
                     let prefix = current_prefix_components.join("");
 
@@ -120,7 +118,7 @@ impl Display for Tree<Inverted> {
     }
 }
 
-impl Display for Tree<Regular> {
+impl Display for Tree<Inverted> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let ctx = self.context();
 
@@ -139,11 +137,15 @@ impl Display for Tree<Regular> {
 
         display_node(root_id, arena[root_id].get(), "")?;
 
+        let mut get_theme = if ctx.follow {
+            theme::link_theme_getter()
+        } else {
+            theme::regular_theme_getter()
+        };
+
         let mut base_prefix_components = vec![""];
 
         while let Some(current_node_id) = descendants.next() {
-            let mut current_prefix_components = Cow::from(&base_prefix_components);
-
             let current_node = arena[current_node_id].get();
 
             let current_depth = current_node.depth();
@@ -152,11 +154,7 @@ impl Display for Tree<Regular> {
 
             let last_sibling = siblings.peek().is_none();
 
-            let theme = if current_node.is_symlink() {
-                styles::get_link_theme().unwrap()
-            } else {
-                styles::get_tree_theme().unwrap()
-            };
+            let theme = get_theme(current_node);
 
             if current_depth <= level {
                 let prefix_part = if last_sibling {
@@ -165,7 +163,9 @@ impl Display for Tree<Regular> {
                     theme.get("vtrt").unwrap()
                 };
 
-                current_prefix_components.to_mut().push(prefix_part);
+                let mut current_prefix_components = base_prefix_components.clone();
+
+                current_prefix_components.push(prefix_part);
 
                 let prefix = current_prefix_components.join("");
 

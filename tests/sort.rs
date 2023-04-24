@@ -49,7 +49,7 @@ fn sort_name_dir_first() {
 #[test]
 fn sort_size() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "size", "tests/data"]),
+        utils::run_cmd(&["--sort", "size-rev", "tests/data"]),
         indoc!(
             "1.21 KiB data
                  83   B ├─ necronomicon.txt
@@ -71,7 +71,7 @@ fn sort_size() {
 #[test]
 fn sort_size_dir_first() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "size", "--dirs-first", "tests/data"]),
+        utils::run_cmd(&["--sort", "size-rev", "--dirs-first", "tests/data"]),
         indoc!(
             "1.21 KiB data
                 143   B ├─ the_yellow_king
