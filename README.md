@@ -5,7 +5,7 @@
 [![Packaging status](https://repology.org/badge/tiny-repos/erdtree.svg)](https://repology.org/project/erdtree/versions)
 [![Crates.io](https://img.shields.io/crates/d/erdtree)](https://crates.io/crates/erdtree)
 
-A modern, multi-threaded file-tree visualization and disk usage analysis tool that respects hidden file and `.gitignore` i.e. the secret love child of [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)).
+A modern, multi-threaded file-tree visualization and disk usage analysis tool that respects hidden file and `.gitignore` rules i.e. the secret love child of [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)).
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo.png?raw=true" alt="failed to load picture" />
