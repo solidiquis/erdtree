@@ -137,20 +137,16 @@ impl FileSize {
     }
 
     /// Formats [FileSize] for presentation.
-    pub fn format(&self, max_size_width: usize) -> String {
+    pub fn format(&self, max_size_width: usize, max_size_unit_width: usize) -> String {
         let out = if self.human_readable {
             let mut precomputed = self.unpadded_display().unwrap().split(' ');
             let size = precomputed.next().unwrap();
             let unit = precomputed.next().unwrap();
-            let unit_padding = match self.prefix_kind {
-                PrefixKind::Si => 2,
-                PrefixKind::Bin => 3,
-            };
 
             if self.uses_base_unit.is_some() {
-                format!("{:>max_size_width$} {unit:>unit_padding$}", self.bytes)
+                format!("{:>max_size_width$} {unit:>max_size_unit_width$}", self.bytes)
             } else {
-                format!("{size:>max_size_width$} {unit:>unit_padding$}")
+                format!("{size:>max_size_width$} {unit:>max_size_unit_width$}")
             }
         } else {
             format!("{:<max_size_width$} B", self.bytes)
