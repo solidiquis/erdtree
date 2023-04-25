@@ -30,7 +30,7 @@ use crate::fs::{
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
-/// Methods format the [Node] for display variants.
+/// Concerned with formating [Node]s for display variants.
 pub mod display;
 
 /// Styling utilities for a [Node].
@@ -202,9 +202,11 @@ impl Node {
         self.tree(f, Some(prefix), ctx)
     }
 
-    /// Formats the [Node] for the report presentation.
+    /// Formats the [Node] for the [`Flat`] presentation.
+    ///
+    /// [`Flat`]: crate::render::tree::display::Flat
     pub fn flat_display(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
-        self.report(f, ctx)
+        self.flat(f, ctx)
     }
 
     /// See [icons::compute].
@@ -238,13 +240,17 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let file_type = dir_entry.file_type();
 
-        let file_size = match file_type {
+        let mut file_size = match file_type {
             Some(ref ft) if ft.is_file() && !ctx.suppress_size => match ctx.disk_usage {
-                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.unit, ctx.scale)),
-                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.unit, ctx.scale),
+                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.unit, ctx.human)),
+                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.unit, ctx.human),
             },
             _ => None,
         };
+
+        if let Some(ref mut fs) = file_size {
+            fs.precompute_unpadded_display();
+        }
 
         let inode = Inode::try_from(&metadata).ok();
 

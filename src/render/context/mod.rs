@@ -7,6 +7,7 @@ use ignore::{
     overrides::{Override, OverrideBuilder},
     DirEntry,
 };
+use output::ColumnProperties;
 use regex::Regex;
 use sort::SortType;
 use std::{
@@ -24,6 +25,9 @@ pub mod error;
 
 /// Common cross-platform file-types.
 pub mod file;
+
+/// Utilities to print output.
+pub mod output;
 
 /// Printing order kinds.
 pub mod sort;
@@ -54,37 +58,25 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
 
-    /// Show hidden files
-    #[arg(short = '.', long)]
-    pub hidden: bool,
-
-    /// Disable traversal of .git directory when traversing hidden files
-    #[arg(long, requires = "hidden")]
-    pub no_git: bool,
-
-    /// Do not respect .gitignore files
-    #[arg(short = 'i', long)]
-    pub no_ignore: bool,
+    /// Follow symlinks
+    #[arg(short = 'f', long)]
+    pub follow: bool,
 
     /// Print disk usage information in plain format without the ASCII tree
     #[arg(short = 'F', long)]
     pub flat: bool,
 
-    /// Print human-readable disk usage in flat display
-    #[arg(long, requires = "flat")]
+    /// Print disk usage in human-readable format
+    #[arg(short = 'H', long)]
     pub human: bool,
 
-    /// Follow symlinks
-    #[arg(short = 'f', long)]
-    pub follow: bool,
+    /// Do not respect .gitignore files
+    #[arg(short = 'i', long)]
+    pub no_ignore: bool,
 
     /// Display file icons
     #[arg(short = 'I', long)]
     pub icons: bool,
-
-    /// Maximum depth to display
-    #[arg(short = 'L', long, value_name = "NUM")]
-    level: Option<usize>,
 
     /// Show extended metadata and attributes
     #[cfg(unix)]
@@ -100,6 +92,10 @@ pub struct Context {
     #[cfg(unix)]
     #[arg(long, value_enum, requires = "long")]
     pub time: Option<time::Stamp>,
+
+    /// Maximum depth to display
+    #[arg(short = 'L', long, value_name = "NUM")]
+    level: Option<usize>,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
@@ -121,10 +117,6 @@ pub struct Context {
     #[arg(short = 'P', long)]
     pub prune: bool,
 
-    /// Total number of digits after the decimal to display for disk usage
-    #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
-    pub scale: usize,
-
     /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
     pub sort: SortType,
@@ -141,6 +133,14 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
     pub unit: PrefixKind,
 
+    /// Show hidden files
+    #[arg(short = '.', long)]
+    pub hidden: bool,
+
+    /// Disable traversal of .git directory when traversing hidden files
+    #[arg(long, requires = "hidden")]
+    pub no_git: bool,
+
     #[arg(long)]
     /// Print completions for a given shell to stdout
     pub completions: Option<clap_complete::Shell>,
@@ -148,6 +148,10 @@ pub struct Context {
     /// Only print directories
     #[arg(long)]
     pub dirs_only: bool,
+
+    /// Print tree with the root directory at the topmost position
+    #[arg(long)]
+    pub inverted: bool,
 
     /// Print plainly without ANSI escapes
     #[arg(long)]
@@ -176,9 +180,13 @@ pub struct Context {
     #[clap(skip = tty::stdout_is_tty())]
     pub stdout_is_tty: bool,
 
-    /// Restricts column width of disk usage
+    /// Restricts column width of size not including units
     #[clap(skip = usize::default())]
-    pub max_du_width: usize,
+    pub max_size_width: usize,
+
+    /// Restricts column width of disk_usage units
+    #[clap(skip = usize::default())]
+    pub max_size_unit_width: usize,
 
     /// Restricts column width of nlink for long view
     #[clap(skip = usize::default())]
@@ -460,31 +468,17 @@ impl Context {
         Ok(builder.build()?)
     }
 
-    /// Setter for `max_du_width` to inform formatters what the width of the disk usage column
-    /// should be.
-    pub fn set_max_du_width(&mut self, width: usize) {
-        self.max_du_width = width;
-    }
+    /// Update column width properties.
+    pub fn update_column_properties(&mut self, col_props: &ColumnProperties) {
+        self.max_size_width = col_props.max_size_width;
+        self.max_size_unit_width = col_props.max_size_unit_width;
 
-    /// Setter for `max_nlink_width` which is used to inform formatters what the width of the
-    /// `nlink` column should be.
-    #[cfg(unix)]
-    pub fn set_max_nlink_width(&mut self, width: usize) {
-        self.max_nlink_width = width;
-    }
-
-    /// Setter for `max_ino_width` which is used to inform formatters what the width of the
-    /// `ino` column should be.
-    #[cfg(unix)]
-    pub fn set_max_ino_width(&mut self, width: usize) {
-        self.max_ino_width = width;
-    }
-
-    /// Setter for `max_block_width` which is used to inform formatters what the width of the
-    /// `block` column should be.
-    #[cfg(unix)]
-    pub fn set_max_block_width(&mut self, width: usize) {
-        self.max_block_width = width;
+        #[cfg(unix)]
+        {
+            self.max_nlink_width = col_props.max_nlink_width;
+            self.max_block_width = col_props.max_block_width;
+            self.max_ino_width = col_props.max_ino_width;
+        }
     }
 
     /// Setter for `window_width` which is set to the current terminal emulator's window width.

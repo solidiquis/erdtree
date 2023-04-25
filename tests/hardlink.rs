@@ -19,18 +19,18 @@ fn hardlink() -> Result<(), Box<dyn Error>> {
 
     fs::hard_link(&src, &link)?;
 
-    let out = utils::run_cmd(&["--sort", "name", "tests/hardlinks"]);
+    let out = utils::run_cmd(&["tests/hardlinks"]);
 
     fs::remove_file(&link)?;
 
     assert_eq!(
         out,
         indoc!(
-            "157   B hardlinks
-            157   B ├─ curwin.hpl
-            157   B └─ kadath.txt
+            "157 B ┌─ kadath.txt
+            157 B ├─ curwin.hpl
+            157 B hardlinks
 
-        2 files"
+            2 files"
         )
     );
 

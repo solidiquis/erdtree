@@ -11,6 +11,8 @@ pub fn run_cmd(args: &[&str]) -> String {
         "1",
         "--disk-usage",
         "logical",
+        "--sort",
+        "name",
         "--no-config",
     ]);
 

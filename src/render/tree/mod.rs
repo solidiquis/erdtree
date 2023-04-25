@@ -1,10 +1,11 @@
 use crate::{
     fs::inode::Inode,
     render::{
-        context::{file::FileType, Context},
+        context::{file::FileType, output::ColumnProperties, Context},
         disk_usage::file_size::FileSize,
         styles,
     },
+    utils,
 };
 use count::FileCount;
 use error::Error;
@@ -46,8 +47,8 @@ pub struct Tree<T>
 where
     T: display::TreeVariant,
 {
-    inner: Arena<Node>,
-    root: NodeId,
+    arena: Arena<Node>,
+    root_id: NodeId,
     ctx: Context,
     display_variant: PhantomData<T>,
 }
@@ -59,10 +60,10 @@ where
     T: display::TreeVariant,
 {
     /// Constructor for [Tree].
-    pub const fn new(inner: Arena<Node>, root: NodeId, ctx: Context) -> Self {
+    pub const fn new(arena: Arena<Node>, root_id: NodeId, ctx: Context) -> Self {
         Self {
-            inner,
-            root,
+            arena,
+            root_id,
             ctx,
             display_variant: PhantomData,
         }
@@ -70,26 +71,17 @@ where
 
     /// Initiates file-system traversal and [Tree construction].
     pub fn try_init(mut ctx: Context) -> Result<Self> {
-        let (inner, root) = Self::traverse(&ctx)?;
+        let mut column_properties = ColumnProperties::from(&ctx);
 
-        let max_du_width = Self::compute_max_du_column_width(root, &inner);
-        ctx.set_max_du_width(max_du_width);
+        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties)?;
 
-        #[cfg(unix)]
-        if ctx.long {
-            let (max_nlink_width, max_ino_width, max_block_width) =
-                Self::compute_max_column_widths(root, &inner, &ctx);
-
-            ctx.set_max_nlink_width(max_nlink_width);
-            ctx.set_max_ino_width(max_ino_width);
-            ctx.set_max_block_width(max_block_width);
-        }
+        ctx.update_column_properties(&column_properties);
 
         if ctx.truncate {
             ctx.set_window_width();
         }
 
-        let tree = Self::new(inner, root, ctx);
+        let tree = Self::new(arena, root_id, ctx);
 
         if tree.is_stump() {
             return Err(Error::NoMatches);
@@ -98,10 +90,10 @@ where
         Ok(tree)
     }
 
-    /// Returns `true` if there are no entries to show excluding the root.
+    /// Returns `true` if there are no entries to show excluding the root_id.
     pub fn is_stump(&self) -> bool {
-        self.root
-            .descendants(self.inner())
+        self.root_id
+            .descendants(self.arena())
             .skip(1)
             .peekable()
             .next()
@@ -113,21 +105,24 @@ where
         &self.ctx
     }
 
-    /// Grab a reference to `root`.
-    const fn root(&self) -> NodeId {
-        self.root
+    /// Grab a reference to `root_id`.
+    const fn root_id(&self) -> NodeId {
+        self.root_id
     }
 
-    /// Grabs a reference to `inner`.
-    const fn inner(&self) -> &Arena<Node> {
-        &self.inner
+    /// Grabs a reference to `arena`.
+    const fn arena(&self) -> &Arena<Node> {
+        &self.arena
     }
 
-    /// Parallel traversal of the root directory and its contents. Parallel traversal relies on
+    /// Parallel traversal of the root_id directory and its contents. Parallel traversal relies on
     /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
-    fn traverse(ctx: &Context) -> Result<(Arena<Node>, NodeId)> {
+    fn traverse(
+        ctx: &Context,
+        column_properties: &mut ColumnProperties,
+    ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
 
@@ -135,7 +130,7 @@ where
             let res = s.spawn(move || {
                 let mut tree = Arena::new();
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
-                let mut root_id = None;
+                let mut root_id_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
                     if node.is_dir() {
@@ -146,7 +141,7 @@ where
                         }
 
                         if node.depth() == 0 {
-                            root_id = Some(tree.new_node(node));
+                            root_id_id = Some(tree.new_node(node));
                             continue;
                         }
                     }
@@ -164,28 +159,29 @@ where
                     }
                 }
 
-                let root = root_id.ok_or(Error::MissingRoot)?;
+                let root_id = root_id_id.ok_or(Error::MissingRoot)?;
                 let node_comparator = node::cmp::comparator(ctx);
                 let mut inodes = HashSet::new();
 
                 Self::assemble_tree(
                     &mut tree,
-                    root,
+                    root_id,
                     &mut branches,
                     &node_comparator,
                     &mut inodes,
+                    column_properties,
                     ctx,
                 );
 
                 if ctx.prune || ctx.file_type != Some(FileType::Dir) {
-                    Self::prune_directories(root, &mut tree);
+                    Self::prune_directories(root_id, &mut tree);
                 }
 
                 if ctx.dirs_only {
-                    Self::filter_directories(root, &mut tree);
+                    Self::filter_directories(root_id, &mut tree);
                 }
 
-                Ok::<(Arena<Node>, NodeId), Error>((tree, root))
+                Ok::<(Arena<Node>, NodeId), Error>((tree, root_id))
             });
 
             let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
@@ -199,34 +195,47 @@ where
     }
 
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
-    /// structure. Sorting occurs if specified.
+    /// structure. Sorting occurs if specified. The amount of columns needed to fit all of the disk
+    /// usages is also computed here.
     fn assemble_tree(
         tree: &mut Arena<Node>,
         current_node_id: NodeId,
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
         node_comparator: &NodeComparator,
         inode_set: &mut HashSet<Inode>,
+        column_properties: &mut ColumnProperties,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
 
         let mut children = branches.remove(current_node.path()).unwrap();
 
-        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.unit, ctx.scale);
+        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.human, ctx.unit);
 
         for child_id in &children {
             let index = *child_id;
 
             let is_dir = {
-                let inner = tree[index].get();
-                inner.is_dir()
+                let arena = tree[index].get();
+                arena.is_dir()
             };
 
             if is_dir {
-                Self::assemble_tree(tree, index, branches, node_comparator, inode_set, ctx);
+                Self::assemble_tree(
+                    tree,
+                    index,
+                    branches,
+                    node_comparator,
+                    inode_set,
+                    column_properties,
+                    ctx,
+                );
             }
 
             let node = tree[index].get();
+
+            #[cfg(unix)]
+            Self::update_column_properties(column_properties, node);
 
             // If a hard-link is already accounted for then don't increment parent dir size.
             if let Some(inode) = node.inode() {
@@ -241,7 +250,17 @@ where
         }
 
         if dir_size.bytes > 0 {
-            tree[current_node_id].get_mut().set_file_size(dir_size);
+            let dir = tree[current_node_id].get_mut();
+
+            dir_size.precompute_unpadded_display();
+
+            dir.set_file_size(dir_size);
+        }
+
+        #[cfg(unix)]
+        {
+            let dir = tree[current_node_id].get();
+            Self::update_column_properties(column_properties, dir);
         }
 
         children.sort_by(|id_a, id_b| {
@@ -257,10 +276,10 @@ where
     }
 
     /// Function to remove empty directories.
-    fn prune_directories(root_id: NodeId, tree: &mut Arena<Node>) {
+    fn prune_directories(root_id_id: NodeId, tree: &mut Arena<Node>) {
         let mut to_prune = vec![];
 
-        for node_id in root_id.descendants(tree).skip(1) {
+        for node_id in root_id_id.descendants(tree).skip(1) {
             let node = tree[node_id].get();
 
             if !node.is_dir() {
@@ -280,14 +299,14 @@ where
             node_id.remove_subtree(tree);
         }
 
-        Self::prune_directories(root_id, tree);
+        Self::prune_directories(root_id_id, tree);
     }
 
     /// Filter for only directories.
-    fn filter_directories(root: NodeId, tree: &mut Arena<Node>) {
+    fn filter_directories(root_id: NodeId, tree: &mut Arena<Node>) {
         let mut to_detach = vec![];
 
-        for descendant_id in root.descendants(tree).skip(1) {
+        for descendant_id in root_id.descendants(tree).skip(1) {
             if !tree[descendant_id].get().is_dir() {
                 to_detach.push(descendant_id);
             }
@@ -311,57 +330,39 @@ where
         count
     }
 
-    fn compute_max_du_column_width(root: NodeId, tree: &Arena<Node>) -> usize {
-        tree[root]
-            .get()
-            .file_size()
-            .map(|size| size.bytes)
-            .map_or(0, crate::utils::num_integral)
-    }
-
     #[cfg(unix)]
-    fn compute_max_column_widths(
-        root: NodeId,
-        tree: &Arena<Node>,
-        ctx: &Context,
-    ) -> (usize, usize, usize) {
-        let mut max_nlink = 0;
-        let mut max_ino = 0;
-        let mut max_blocks = 0;
+    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node) {
+        if let Some(ino) = node.ino() {
+            let ino_num_integral = utils::num_integral(ino);
 
-        let max_depth = ctx.level();
-
-        for id in root.descendants(tree) {
-            let node = tree[id].get();
-
-            if node.depth() > max_depth {
-                continue;
-            }
-
-            if let Some(ino) = node.ino() {
-                if ino > max_ino {
-                    max_ino = ino;
-                }
-            }
-
-            if let Some(nlink) = node.nlink() {
-                if nlink > max_nlink {
-                    max_nlink = nlink;
-                }
-            }
-
-            if let Some(blocks) = node.blocks() {
-                if blocks > max_blocks {
-                    max_blocks = blocks;
-                }
+            if ino_num_integral > col_props.max_ino_width {
+                col_props.max_ino_width = ino_num_integral;
             }
         }
 
-        let max_nlink_width = crate::utils::num_integral(max_nlink);
-        let max_ino_width = crate::utils::num_integral(max_ino);
-        let max_block_width = crate::utils::num_integral(max_blocks);
+        if let Some(nlink) = node.nlink() {
+            let nlink_num_integral = utils::num_integral(nlink);
 
-        (max_nlink_width, max_ino_width, max_block_width)
+            if nlink_num_integral > col_props.max_nlink_width {
+                col_props.max_nlink_width = nlink_num_integral;
+            }
+        }
+
+        if let Some(blocks) = node.blocks() {
+            let blocks_num_integral = utils::num_integral(blocks);
+
+            if blocks_num_integral > col_props.max_block_width {
+                col_props.max_block_width = blocks_num_integral;
+            }
+        }
+
+        if let Some(file_size) = node.file_size() {
+            let file_size_cols = file_size.size_columns;
+
+            if file_size_cols > col_props.max_size_width {
+                col_props.max_size_width = file_size_cols;
+            }
+        }
     }
 }
 
@@ -369,11 +370,12 @@ impl TryFrom<&Context> for WalkParallel {
     type Error = Error;
 
     fn try_from(ctx: &Context) -> StdResult<Self, Self::Error> {
-        let root = fs::canonicalize(ctx.dir())?;
+        let root_id = fs::canonicalize(ctx.dir())?;
 
-        fs::metadata(&root).map_err(|e| Error::DirNotFound(format!("{}: {e}", root.display())))?;
+        fs::metadata(&root_id)
+            .map_err(|e| Error::DirNotFound(format!("{}: {e}", root_id.display())))?;
 
-        let mut builder = WalkBuilder::new(root);
+        let mut builder = WalkBuilder::new(root_id);
 
         builder
             .follow_links(ctx.follow)

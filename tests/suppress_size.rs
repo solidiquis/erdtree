@@ -5,18 +5,18 @@ mod utils;
 #[test]
 fn suppress_size() {
     assert_eq!(
-        utils::run_cmd(&["--suppress-size", "--sort", "name", "tests/data"]),
+        utils::run_cmd(&["--suppress-size", "tests/data"]),
         indoc!(
-            "data
-             ├─ dream_cycle
-             │  └─ polaris.txt
-             ├─ lipsum
-             │  └─ lipsum.txt
-             ├─ necronomicon.txt
-             ├─ nemesis.txt
+            "┌─ cassildas_song.md
+             ┌─ the_yellow_king
              ├─ nylarlathotep.txt
-             └─ the_yellow_king
-                └─ cassildas_song.md
+             ├─ nemesis.txt
+             ├─ necronomicon.txt
+             │  ┌─ lipsum.txt
+             ├─ lipsum
+             │  ┌─ polaris.txt
+             ├─ dream_cycle
+             data
 
             3 directories, 6 files"
         ),
