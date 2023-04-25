@@ -113,10 +113,6 @@ pub struct Context {
     #[arg(short = 'P', long)]
     pub prune: bool,
 
-    /// Total number of digits after the decimal to display for disk usage
-    #[arg(short = 'n', long, default_value_t = 2, value_name = "NUM")]
-    pub scale: usize,
-
     /// Sort-order to display directory content
     #[arg(short, long, value_enum, default_value_t = SortType::default())]
     pub sort: SortType,
