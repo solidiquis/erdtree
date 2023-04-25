@@ -141,7 +141,6 @@ pub struct Context {
     #[arg(long, requires = "hidden")]
     pub no_git: bool,
 
-
     #[arg(long)]
     /// Print completions for a given shell to stdout
     pub completions: Option<clap_complete::Shell>,

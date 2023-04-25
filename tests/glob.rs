@@ -5,25 +5,18 @@ mod utils;
 #[test]
 fn glob() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--glob",
-            "--pattern",
-            "*.txt",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--glob", "--pattern", "*.txt", "tests/data"]),
         indoc!(
-            "1.07 KiB data
-            308   B ├─ dream_cycle
-            308   B │  └─ polaris.txt
-            446   B ├─ lipsum
-            446   B │  └─ lipsum.txt
-             83   B ├─ necronomicon.txt
-            161   B ├─ nemesis.txt
-            100   B └─ nylarlathotep.txt
+            "100  B ┌─ nylarlathotep.txt
+            161  B ├─ nemesis.txt
+            83   B ├─ necronomicon.txt
+            446  B │  ┌─ lipsum.txt
+            446  B ├─ lipsum
+            308  B │  ┌─ polaris.txt
+            308  B ├─ dream_cycle
+            1098 B data
 
-        2 directories, 5 files"
+            2 directories, 5 files"
         )
     );
 }
@@ -31,20 +24,13 @@ fn glob() {
 #[test]
 fn glob_negative() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--glob",
-            "--pattern",
-            "!*.txt",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--glob", "--pattern", "!*.txt", "tests/data"]),
         indoc!(
-            "143   B data
-            143   B └─ the_yellow_king
-            143   B    └─ cassildas_song.md
+            "143 B    ┌─ cassildas_song.md
+            143 B ┌─ the_yellow_king
+            143 B data
 
-        1 directory, 1 file"
+            1 directory, 1 file"
         )
     )
 }
@@ -52,25 +38,18 @@ fn glob_negative() {
 #[test]
 fn glob_case_insensitive() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--iglob",
-            "--pattern",
-            "*.TXT",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--iglob", "--pattern", "*.TXT", "tests/data"]),
         indoc!(
-            "1.07 KiB data
-            308   B ├─ dream_cycle
-            308   B │  └─ polaris.txt
-            446   B ├─ lipsum
-            446   B │  └─ lipsum.txt
-             83   B ├─ necronomicon.txt
-            161   B ├─ nemesis.txt
-            100   B └─ nylarlathotep.txt
+            "100  B ┌─ nylarlathotep.txt
+            161  B ├─ nemesis.txt
+            83   B ├─ necronomicon.txt
+            446  B │  ┌─ lipsum.txt
+            446  B ├─ lipsum
+            308  B │  ┌─ polaris.txt
+            308  B ├─ dream_cycle
+            1098 B data
 
-        2 directories, 5 files"
+            2 directories, 5 files"
         )
     )
 }
@@ -79,8 +58,6 @@ fn glob_case_insensitive() {
 fn glob_with_filetype() {
     assert_eq!(
         utils::run_cmd(&[
-            "--sort",
-            "name",
             "--glob",
             "--pattern",
             "dream*",
@@ -89,11 +66,11 @@ fn glob_with_filetype() {
             "tests/data"
         ]),
         indoc!(
-            "308   B data
-            308   B └─ dream_cycle
-            308   B    └─ polaris.txt
+            "308 B    ┌─ polaris.txt
+            308 B ┌─ dream_cycle
+            308 B data
 
-        1 directory, 1 file"
+            1 directory, 1 file"
         )
     )
 }
@@ -102,8 +79,6 @@ fn glob_with_filetype() {
 #[should_panic]
 fn glob_empty_set_dir() {
     utils::run_cmd(&[
-        "--sort",
-        "name",
         "--glob",
         "--pattern",
         "*.txt",
@@ -116,12 +91,5 @@ fn glob_empty_set_dir() {
 #[test]
 #[should_panic]
 fn glob_empty_set_file() {
-    utils::run_cmd(&[
-        "--sort",
-        "name",
-        "--glob",
-        "--pattern",
-        "*weewoo*",
-        "tests/data",
-    ]);
+    utils::run_cmd(&["--glob", "--pattern", "*weewoo*", "tests/data"]);
 }

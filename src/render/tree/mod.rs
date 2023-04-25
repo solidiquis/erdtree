@@ -226,7 +226,15 @@ where
             };
 
             if is_dir {
-                Self::assemble_tree(tree, index, branches, node_comparator, inode_set, size_columns, ctx);
+                Self::assemble_tree(
+                    tree,
+                    index,
+                    branches,
+                    node_comparator,
+                    inode_set,
+                    size_columns,
+                    ctx,
+                );
             }
 
             let node = tree[index].get();
@@ -244,7 +252,7 @@ where
                 let file_size_cols = file_size.size_columns;
 
                 if file_size_cols > *size_columns {
-                    *size_columns = file_size_cols
+                    *size_columns = file_size_cols;
                 }
             }
         }
@@ -257,7 +265,7 @@ where
             let dir_size_cols = dir_size.size_columns;
 
             if dir_size_cols > *size_columns {
-                *size_columns = dir_size_cols
+                *size_columns = dir_size_cols;
             }
 
             node.set_file_size(dir_size);

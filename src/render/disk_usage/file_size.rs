@@ -1,10 +1,9 @@
 use super::units::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
-use ansi_term::Style;
 use crate::{
     render::styles::{self, get_du_theme, get_placeholder_style},
-    Context,
-    utils,
+    utils, Context,
 };
+use ansi_term::Style;
 use clap::ValueEnum;
 use filesize::PathExt;
 use std::{borrow::Cow, fs::Metadata, ops::AddAssign, path::Path};
@@ -79,11 +78,13 @@ impl FileSize {
     }
 
     pub fn unpadded_display(&self) -> Option<&str> {
-        self.unpadded_display.as_ref().map(String::as_str)
+        self.unpadded_display.as_deref()
     }
 
     /// Precompute the raw (unpadded) display and sets the number of columns the size (without
     /// the prefix) will occupy. Also sets the [Color] to use in advance to style the size output.
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
     pub fn precompute_unpadded_display(&mut self) {
         let fbytes = self.bytes as f64;
 
@@ -105,11 +106,11 @@ impl FileSize {
                     self.size_columns = utils::num_integral((size * 100.0).floor() as u64) + 1;
                 }
 
-                if let Some(theme) = get_du_theme().ok() {
+                if let Ok(theme) = get_du_theme() {
                     let style = theme.get(format!("{unit}").as_str());
                     self.style = style;
                 }
-            },
+            }
             PrefixKind::Bin => {
                 let unit = BinPrefix::from(fbytes);
                 let base_value = unit.base_value();
@@ -127,11 +128,11 @@ impl FileSize {
                     self.size_columns = utils::num_integral((size * 100.0).floor() as u64) + 1;
                 }
 
-                if let Some(theme) = get_du_theme().ok() {
+                if let Ok(theme) = get_du_theme() {
                     let style = theme.get(format!("{unit}").as_str());
                     self.style = style;
                 }
-            },
+            }
         }
     }
 
@@ -147,12 +148,12 @@ impl FileSize {
             };
 
             if self.uses_base_unit.is_some() {
-                format!("{:>width$} {unit:>unit_padding$}", self.bytes, width = max_size_width)
+                format!("{:>max_size_width$} {unit:>unit_padding$}", self.bytes)
             } else {
-                format!("{size:>width$} {unit:>unit_padding$}", width = max_size_width)
+                format!("{size:>max_size_width$} {unit:>unit_padding$}")
             }
         } else {
-            format!("{:<width$} B", self.bytes, width = max_size_width)
+            format!("{:<max_size_width$} B", self.bytes)
         };
 
         if let Some(style) = self.style {
@@ -165,7 +166,7 @@ impl FileSize {
     /// Returns a placeholder or empty string.
     pub fn placeholder(ctx: &Context) -> String {
         if ctx.suppress_size || ctx.max_du_width == 0 {
-            return String::new()
+            return String::new();
         }
 
         let placeholder = get_placeholder_style().map_or_else(
@@ -173,12 +174,14 @@ impl FileSize {
             |style| Cow::from(style.paint(styles::PLACEHOLDER).to_string()),
         );
 
-        let placeholder_padding = placeholder.len() + ctx.max_du_width + match ctx.unit {
-            PrefixKind::Si if ctx.human => 2,
-            PrefixKind::Bin if ctx.human  => 3,
-            PrefixKind::Si => 0,
-            PrefixKind::Bin => 1,
-        };
+        let placeholder_padding = placeholder.len()
+            + ctx.max_du_width
+            + match ctx.unit {
+                PrefixKind::Si if ctx.human => 2,
+                PrefixKind::Bin if ctx.human => 3,
+                PrefixKind::Si => 0,
+                PrefixKind::Bin => 1,
+            };
 
         format!("{placeholder:>placeholder_padding$}")
     }

@@ -1,6 +1,4 @@
-use crate::render::{
-    context::Context, disk_usage::file_size::FileSize, tree::Node,
-};
+use crate::render::{context::Context, disk_usage::file_size::FileSize, tree::Node};
 use std::borrow::Cow;
 
 #[cfg(unix)]
