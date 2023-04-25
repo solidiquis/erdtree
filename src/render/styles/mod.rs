@@ -184,6 +184,7 @@ fn init_plain() {
     let theme = hash! {
         "vt" => VT.to_owned(),
         "uprt" => UPRT.to_owned(),
+        "drt" => DRT.to_owned(),
         "vtrt" => VTRT.to_owned()
     };
     TREE_THEME.set(theme).unwrap();
@@ -191,6 +192,7 @@ fn init_plain() {
     let link_theme = hash! {
         "vt" => VT.to_owned(),
         "uprt" => UPRT.to_owned(),
+        "drt" => DRT.to_owned(),
         "vtrt" => VTRT.to_owned()
     };
     LINK_THEME.set(link_theme).unwrap();

@@ -54,37 +54,25 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
     pub disk_usage: DiskUsage,
 
-    /// Show hidden files
-    #[arg(short = '.', long)]
-    pub hidden: bool,
-
-    /// Disable traversal of .git directory when traversing hidden files
-    #[arg(long, requires = "hidden")]
-    pub no_git: bool,
-
-    /// Do not respect .gitignore files
-    #[arg(short = 'i', long)]
-    pub no_ignore: bool,
+    /// Follow symlinks
+    #[arg(short = 'f', long)]
+    pub follow: bool,
 
     /// Print disk usage information in plain format without the ASCII tree
     #[arg(short = 'F', long)]
     pub flat: bool,
 
-    /// Print human-readable disk usage in flat display
-    #[arg(long, requires = "flat")]
+    /// Print disk usage in human-readable format
+    #[arg(short = 'H', long)]
     pub human: bool,
 
-    /// Follow symlinks
-    #[arg(short = 'f', long)]
-    pub follow: bool,
+    /// Do not respect .gitignore files
+    #[arg(short = 'i', long)]
+    pub no_ignore: bool,
 
     /// Display file icons
     #[arg(short = 'I', long)]
     pub icons: bool,
-
-    /// Maximum depth to display
-    #[arg(short = 'L', long, value_name = "NUM")]
-    level: Option<usize>,
 
     /// Show extended metadata and attributes
     #[cfg(unix)]
@@ -100,6 +88,10 @@ pub struct Context {
     #[cfg(unix)]
     #[arg(long, value_enum, requires = "long")]
     pub time: Option<time::Stamp>,
+
+    /// Maximum depth to display
+    #[arg(short = 'L', long, value_name = "NUM")]
+    level: Option<usize>,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
@@ -140,6 +132,15 @@ pub struct Context {
     /// Report disk usage in binary or SI units
     #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
     pub unit: PrefixKind,
+
+    /// Show hidden files
+    #[arg(short = '.', long)]
+    pub hidden: bool,
+
+    /// Disable traversal of .git directory when traversing hidden files
+    #[arg(long, requires = "hidden")]
+    pub no_git: bool,
+
 
     #[arg(long)]
     /// Print completions for a given shell to stdout

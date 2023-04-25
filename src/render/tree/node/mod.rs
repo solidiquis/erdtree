@@ -240,13 +240,17 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let file_type = dir_entry.file_type();
 
-        let file_size = match file_type {
+        let mut file_size = match file_type {
             Some(ref ft) if ft.is_file() && !ctx.suppress_size => match ctx.disk_usage {
-                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.unit, ctx.scale)),
-                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.unit, ctx.scale),
+                DiskUsage::Logical => Some(FileSize::logical(&metadata, ctx.unit, ctx.human)),
+                DiskUsage::Physical => FileSize::physical(path, &metadata, ctx.unit, ctx.human),
             },
             _ => None,
         };
+
+        if let Some(ref mut fs) = file_size {
+            fs.precompute_unpadded_display();
+        }
 
         let inode = Inode::try_from(&metadata).ok();
 

@@ -13,6 +13,7 @@ pub fn run_cmd(args: &[&str]) -> String {
         "logical",
         "--no-config",
         "--inverted",
+        "--human",
     ]);
 
     for arg in args {

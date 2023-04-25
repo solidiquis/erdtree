@@ -1,5 +1,5 @@
 use crate::render::{
-    context::Context, disk_usage::file_size::FileSize, styles::get_du_theme, tree::Node,
+    context::Context, disk_usage::file_size::FileSize, tree::Node,
 };
 use std::borrow::Cow;
 
@@ -64,25 +64,7 @@ pub(super) fn format_long(node: &Node, ctx: &Context) -> LongAttrs {
 pub(super) fn format_size(node: &Node, ctx: &Context) -> String {
     node.file_size().map_or_else(
         || FileSize::placeholder(ctx),
-        |size| size.format_human_readable(ctx.max_du_width),
-    )
-}
-
-/// Builds the disk usage portion of the output in unprefixed bytes.
-#[inline]
-pub(super) fn format_nonhuman_size(node: &Node, ctx: &Context) -> String {
-    node.file_size().map_or_else(
-        || FileSize::placeholder(ctx),
-        |size| {
-            let Ok(th) = get_du_theme() else {
-                return size.format(ctx.max_du_width)
-            };
-
-            th.get("B").map_or_else(
-                || size.format(ctx.max_du_width),
-                |style| style.paint(size.format(ctx.max_du_width)).to_string(),
-            )
-        },
+        |size| size.format(ctx.max_du_width),
     )
 }
 

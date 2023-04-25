@@ -70,10 +70,7 @@ where
 
     /// Initiates file-system traversal and [Tree construction].
     pub fn try_init(mut ctx: Context) -> Result<Self> {
-        let (arena, root_id) = Self::traverse(&ctx)?;
-
-        let max_du_width = Self::compute_max_du_column_width(root_id, &arena);
-        ctx.set_max_du_width(max_du_width);
+        let (arena, root_id, size_columns) = Self::traverse(&ctx)?;
 
         #[cfg(unix)]
         if ctx.long {
@@ -84,6 +81,8 @@ where
             ctx.set_max_ino_width(max_ino_width);
             ctx.set_max_block_width(max_block_width);
         }
+
+        ctx.set_max_du_width(size_columns);
 
         if ctx.truncate {
             ctx.set_window_width();
@@ -127,7 +126,7 @@ where
     /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
-    fn traverse(ctx: &Context) -> Result<(Arena<Node>, NodeId)> {
+    fn traverse(ctx: &Context) -> Result<(Arena<Node>, NodeId, usize)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
 
@@ -167,6 +166,7 @@ where
                 let root_id = root_id_id.ok_or(Error::MissingRoot)?;
                 let node_comparator = node::cmp::comparator(ctx);
                 let mut inodes = HashSet::new();
+                let mut size_columns = 0;
 
                 Self::assemble_tree(
                     &mut tree,
@@ -174,6 +174,7 @@ where
                     &mut branches,
                     &node_comparator,
                     &mut inodes,
+                    &mut size_columns,
                     ctx,
                 );
 
@@ -185,7 +186,7 @@ where
                     Self::filter_directories(root_id, &mut tree);
                 }
 
-                Ok::<(Arena<Node>, NodeId), Error>((tree, root_id))
+                Ok::<(Arena<Node>, NodeId, usize), Error>((tree, root_id, size_columns))
             });
 
             let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
@@ -199,20 +200,22 @@ where
     }
 
     /// Takes the results of the parallel traversal and uses it to construct the [Tree] data
-    /// structure. Sorting occurs if specified.
+    /// structure. Sorting occurs if specified. The amount of columns needed to fit all of the disk
+    /// usages is also computed here.
     fn assemble_tree(
         tree: &mut Arena<Node>,
         current_node_id: NodeId,
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
         node_comparator: &NodeComparator,
         inode_set: &mut HashSet<Inode>,
+        size_columns: &mut usize,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
 
         let mut children = branches.remove(current_node.path()).unwrap();
 
-        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.unit, ctx.scale);
+        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.human, ctx.unit);
 
         for child_id in &children {
             let index = *child_id;
@@ -223,7 +226,7 @@ where
             };
 
             if is_dir {
-                Self::assemble_tree(tree, index, branches, node_comparator, inode_set, ctx);
+                Self::assemble_tree(tree, index, branches, node_comparator, inode_set, size_columns, ctx);
             }
 
             let node = tree[index].get();
@@ -237,11 +240,27 @@ where
 
             if let Some(file_size) = node.file_size() {
                 dir_size += file_size;
+
+                let file_size_cols = file_size.size_columns;
+
+                if file_size_cols > *size_columns {
+                    *size_columns = file_size_cols
+                }
             }
         }
 
         if dir_size.bytes > 0 {
-            tree[current_node_id].get_mut().set_file_size(dir_size);
+            let node = tree[current_node_id].get_mut();
+
+            dir_size.precompute_unpadded_display();
+
+            let dir_size_cols = dir_size.size_columns;
+
+            if dir_size_cols > *size_columns {
+                *size_columns = dir_size_cols
+            }
+
+            node.set_file_size(dir_size);
         }
 
         children.sort_by(|id_a, id_b| {
@@ -309,14 +328,6 @@ where
         }
 
         count
-    }
-
-    fn compute_max_du_column_width(root_id: NodeId, tree: &Arena<Node>) -> usize {
-        tree[root_id]
-            .get()
-            .file_size()
-            .map(|size| size.bytes)
-            .map_or(0, crate::utils::num_integral)
     }
 
     #[cfg(unix)]

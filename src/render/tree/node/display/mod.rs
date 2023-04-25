@@ -57,11 +57,7 @@ impl Node {
     pub(super) fn flat(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
         use std::{ffi::OsStr, path::Path};
 
-        let size = if ctx.human {
-            presenters::format_size(self, ctx)
-        } else {
-            presenters::format_nonhuman_size(self, ctx)
-        };
+        let size = presenters::format_size(self, ctx);
 
         let file = {
             let node_path = self.path();
