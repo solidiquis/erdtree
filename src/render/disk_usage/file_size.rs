@@ -165,7 +165,7 @@ impl FileSize {
 
     /// Returns a placeholder or empty string.
     pub fn placeholder(ctx: &Context) -> String {
-        if ctx.suppress_size || ctx.max_du_width == 0 {
+        if ctx.suppress_size || ctx.max_size_width == 0 {
             return String::new();
         }
 
@@ -175,7 +175,7 @@ impl FileSize {
         );
 
         let placeholder_padding = placeholder.len()
-            + ctx.max_du_width
+            + ctx.max_size_width
             + match ctx.unit {
                 PrefixKind::Si if ctx.human => 2,
                 PrefixKind::Bin if ctx.human => 3,

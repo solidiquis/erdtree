@@ -1,10 +1,11 @@
 use crate::{
     fs::inode::Inode,
     render::{
-        context::{file::FileType, Context},
+        context::{file::FileType, output::ColumnProperties, Context},
         disk_usage::file_size::FileSize,
         styles,
     },
+    utils,
 };
 use count::FileCount;
 use error::Error;
@@ -70,19 +71,11 @@ where
 
     /// Initiates file-system traversal and [Tree construction].
     pub fn try_init(mut ctx: Context) -> Result<Self> {
-        let (arena, root_id, size_columns) = Self::traverse(&ctx)?;
+        let mut column_properties = ColumnProperties::from(&ctx);
 
-        #[cfg(unix)]
-        if ctx.long {
-            let (max_nlink_width, max_ino_width, max_block_width) =
-                Self::compute_max_column_widths(root_id, &arena, &ctx);
+        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties)?;
 
-            ctx.set_max_nlink_width(max_nlink_width);
-            ctx.set_max_ino_width(max_ino_width);
-            ctx.set_max_block_width(max_block_width);
-        }
-
-        ctx.set_max_du_width(size_columns);
+        ctx.update_column_properties(&column_properties);
 
         if ctx.truncate {
             ctx.set_window_width();
@@ -126,7 +119,10 @@ where
     /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
-    fn traverse(ctx: &Context) -> Result<(Arena<Node>, NodeId, usize)> {
+    fn traverse(
+        ctx: &Context,
+        column_properties: &mut ColumnProperties,
+    ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
 
@@ -166,7 +162,6 @@ where
                 let root_id = root_id_id.ok_or(Error::MissingRoot)?;
                 let node_comparator = node::cmp::comparator(ctx);
                 let mut inodes = HashSet::new();
-                let mut size_columns = 0;
 
                 Self::assemble_tree(
                     &mut tree,
@@ -174,7 +169,7 @@ where
                     &mut branches,
                     &node_comparator,
                     &mut inodes,
-                    &mut size_columns,
+                    column_properties,
                     ctx,
                 );
 
@@ -186,7 +181,7 @@ where
                     Self::filter_directories(root_id, &mut tree);
                 }
 
-                Ok::<(Arena<Node>, NodeId, usize), Error>((tree, root_id, size_columns))
+                Ok::<(Arena<Node>, NodeId), Error>((tree, root_id))
             });
 
             let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
@@ -208,7 +203,7 @@ where
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
         node_comparator: &NodeComparator,
         inode_set: &mut HashSet<Inode>,
-        size_columns: &mut usize,
+        column_properties: &mut ColumnProperties,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
@@ -232,12 +227,15 @@ where
                     branches,
                     node_comparator,
                     inode_set,
-                    size_columns,
+                    column_properties,
                     ctx,
                 );
             }
 
             let node = tree[index].get();
+
+            #[cfg(unix)]
+            Self::update_column_properties(column_properties, node);
 
             // If a hard-link is already accounted for then don't increment parent dir size.
             if let Some(inode) = node.inode() {
@@ -248,27 +246,21 @@ where
 
             if let Some(file_size) = node.file_size() {
                 dir_size += file_size;
-
-                let file_size_cols = file_size.size_columns;
-
-                if file_size_cols > *size_columns {
-                    *size_columns = file_size_cols;
-                }
             }
         }
 
         if dir_size.bytes > 0 {
-            let node = tree[current_node_id].get_mut();
+            let dir = tree[current_node_id].get_mut();
 
             dir_size.precompute_unpadded_display();
 
-            let dir_size_cols = dir_size.size_columns;
+            dir.set_file_size(dir_size);
+        }
 
-            if dir_size_cols > *size_columns {
-                *size_columns = dir_size_cols;
-            }
-
-            node.set_file_size(dir_size);
+        #[cfg(unix)]
+        {
+            let dir = tree[current_node_id].get();
+            Self::update_column_properties(column_properties, dir);
         }
 
         children.sort_by(|id_a, id_b| {
@@ -339,48 +331,38 @@ where
     }
 
     #[cfg(unix)]
-    fn compute_max_column_widths(
-        root_id: NodeId,
-        tree: &Arena<Node>,
-        ctx: &Context,
-    ) -> (usize, usize, usize) {
-        let mut max_nlink = 0;
-        let mut max_ino = 0;
-        let mut max_blocks = 0;
+    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node) {
+        if let Some(ino) = node.ino() {
+            let ino_num_integral = utils::num_integral(ino);
 
-        let max_depth = ctx.level();
-
-        for id in root_id.descendants(tree) {
-            let node = tree[id].get();
-
-            if node.depth() > max_depth {
-                continue;
-            }
-
-            if let Some(ino) = node.ino() {
-                if ino > max_ino {
-                    max_ino = ino;
-                }
-            }
-
-            if let Some(nlink) = node.nlink() {
-                if nlink > max_nlink {
-                    max_nlink = nlink;
-                }
-            }
-
-            if let Some(blocks) = node.blocks() {
-                if blocks > max_blocks {
-                    max_blocks = blocks;
-                }
+            if ino_num_integral > col_props.max_ino_width {
+                col_props.max_ino_width = ino_num_integral;
             }
         }
 
-        let max_nlink_width = crate::utils::num_integral(max_nlink);
-        let max_ino_width = crate::utils::num_integral(max_ino);
-        let max_block_width = crate::utils::num_integral(max_blocks);
+        if let Some(nlink) = node.nlink() {
+            let nlink_num_integral = utils::num_integral(nlink);
 
-        (max_nlink_width, max_ino_width, max_block_width)
+            if nlink_num_integral > col_props.max_nlink_width {
+                col_props.max_nlink_width = nlink_num_integral;
+            }
+        }
+
+        if let Some(blocks) = node.blocks() {
+            let blocks_num_integral = utils::num_integral(blocks);
+
+            if blocks_num_integral > col_props.max_block_width {
+                col_props.max_block_width = blocks_num_integral;
+            }
+        }
+
+        if let Some(file_size) = node.file_size() {
+            let file_size_cols = file_size.size_columns;
+
+            if file_size_cols > col_props.max_size_width {
+                col_props.max_size_width = file_size_cols;
+            }
+        }
     }
 }
 

@@ -7,6 +7,7 @@ use ignore::{
     overrides::{Override, OverrideBuilder},
     DirEntry,
 };
+use output::ColumnProperties;
 use regex::Regex;
 use sort::SortType;
 use std::{
@@ -24,6 +25,9 @@ pub mod error;
 
 /// Common cross-platform file-types.
 pub mod file;
+
+/// Utilities to print output.
+pub mod output;
 
 /// Printing order kinds.
 pub mod sort;
@@ -176,9 +180,13 @@ pub struct Context {
     #[clap(skip = tty::stdout_is_tty())]
     pub stdout_is_tty: bool,
 
-    /// Restricts column width of disk usage
+    /// Restricts column width of size not including units
     #[clap(skip = usize::default())]
-    pub max_du_width: usize,
+    pub max_size_width: usize,
+
+    /// Restricts column width of disk_usage units
+    #[clap(skip = usize::default())]
+    pub max_size_unit_width: usize,
 
     /// Restricts column width of nlink for long view
     #[clap(skip = usize::default())]
@@ -460,31 +468,17 @@ impl Context {
         Ok(builder.build()?)
     }
 
-    /// Setter for `max_du_width` to inform formatters what the width of the disk usage column
-    /// should be.
-    pub fn set_max_du_width(&mut self, width: usize) {
-        self.max_du_width = width;
-    }
+    /// Update column width properties.
+    pub fn update_column_properties(&mut self, col_props: &ColumnProperties) {
+        self.max_size_width = col_props.max_size_width;
+        self.max_size_unit_width = col_props.max_size_unit_width;
 
-    /// Setter for `max_nlink_width` which is used to inform formatters what the width of the
-    /// `nlink` column should be.
-    #[cfg(unix)]
-    pub fn set_max_nlink_width(&mut self, width: usize) {
-        self.max_nlink_width = width;
-    }
-
-    /// Setter for `max_ino_width` which is used to inform formatters what the width of the
-    /// `ino` column should be.
-    #[cfg(unix)]
-    pub fn set_max_ino_width(&mut self, width: usize) {
-        self.max_ino_width = width;
-    }
-
-    /// Setter for `max_block_width` which is used to inform formatters what the width of the
-    /// `block` column should be.
-    #[cfg(unix)]
-    pub fn set_max_block_width(&mut self, width: usize) {
-        self.max_block_width = width;
+        #[cfg(unix)]
+        {
+            self.max_nlink_width = col_props.max_nlink_width;
+            self.max_block_width = col_props.max_block_width;
+            self.max_ino_width = col_props.max_ino_width;
+        }
     }
 
     /// Setter for `window_width` which is set to the current terminal emulator's window width.

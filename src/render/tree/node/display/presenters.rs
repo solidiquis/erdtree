@@ -62,7 +62,7 @@ pub(super) fn format_long(node: &Node, ctx: &Context) -> LongAttrs {
 pub(super) fn format_size(node: &Node, ctx: &Context) -> String {
     node.file_size().map_or_else(
         || FileSize::placeholder(ctx),
-        |size| size.format(ctx.max_du_width),
+        |size| size.format(ctx.max_size_width),
     )
 }
 

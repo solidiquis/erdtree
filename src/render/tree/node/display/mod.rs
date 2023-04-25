@@ -104,11 +104,7 @@ impl Node {
     /// Formats the [Node] for a plain report view.
     #[cfg(not(unix))]
     pub(super) fn flat(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
-        let size = if ctx.human {
-            presenters::format_size(self, ctx)
-        } else {
-            presenters::format_nonhuman_size(self, ctx)
-        };
+        let size = presenters::format_size(self, ctx);
 
         let file = {
             let path = self
@@ -140,15 +136,8 @@ impl Node {
     ) -> fmt::Result {
         let size = presenters::format_size(self, ctx);
         let padded_icon = presenters::format_padded_icon(self, ctx);
+        let file_name = presenters::file_name(self);
         let pre = prefix.unwrap_or("");
-
-        let file_name = self.symlink_target_file_name().map_or_else(
-            || Node::stylize(self.file_name(), self.style),
-            |target_name| {
-                let link_name = self.file_name();
-                Node::stylize_link_name(link_name, target_name, self.style)
-            },
-        );
 
         let ln = format!("{size} {pre}{padded_icon}{file_name}");
 
