@@ -419,7 +419,11 @@ impl Context {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
-                    return Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
+                    if negated_glob {
+                        return !Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
+                    } else {
+                        return Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
+                    }
                 }
                 let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides, 1);
 

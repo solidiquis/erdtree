@@ -76,6 +76,32 @@ fn glob_with_filetype() {
 }
 
 #[test]
+fn negated_glob_with_filetype() {
+    assert_eq!(
+        utils::run_cmd(&[
+            "--glob",
+            "--pattern",
+            "!dream*",
+            "--file-type",
+            "dir",
+            "tests/data"
+        ]),
+        indoc!(
+            "143 B    ┌─ cassildas_song.md
+            143 B ┌─ the_yellow_king
+            100 B ├─ nylarlathotep.txt
+            161 B ├─ nemesis.txt
+            83  B ├─ necronomicon.txt
+            446 B │  ┌─ lipsum.txt
+            446 B ├─ lipsum
+            933 B data
+
+            2 directories, 5 files"
+        )
+    )
+}
+
+#[test]
 #[should_panic]
 fn glob_empty_set_dir() {
     utils::run_cmd(&[
