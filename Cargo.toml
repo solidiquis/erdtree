@@ -1,17 +1,16 @@
 [package]
 name = "erdtree"
-version = "1.8.1"
+version = "2.0.0"
 edition = "2021"
 authors = ["Benjamin Nguyen <benjamin.van.nguyen@gmail.com>"]
 description = """
-erdtree (et) is a multi-threaded file-tree visualization and disk usage
-analysis tool that respects gitignore and hidden file rules offering a modern
-alternative to tree and du.
+erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage
+analysis tool that respects gitignore and hidden file rules.
 """
 documentation = "https://github.com/solidiquis/erdtree"
 homepage = "https://github.com/solidiquis/erdtree"
 repository = "https://github.com/solidiquis/erdtree"
-keywords = ["tree", "commandline", "command-line", "du", "disk-usage"]
+keywords = ["tree", "find", "ls", "du", "commandline"]
 exclude = ["assets/*"]
 readme = "README.md"
 license = "MIT"
@@ -20,7 +19,7 @@ rust-version = "1.67.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "et"
+name = "erd"
 path = "src/main.rs"
 
 [dependencies]
