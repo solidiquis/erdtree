@@ -82,7 +82,7 @@ impl FileSize {
     }
 
     /// Precompute the raw (unpadded) display and sets the number of columns the size (without
-    /// the prefix) will occupy. Also sets the [Color] to use in advance to style the size output.
+    /// the prefix) will occupy. Also sets the [Style] to use in advance to style the size output.
     #[allow(clippy::cast_possible_truncation)]
     #[allow(clippy::cast_sign_loss)]
     pub fn precompute_unpadded_display(&mut self) {
