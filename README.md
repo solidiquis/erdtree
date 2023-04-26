@@ -197,7 +197,7 @@ Here is an example of a valid configuration file:
 
 ### Hardlinks
 
-If multiple hardlinks that point to the same inode are in the same file-tree, both will be included in the output but only one is considered when computing overall disk usage.
+If multiple hardlinks that point to the same inode are in the same file-tree, all will be included in the output but only one is considered when computing overall disk usage.
 
 ### Symlinks
 
@@ -423,7 +423,7 @@ In these situations the following may be used:
 
 ### Redirecting output and colorization
 
-If you with to force a colorless output the following may be used:
+If you wish to force a colorless output the following may be used:
 
 ```
 --no-color                   Print plainly without ANSI escapes
