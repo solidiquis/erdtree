@@ -460,6 +460,9 @@ While this is true, parallelism still results in improved throughput due to the 
 that, when saturated, allows requests to be processed in aggregate keeping the disk busy as opposed to having it wait on `erdtree` to due CPU-bound processing
 in between requests.
 
+It should be noted however that the performance as a function of thread-count is asymptotic in nature (see [Amdahl's Law](https://en.wikipedia.org/wiki/Amdahl%27s_law))
+so you'll quickly reach a point of dimishing returns after a certain thread-count threshold as you'd be paying the cost of managing a larger threadpool with no added benefit.
+
 For empirical data on the subject checkout [this article](https://pkolaczk.github.io/disk-parallelism/).
 
 ### Completions
