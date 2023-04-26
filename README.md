@@ -16,7 +16,7 @@
 You can think of `erdtree` as a combination of `du`, `tree`, `find`, and `ls`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/showcase_top.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/showcase_top.png?raw=true" alt="failed to load picture" />
 </p>
 
 ## Table of Contents
@@ -25,23 +25,23 @@ You can think of `erdtree` as a combination of `du`, `tree`, `find`, and `ls`.
 * [Installation](#installation)
 * [Documentation](#documentation)
   - [Configuration file](#configuration-file)
-  - [Parallelism](#parallelism)
-  - [Binary prefix or SI prefix](#binary-prefix-or-si-prefix)
-  - [Logical or physical disk usage](#logical-or-physical-disk-usage)
-  - [How are directory sizes computed](#how-are-directory-sizes-computed)
-  - [Symlinks](#symlinks)
   - [Hardlinks](#hardlinks)
-  - [File coloring](#file-coloring)
+  - [Symlinks](#symlinks)
+  - [Disk usage](#disk-usage)
+  - [Flat view](#flat-view)
+  - [gitignore](#gitignore)
+  - [Hidden files](#hidden-files)
   - [Icons](#icons)
+  - [Maximum depth](#maximum-depth)
+  - [Pruning empty directories](#pruning-empty-directories)
+  - [Sorting](#sorting)
+  - [Directories only](#directories-only)
+  - [Permissions](#permissions)
+  - [Regular expressions and globbing](#regular-expressions-and-globbing)
+  - [Truncating output](#truncating-output)
+  - [Redirecting output and colorization](#redirecting-output-and-colorization)
+  - [Parallelism](#parallelism)
   - [Completions](#completions)
-  - [Plain view](#plain-view)
-* [Comparisons against similar programs](#comparisons-against-similar-programs)
-  - [tree command](#tree-command)
-  - [Advantages over exa --tree](#advantages-over-exa---tree)
-  - [dua](#dua)
-  - [dust](#dust)
-* [Rules for Contributing and Feature Requests](#rules-for-contributing-and-feature-requests)
-* [Special Thanks](#special-thanks)
 * [Questions you might have](#questions-you-might-have)
 
 ## Usage
@@ -88,7 +88,7 @@ Options:
   -V, --version                    Print version
 ```
 
-Of all the arguments, the following are not available on Windows:
+Of all the above arguments, the following are not yet available on Windows but will be in the near future:
 
 ```
   -l, --long                       Show extended metadata and attributes
@@ -144,10 +144,10 @@ Binaries for common architectures can be downloaded from latest releases.
 
 ### Latest non-release
 
-If you'd like the latest features that are on `master` but aren't yet included as part of a release:
+If you'd like the latest features that are on `v2.0` but aren't yet included as part of a release:
 
 ```
-$ cargo install --git https://github.com/solidiquis/erdtree --branch master
+$ cargo install --git https://github.com/solidiquis/erdtree --branch v2.0
 ```
 
 Other means of installation to come.
@@ -192,60 +192,258 @@ Here is an example of a valid configuration file:
 
 If multiple hardlinks that point to the same inode are in the same file-tree, both will be included in the output but only one is considered when computing overall disk usage.
 
-### Symlinks (`-f, --follow`)
-
-Symlinks will never be counted towards the total disk usage. When a symlink to a directory is followed all of its descendents will be painted a different
-
-### Binary prefix or SI Prefix
-
-Disk usage is reported using binary prefixes by default (e.g. `1 KiB = 1024 B`) as opposed to SI prefixes (`1 KB = 1000 B`). To toggle between the two use the `-p, --prefix` option.
-
-### Logical or physical disk usage
-
-Logical sizes are reported by default but you can toggle the reporting to physical sizes which takes into account compression, sparse files, and actual blocks allocated to a particular file via the following option:
-
-```
--d, --disk-usage <DISK_USAGE>  Print physical or logical file size [default: logical] [possible values: logical, physical]
-```
-
-### How are directory sizes computed
-
-- A directory will have a size equal to the sum of the sizes of all of its entries.
-- Hidden files, files excluded by `.gitignore`, and files excluded via globbing will be omitted from the disk usages of their parent directories.
-- Files/Directories that don't have read permissions will be omitted from the disk usages of their parent directories.
-- Special files such a named pipes, sockets, etc. have negligible sizes so their disk usage aren't reported.
-
 ### Symlinks
 
-- If symlink following is not enabled via `-S, --follow-links`, the disk usages of their target will not be reported nor considered.
-- If symlink following is enabled the size of the target will be reported and considered as part of the total of the symlink's ancestral directories.
-- The parts of the file-tree that branch from the symlink that's followed are printed in a different color.
+```
+-f, --follow                     Follow symlinks
+```
+
+Symlinks will never be counted towards the total disk usage. When a symlink to a directory is followed all of the box-drawing characters of its descendants will
+be painted in a different color for better visual feedback:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/follow_links_demo.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/symlink.png?raw=true" alt="failed to load picture" />
 </p>
 
-### Hardlinks
+### Disk usage
 
-If you happen to have multiple hardlinks pointing to the same underlying inode in a given file-tree, everything subsequent to the first will be skipped and ignored as to not be double counted in the overall disk-usage.
+Disk usage is reported in total amount of bytes by default but can output in a human readable format using:
 
-### File coloring
+```
+-H, --human                      Print disk usage in human-readable format
+```
 
-Files are printed in ANSI colors specified according to the `LS_COLORS` environment variable on GNU/Linux systems. In its absence [a default value](https://docs.rs/lscolors/latest/src/lscolors/lib.rs.html#221) is used.
+#### Regular format:
 
-**Note for MacOS**: MacOS uses the `LSCOLORS` environment variable to determine file colors for the `ls` command which is formatted very differently from `LS_COLORS`. MacOS systems will fall back on the aforementioned default value unless the user defines their own `LS_COLORS` environment variable.
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/non_human.png?raw=true" alt="failed to load picture" />
+</p>
+
+#### Human-readable format:
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/human.png?raw=true" alt="failed to load picture" />
+</p>
+
+Additionally, disk usage is reported using binary prefixes by default (e.g. `1 KiB = 1024 B`) but SI prefixes can be used as well (`1 KB = 1000 B`) using:
+
+```
+-u, --unit <UNIT>                Report disk usage in binary or SI units [default: bin] [possible values: bin, si]
+```
+
+Furthermore, physical size which takes into account compression, sparse files, and actual blocks allocated to a particular file are used by default.
+Logical size which just reports the total number of bytes in a file may also be used.
+
+```
+-d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
+```
+
+Lastly, if you'd like to omit disk usage from the output:
+
+```
+--suppress-size              Omit disk usage from output
+```
+
+### Flat view
+
+```
+-F, --flat                       Print disk usage information in plain format without the ASCII tree
+```
+
+For a more traditional `du`-like view without the ASCII tree, use `-F, --flat`.
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat.png?raw=true" alt="failed to load picture" />
+</p>
+
+### gitignore
+
+```
+-i, --no-ignore                  Do not respect .gitignore files
+```
+
+`.gitignore` is respected by default but can be disregarded with the above argument. `.gitignore` rules are also respected on a per directory basis, so
+every directory that is encountered during traversal that has a `.gitignore` will also be considered.
+
+If `.gitignore` is respected any file that is ignored will not be included in the total disk usage.
+
+### Hidden files
+
+```
+-., --hidden                     Show hidden files
+    --no-git                     Disable traversal of .git directory when traversing hidden files
+```
+
+Hidden files ignored by default but can be included with `-., --hidden`. If opting in to show hidden files `.git` is included; to exclude
+it use `--no-git`.
+
+If hidden files are ignored it will not be included in the total disk usage.
 
 ### Icons
 
-Icons (enabled with `I, --icons`) are an opt-in feature because for icons to render properly it is required that the font you have hooked up to your terminal emulator contains the glyphs necessary to properly render icons.
+```
+-I, --icons                      Display file icons
+```
+
+Icons are an opt-in feature because for icons to render properly it is required that the font you have hooked up to your terminal emulator contains the glyphs necessary to properly render icons.
 
 If your icons look something like this:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icons.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/broken_icons.png?raw=true" alt="failed to load png" />
 </p>
 
 this means that the font you are using doesn't include the relevant glyphs. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
+
+### Maximum depth
+
+Directories are fully traversed by default. To limit the maximum depth:
+
+```
+-L, --level <NUM>                Maximum depth to display
+```
+
+Limiting the maximum depth to display will not affect the total disk usage report.
+
+### Pruning empty directories
+
+Sometimes empty directories may appear in the output. To remove them:
+
+```
+-P, --prune                      Remove empty directories from output
+```
+
+### Sorting
+
+Various sorting methods are provided:
+
+```
+-s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
+    --dirs-first                 Sort directories above files
+```
+
+To ensure that directories appear before all other file-types:
+
+```
+--dirs-first                 Sort directories above files
+```
+
+### Directories only
+
+You output only directories with:
+
+```
+--dirs-only                  Only print directories
+```
+
+This will not affect total disk usage.
+
+### Permissions
+
+Unix file permissions as well as metadata associated with directory entries can be shown using the following:
+
+```
+-l, --long                       Show extended metadata and attributes
+    --octal                      Show permissions in numeric octal format instead of symbolic
+    --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
+```
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/showcase_top.png?raw=true" alt="failed to load picture" />
+</p>
+
+The columns shown in the order of left to right are:
+  * inode number
+  * [permissions](https://en.wikipedia.org/wiki/File-system_permissions#Notation_of_traditional_Unix_permissions)
+  * The number of hardlinks of the underlying inode
+  * The number of blocks allocated to that particular file
+  * The date the file was last modified (or created or last accessed)
+
+File permissions are currently not supported for Windows but will be sometime in the near future.
+
+Additionally, although the permissions column does indicate whether or not extended attributes exist on a particular file, showing the extended
+attributes will not be supported.
+
+### Regular expressions and globbing
+
+Searching for a particular file using a regular expression or glob is supported using the following:
+
+```
+-p, --pattern <PATTERN>          Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
+    --glob                       Enables glob based searching
+    --iglob                      Enables case-insensitive glob based searching
+-t, --file-type <FILE_TYPE>      Restrict regex or glob search to a particular file-type [possible values: file, dir, link]
+```
+
+Note that applying the regular expression or glob to a particular file-type is supported; regular files are the default file-type.
+
+Additionally, any file that is filtered out will be excluded from the total disk usage.
+
+Lastly, when applying a regular expression or glob to directories, off its descendants regardless of file-type will be included in the output.
+If you desire to only show directories you may use `--dirs-only`.
+
+References:
+  * [Globbing rules](https://git-scm.com/docs/gitignore#_pattern_format)
+  * [Regular expressions](https://docs.rs/regex/latest/regex/#syntax)
+
+### Truncating output
+
+In instances where the output does not fit the terminal emulator's window, the output itself may be rendered incoherently:
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/untruncated.png?raw=true" alt="failed to load picture" />
+</p>
+
+In these situations the following may be used:
+
+```
+--truncate                   Truncate output to fit terminal emulator window
+```
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/truncated.png?raw=true" alt="failed to load picture" />
+</p>
+
+### Redirecting output and colorization
+
+If you with to force a colorless output the following may be used:
+
+```
+--no-color                   Print plainly without ANSI escapes
+```
+
+Colorization is also turned off if the output is redirected to something that is not a tty. If you wish to preserve the ANSI escape sequences (i.e.)
+preserve the colors as in the case of piping the following may be used:
+
+```
+-C, --force-color                Turn on colorization always
+```
+
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/no_color.png?raw=true" alt="failed to load picture" />
+</p>
+ 
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/force_color.png?raw=true" alt="failed to load picture" />
+</p>
+
+### Parallelism
+
+The amount of threads by the program can be adjusted with the following:
+
+```
+-T, --threads <THREADS>          Number of threads to use [default: 3]
+```
+
+#### Why parallelism
+
+A common question that gets asked is how parallelism benefits disk reads when filesystem I/O is processed serially.
+
+While this is true, parallelism still results in improved throughput due to the fact that the disk's have a [queue depth](https://en.wikipedia.org/wiki/IOPS)
+that, when saturated, allows requests to be processed in aggregate keeping the disk busy as opposed to having it wait on `erdtree` to due CPU-bound processing
+in between requests.
+
+For empirical data on the subject checkout [this article](https://pkolaczk.github.io/disk-parallelism/).
 
 ### Completions
 
@@ -256,83 +454,6 @@ $ et --completions zsh > ~/.oh-my-zsh/completions/_et
 $ source ~/.zshrc
 ```
 
-### Plain view
-
-`-r, --report` offers a more traditional `du`-like view of disk usage info with the additional of file-type identifiers you'd expect on `ls -l` for POSIX systems or `Get-ChildItem` on Windows.
-
-#### Regular view
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/report.png?raw=true" alt="failed to load png" />
-</p>
-
-#### Human readable
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/report_human.png?raw=true" alt="failed to load png" />
-</p>
-
-## Comparisons against similar programs
-
-### `tree` command
-
-This is not a rewrite of the `tree` command thus it should not be considered a 1-to-1 port. While the spirit of `tree` is maintained `erdtree` there are more differences than there are similarities.
-
-### Advantages over `exa --tree`
-
-[Exa](https://github.com/ogham/exa) is a powerful modern equivalent of the `ls` command which gives the option to print a tree-view of a specified directory, however the primary differences between `exa --tree` and `et` are:
-- `exa --tree --git-ignore` doesn't respect `.gitignore` rules on a per directory basis whereas `et` does. With `exa` the root's `.gitignore` is considered, but if child directories have their own `.gitignore` they are disregarded and all of their contents will be printed.
-- `et` displays the total size of a directory as the sum of all of its entries' sizes whereas `exa` [does not support this](https://github.com/ogham/exa/issues/91). This makes sorting directories in the tree-view by size dubious and unclear. Below are screenshots comparing equivalent usages of `et` and `exa`, using long option names for clarity.
-
-#### exa
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/exa_cmp.png?raw=true" alt="failed to load png" />
-</p>
-
-#### erdtree
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_cmp.png?raw=true" alt="failed to load png" />
-</p>
-
-### dua
-
-[dua](https://github.com/Byron/dua-cli) is a fantastic interactive disk usage analyzer that serves as a modern alternative to [ncdu](https://en.wikipedia.org/wiki/Ncdu). If you're in the mood for something interactive, `dua` might suit you more. If you'd rather do a quick analysis of your file-tree and disk-usage without spinning up an entire terminal UI then go with `erdtree`.
-
-### dust
-
-[dust](https://github.com/bootandy/dust) is another fantastic tool, but it's one that heavily overlaps with `erdtree` in functionality. On the surface you'll find that the biggest differences are the out-of-the-box defaults - but of course you can override `erdtree`'s defaults with a [config file](#configuration-file) if you so choose - as well as the UI.
-
-On the topic of performance you'll find that there is negligible difference between the two. In the following crude benchmark the options supplied to `erdtree` make it mirror `dust` as closely as possible in behavior with the exception of icons.
-
-#### dust
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/dust_benchmark_v2.png?raw=true" alt="failed to load png" />
-</p>
-
-#### erdtree
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/et_benchmark_v2.png?raw=true" alt="failed to load png" />
-</p>
-
-Ultimately you should give both tools a try and see which one best suits you :]
-
-## Rules for Contributing and Feature Requests
-
-Happy to accept contributions but please keep the following in mind:
-- If you'd like to add a feature please open up an issue and receive approval first unless you've previously contributed. You can also start a [discussion](https://github.com/solidiquis/erdtree/discussions/49).
-- If new arguments/options are added please do your best to keep them sensibly alphabetized. Also be sure to update the [Usage][#usage] section of the README.
-- The code is heavily documented so please follow suit. `cargo doc --open` can be extremely helpful.
-- Feature adds generally require tests.
-- If no one is assigned to an `up for grabs` issue feel free to pick it up yourself :]
-
-Feature requests in the form of issues in general are welcome.
-
-## Special thanks
-
-- to [luccahuguet](https://github.com/luccahuguet) on Github) for suggesting that the compiled `erdtree` binary be shorted to `et`.
-- to [messense](https://github.com/messense) for getting this on Homebrew-core!
-- to [fawni](https://github.com/fawni) for getting this on Scoop!
-- to [0323pin](https://github.com/0323pin) for getting this on NetBSD!
-- to all contributors :]
-
 ## Questions you might have
 
 _Q: Why did you make this? It's totally unnecessary._
@@ -341,24 +462,14 @@ A: Ennui.
 
 _Q: Why is it called erdtree?_
 
-A: It's a reference to Elden Ring.
+A: It's a reference to an object of worship in Elden Ring.
 
 _Q: Is it any good?_
 
 A: Yes.
 
-_Q: Got any testimonials?_
+_Q: Why is there no mention of this project being blazing fast or written in Rust? Is it slow or something?_
 
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/tarnished_i.png?raw=true" alt="failed to load png" />
-</p>
-
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/tarnished_ii.png?raw=true" alt="failed to load png" />
-</p>
-
-_Q: Is it blazingly fast?_
-
-A: I wrote it in Rust so it should be blazingly fast.
+A: Okay fine. `erdtree` is written in Rust and is blazingly fast.
 
 <img src="https://i.redd.it/t7ns9qtb5gh81.jpg">
