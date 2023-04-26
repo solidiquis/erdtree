@@ -16,7 +16,7 @@
 You can think of `erdtree` as a combination of `du`, `tree`, `find`, and `ls`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/showcase_top.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/showcase_top.png?raw=true" alt="failed to load picture" />
 </p>
 
 ## Table of Contents
@@ -151,10 +151,10 @@ Binaries for common architectures can be downloaded from latest releases.
 
 ### Latest non-release
 
-If you'd like the latest features that are on `v2.0` but aren't yet included as part of a release:
+If you'd like the latest features that are on `master` but aren't yet included as part of a release:
 
 ```
-$ cargo install --git https://github.com/solidiquis/erdtree --branch v2.0
+$ cargo install --git https://github.com/solidiquis/erdtree --branch master
 ```
 
 Other means of installation to come.
@@ -209,7 +209,7 @@ Symlinks will never be counted towards the total disk usage. When a symlink to a
 be painted in a different color for better visual feedback:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/symlink.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlink.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### Disk usage
@@ -223,13 +223,13 @@ Disk usage is reported in total amount of bytes by default but can output in a h
 #### Regular format:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/non_human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/non_human.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human-readable format:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/human.png?raw=true" alt="failed to load picture" />
 </p>
 
 Additionally, disk usage is reported using binary prefixes by default (e.g. `1 KiB = 1024 B`) but SI prefixes can be used as well (`1 KB = 1000 B`) using:
@@ -260,17 +260,17 @@ Lastly, if you'd like to omit disk usage from the output:
 For a more traditional `du`-like view without the ASCII tree, use `-F, --flat`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat_non_human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_non_human.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human readable disk usage
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat_human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_human.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human readable and long view
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat_human_long.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_human_long.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### gitignore
@@ -307,7 +307,7 @@ Icons are an opt-in feature because for icons to render properly it is required 
 If your icons look something like this:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/broken_icons.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icons.png?raw=true" alt="failed to load png" />
 </p>
 
 this means that the font you are using doesn't include the relevant glyphs. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
@@ -366,7 +366,7 @@ Unix file permissions as well as metadata associated with directory entries can 
 ```
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/showcase_top.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/showcase_top.png?raw=true" alt="failed to load picture" />
 </p>
 
 The columns shown in the order of left to right are:
@@ -408,7 +408,7 @@ References:
 In instances where the output does not fit the terminal emulator's window, the output itself may be rendered incoherently:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/untruncated.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/untruncated.png?raw=true" alt="failed to load picture" />
 </p>
 
 In these situations the following may be used:
@@ -418,7 +418,7 @@ In these situations the following may be used:
 ```
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/truncated.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/truncated.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### Redirecting output and colorization
@@ -437,11 +437,11 @@ preserve the colors as in the case of piping the following may be used:
 ```
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/no_color.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/no_color.png?raw=true" alt="failed to load picture" />
 </p>
  
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/force_color.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/force_color.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### Parallelism
