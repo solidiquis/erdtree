@@ -429,8 +429,8 @@ If you wish to force a colorless output the following may be used:
 --no-color                   Print plainly without ANSI escapes
 ```
 
-Colorization is also turned off if the output is redirected to something that is not a tty. If you wish to preserve the ANSI escape sequences (i.e.)
-preserve the colors as in the case of piping the following may be used:
+Colorization is also turned off if the output is redirected to something that is not a tty. If you wish to preserve the ANSI escape sequences (e.g.
+preserve the colors as in the case of piping) the following may be used:
 
 ```
 -C, --force-color                Turn on colorization always
@@ -446,7 +446,7 @@ preserve the colors as in the case of piping the following may be used:
 
 ### Parallelism
 
-The amount of threads by the program can be adjusted with the following:
+The amount of threads used by `erdtree` can be adjusted with the following:
 
 ```
 -T, --threads <THREADS>          Number of threads to use [default: 3]
@@ -458,7 +458,7 @@ A common question that gets asked is how parallelism benefits disk reads when fi
 
 While this is true, parallelism still results in improved throughput due to the fact that disks have a [queue depth](https://en.wikipedia.org/wiki/IOPS)
 that, when saturated, allows requests to be processed in aggregate keeping the disk busy as opposed to having it wait on `erdtree` to due CPU-bound processing
-in between requests.
+in between requests. Additionally these threads aren't just parallelizing disk reads, they're also prallelizing the processing of the data that is ultimately retrieved.
 
 It should be noted however that the performance as a function of thread-count is asymptotic in nature (see [Amdahl's Law](https://en.wikipedia.org/wiki/Amdahl%27s_law))
 so you'll quickly reach a point of dimishing returns after a certain thread-count threshold as you'd be paying the cost of managing a larger threadpool with no added benefit.
