@@ -38,13 +38,14 @@ pub mod time;
 #[cfg(test)]
 mod test;
 
-
 #[derive(Clone, Copy, Debug, clap::ValueEnum, PartialEq, Eq, Default)]
 pub enum Coloring {
     /// Print plainly without ANSI escapes
     None,
 
-    /// Default
+    /// Check the [`no_color`] function for the Auto behaviour
+    ///
+    /// [`no_color`]: no_color
     #[default]
     Auto,
 
