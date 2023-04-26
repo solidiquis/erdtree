@@ -2,8 +2,7 @@ use clap::ValueEnum;
 
 /// Order in which to print nodes.
 #[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
-#[allow(clippy::module_name_repetitions)]
-pub enum SortType {
+pub enum Type {
     /// Sort entries by file name
     Name,
 

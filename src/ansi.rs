@@ -15,8 +15,7 @@
 /// assumptions that are valid only for this program, namely that all relevant grapheme clusters
 /// are at most sized to a single `char`, so truncating to any arbitrary length will always result
 /// in a coherent output.
-#[allow(clippy::module_name_repetitions)]
-pub trait AnsiEscaped: AsRef<str> {
+pub trait Escaped: AsRef<str> {
     fn truncate(&self, new_len: usize) -> String {
         let mut open_sequence = false;
         let mut resultant = String::new();
@@ -60,7 +59,7 @@ pub trait AnsiEscaped: AsRef<str> {
     }
 }
 
-impl AnsiEscaped for str {}
+impl Escaped for str {}
 
 #[test]
 fn truncate() {
@@ -68,7 +67,7 @@ fn truncate() {
 
     let control = Red.bold().paint("Hello").to_string();
     let base = format!("{}{}", Red.bold().paint("Hello World"), "!!!");
-    let trunc = <str as AnsiEscaped>::truncate(&base, 5);
+    let trunc = <str as Escaped>::truncate(&base, 5);
 
     assert_eq!(control, trunc);
 }

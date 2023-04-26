@@ -2,14 +2,12 @@ use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
 use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
 use error::Error;
-use file::FileType;
 use ignore::{
     overrides::{Override, OverrideBuilder},
     DirEntry,
 };
 use output::ColumnProperties;
 use regex::Regex;
-use sort::SortType;
 use std::{
     borrow::Borrow,
     convert::From,
@@ -111,15 +109,15 @@ pub struct Context {
 
     /// Restrict regex or glob search to a particular file-type
     #[arg(short = 't', long, requires = "pattern", value_enum)]
-    pub file_type: Option<FileType>,
+    pub file_type: Option<file::Type>,
 
     /// Remove empty directories from output
     #[arg(short = 'P', long)]
     pub prune: bool,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = SortType::default())]
-    pub sort: SortType,
+    #[arg(short, long, value_enum, default_value_t = sort::Type::default())]
+    pub sort: sort::Type,
 
     /// Sort directories above files
     #[arg(long)]
@@ -208,6 +206,7 @@ pub struct Context {
     pub window_width: Option<usize>,
 }
 
+type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
@@ -312,7 +311,7 @@ impl Context {
     }
 
     /// Which filetype to filter on; defaults to regular file.
-    pub fn file_type(&self) -> FileType {
+    pub fn file_type(&self) -> file::Type {
         self.file_type.unwrap_or_default()
     }
 
@@ -338,9 +337,7 @@ impl Context {
     /// to the root node somehow. Empty sets not producing an output is handled by [`Tree`].
     ///
     /// [`Tree`]: crate::render::tree::Tree
-    pub fn regex_predicate(
-        &self,
-    ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
+    pub fn regex_predicate(&self) -> Predicate {
         let Some(pattern) = self.pattern.as_ref() else {
             return Err(Error::PatternNotProvided);
         };
@@ -350,7 +347,7 @@ impl Context {
         let file_type = self.file_type();
 
         match file_type {
-            FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
+            file::Type::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
@@ -370,8 +367,8 @@ impl Context {
                 }
 
                 match file_type {
-                    FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
-                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
+                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
                     _ => (),
@@ -383,9 +380,7 @@ impl Context {
     }
 
     /// Predicate used for filtering via globs and file-types.
-    pub fn glob_predicate(
-        &self,
-    ) -> Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error> {
+    pub fn glob_predicate(&self) -> Predicate {
         let mut builder = OverrideBuilder::new(self.dir());
 
         let mut negated_glob = false;
@@ -415,15 +410,14 @@ impl Context {
         let file_type = self.file_type();
 
         match file_type {
-            FileType::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
+            file::Type::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
                     if negated_glob {
                         return !Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
-                    } else {
-                        return Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
                     }
+                    return Self::ancestor_glob_match(dir_entry.path(), &overrides, 0);
                 }
                 let matched = Self::ancestor_glob_match(dir_entry.path(), &overrides, 1);
 
@@ -443,8 +437,8 @@ impl Context {
                 }
 
                 match file_type {
-                    FileType::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
-                    FileType::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
+                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
                     _ => (),
@@ -500,7 +494,7 @@ impl Context {
             .any(|c| ovr.matched(c, false).is_whitelist())
     }
 
-    /// Like [Self::ancestor_glob_match] except uses [Regex] rather than [Override].
+    /// Like [`Self::ancestor_glob_match`] except uses [Regex] rather than [Override].
     #[inline]
     fn ancestor_regex_match(path: &Path, re: &Regex, skip: usize) -> bool {
         path.components()

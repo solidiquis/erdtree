@@ -36,7 +36,7 @@ pub mod display;
 /// Styling utilities for a [Node].
 pub mod style;
 
-/// A node of [`Tree`] that can be created from a [DirEntry]. Any filesystem I/O and
+/// A node of [`Tree`] that can be created from a [`DirEntry`]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
 /// uses ANSI colors determined by the file-type and `LS_COLORS`.
 ///
@@ -92,7 +92,7 @@ impl Node {
         self.dir_entry.depth()
     }
 
-    /// Gets the number of blocks used by the underlying [DirEntry]. Returns `None` in the case of
+    /// Gets the number of blocks used by the underlying [`DirEntry`]. Returns `None` in the case of
     /// no blocks allocated like in the case of directories.
     #[cfg(unix)]
     pub fn blocks(&self) -> Option<u64> {
@@ -127,12 +127,12 @@ impl Node {
         self.inode
     }
 
-    /// Returns the underlying `ino` of the [DirEntry].
+    /// Returns the underlying `ino` of the [`DirEntry`].
     pub fn ino(&self) -> Option<u64> {
         self.inode.map(|inode| inode.ino)
     }
 
-    /// Returns the underlying `nlink` of the [DirEntry].
+    /// Returns the underlying `nlink` of the [`DirEntry`].
     pub fn nlink(&self) -> Option<u64> {
         self.inode.map(|inode| inode.nlink)
     }
@@ -157,7 +157,7 @@ impl Node {
         self.symlink_target_path().and_then(Path::file_name)
     }
 
-    /// Returns reference to underlying [FileType].
+    /// Returns reference to underlying [`FileType`].
     pub fn file_type(&self) -> Option<FileType> {
         self.dir_entry.file_type()
     }
@@ -167,13 +167,13 @@ impl Node {
         self.path().parent()
     }
 
-    /// Returns a reference to `path`. If the underlying [DirEntry] is a symlink then the path of
+    /// Returns a reference to `path`. If the underlying [`DirEntry`] is a symlink then the path of
     /// the symlink shall be returned.
     pub fn path(&self) -> &Path {
         self.dir_entry.path()
     }
 
-    /// Gets 'file_size'.
+    /// Gets '`file_size`'.
     pub const fn file_size(&self) -> Option<&FileSize> {
         self.file_size.as_ref()
     }
@@ -183,7 +183,7 @@ impl Node {
         self.file_size = Some(size);
     }
 
-    /// Attempts to return an instance of [FileMode] for the display of symbolic permissions.
+    /// Attempts to return an instance of [`FileMode`] for the display of symbolic permissions.
     #[cfg(unix)]
     pub fn mode(&self) -> Result<FileMode, Error> {
         let permissions = self.metadata.permissions();
@@ -209,7 +209,7 @@ impl Node {
         self.flat(f, ctx)
     }
 
-    /// See [icons::compute].
+    /// See [`icons::compute`].
     fn compute_icon(&self, no_color: bool) -> Cow<'static, str> {
         if no_color {
             icons::compute(self.dir_entry(), self.symlink_target_path())

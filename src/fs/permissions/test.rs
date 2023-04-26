@@ -26,7 +26,7 @@ fn test_symbolic_notation() -> Result<(), Box<dyn Error>> {
     let rwx = format!("{file_mode}");
     assert_eq!(rwx, ".rw-r--r--");
 
-    let octal = format!("{:o}", file_mode);
+    let octal = format!("{file_mode:o}");
     assert_eq!(octal, "644");
 
     Ok(())
@@ -43,53 +43,53 @@ fn test_symbolic_notation_special_attr() -> Result<(), Box<dyn Error>> {
     let mut permissions = metadata.permissions();
 
     // Set the sticky bit
-    permissions.set_mode(0o101644);
+    permissions.set_mode(0o101_644);
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
     assert_eq!(rwx, ".rw-r--r-T");
 
-    let octal = format!("{:o}", file_mode);
+    let octal = format!("{file_mode:o}");
     assert_eq!(octal, "1644");
 
     // Set the getuid bit
-    permissions.set_mode(0o102644);
+    permissions.set_mode(0o102_644);
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
     assert_eq!(rwx, ".rw-r-Sr--");
 
-    let octal = format!("{:o}", file_mode);
+    let octal = format!("{file_mode:o}");
     assert_eq!(octal, "2644");
 
     // Set the setuid bit
-    permissions.set_mode(0o104644);
+    permissions.set_mode(0o104_644);
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
     assert_eq!(rwx, ".rwSr--r--");
 
-    let octal = format!("{:o}", file_mode);
+    let octal = format!("{file_mode:o}");
     assert_eq!(octal, "4644");
 
     // Set the all the attr bits
-    permissions.set_mode(0o107644);
+    permissions.set_mode(0o107_644);
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
     assert_eq!(rwx, ".rwSr-Sr-T");
 
-    let octal = format!("{:o}", file_mode);
+    let octal = format!("{file_mode:o}");
     assert_eq!(octal, "7644");
 
     // Set all the attr bits and give all classes execute permissions
-    permissions.set_mode(0o107777);
+    permissions.set_mode(0o107_777);
 
     let file_mode = permissions.try_mode_symbolic_notation()?;
     let rwx = format!("{file_mode}");
     assert_eq!(rwx, ".rwsrwsrwt");
 
-    let octal = format!("{:o}", file_mode);
+    let octal = format!("{file_mode:o}");
     assert_eq!(octal, "7777");
 
     Ok(())

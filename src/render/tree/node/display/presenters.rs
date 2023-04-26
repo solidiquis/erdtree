@@ -27,14 +27,14 @@ pub(super) struct LongAttrs {
 #[cfg(unix)]
 #[inline]
 pub(super) fn format_long(node: &Node, ctx: &Context) -> LongAttrs {
-    let mode = node.mode().unwrap();
+    let file_mode = node.mode().unwrap();
 
     let perms = if ctx.octal {
-        Node::style_octal_permissions(&mode)
+        Node::style_octal_permissions(&file_mode)
     } else if node.has_xattrs() {
-        Node::style_sym_permissions(&mode, true)
+        Node::style_sym_permissions(&file_mode, true)
     } else {
-        Node::style_sym_permissions(&mode, false)
+        Node::style_sym_permissions(&file_mode, false)
     };
 
     let datetime = match ctx.time() {

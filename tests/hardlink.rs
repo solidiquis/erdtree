@@ -17,7 +17,7 @@ fn hardlink() -> Result<(), Box<dyn Error>> {
         .join("hardlinks")
         .join("curwin.hpl");
 
-    fs::hard_link(&src, &link)?;
+    fs::hard_link(src, &link)?;
 
     let out = utils::run_cmd(&["tests/hardlinks"]);
 

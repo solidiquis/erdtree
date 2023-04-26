@@ -27,26 +27,26 @@ impl FileType {
     }
 }
 
-/// The argument `mode` is meant to come from the `mode` method of [std::fs::Permissions].
+/// The argument `mode` is meant to come from the `mode` method of [`std::fs::Permissions`].
 impl TryFrom<u32> for FileType {
     type Error = Error;
 
     fn try_from(mode: u32) -> Result<Self, Self::Error> {
-        let file_mask = mode & u32::from(libc::S_IFMT);
+        let file_mask = mode & libc::S_IFMT;
 
-        if file_mask == u32::from(libc::S_IFIFO) {
+        if file_mask == libc::S_IFIFO {
             Ok(Self::Fifo)
-        } else if file_mask == u32::from(libc::S_IFCHR) {
+        } else if file_mask == libc::S_IFCHR {
             Ok(Self::CharDevice)
-        } else if file_mask == u32::from(libc::S_IFDIR) {
+        } else if file_mask == libc::S_IFDIR {
             Ok(Self::Directory)
-        } else if file_mask == u32::from(libc::S_IFBLK) {
+        } else if file_mask == libc::S_IFBLK {
             Ok(Self::BlockDevice)
-        } else if file_mask == u32::from(libc::S_IFREG) {
+        } else if file_mask == libc::S_IFREG {
             Ok(Self::File)
-        } else if file_mask == u32::from(libc::S_IFLNK) {
+        } else if file_mask == libc::S_IFLNK {
             Ok(Self::Symlink)
-        } else if file_mask == u32::from(libc::S_IFSOCK) {
+        } else if file_mask == libc::S_IFSOCK {
             Ok(Self::Socket)
         } else {
             Err(Error::UnknownFileType)

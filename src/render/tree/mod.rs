@@ -1,7 +1,7 @@
 use crate::{
     fs::inode::Inode,
     render::{
-        context::{file::FileType, output::ColumnProperties, Context},
+        context::{file, output::ColumnProperties, Context},
         disk_usage::file_size::FileSize,
         styles,
     },
@@ -90,7 +90,7 @@ where
         Ok(tree)
     }
 
-    /// Returns `true` if there are no entries to show excluding the root_id.
+    /// Returns `true` if there are no entries to show excluding the `root_id`.
     pub fn is_stump(&self) -> bool {
         self.root_id
             .descendants(self.arena())
@@ -115,7 +115,7 @@ where
         &self.arena
     }
 
-    /// Parallel traversal of the root_id directory and its contents. Parallel traversal relies on
+    /// Parallel traversal of the `root_id` directory and its contents. Parallel traversal relies on
     /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
     /// parallel traversal; post-processing post-processing of all directory entries should
     /// be completely CPU-bound.
@@ -173,7 +173,7 @@ where
                     ctx,
                 );
 
-                if ctx.prune || ctx.file_type != Some(FileType::Dir) {
+                if ctx.prune || ctx.file_type != Some(file::Type::Dir) {
                     Self::prune_directories(root_id, &mut tree);
                 }
 
@@ -335,7 +335,7 @@ where
         count
     }
 
-    /// Updates [ColumnProperties] with provided [Node].
+    /// Updates [`ColumnProperties`] with provided [Node].
     #[cfg(unix)]
     fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, long: bool) {
         if let Some(file_size) = node.file_size() {

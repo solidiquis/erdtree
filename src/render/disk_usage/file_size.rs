@@ -40,7 +40,7 @@ pub enum DiskUsage {
 }
 
 impl FileSize {
-    /// Initializes a [FileSize].
+    /// Initializes a [`FileSize`].
     pub const fn new(
         bytes: u64,
         disk_usage: DiskUsage,
@@ -83,8 +83,6 @@ impl FileSize {
 
     /// Precompute the raw (unpadded) display and sets the number of columns the size (without
     /// the prefix) will occupy. Also sets the [Style] to use in advance to style the size output.
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
     pub fn precompute_unpadded_display(&mut self) {
         let fbytes = self.bytes as f64;
 
@@ -136,7 +134,7 @@ impl FileSize {
         }
     }
 
-    /// Formats [FileSize] for presentation.
+    /// Formats [`FileSize`] for presentation.
     pub fn format(&self, max_size_width: usize, max_size_unit_width: usize) -> String {
         let out = if self.human_readable {
             let mut precomputed = self.unpadded_display().unwrap().split(' ');
@@ -144,7 +142,10 @@ impl FileSize {
             let unit = precomputed.next().unwrap();
 
             if self.uses_base_unit.is_some() {
-                format!("{:>max_size_width$} {unit:>max_size_unit_width$}", self.bytes)
+                format!(
+                    "{:>max_size_width$} {unit:>max_size_unit_width$}",
+                    self.bytes
+                )
             } else {
                 format!("{size:>max_size_width$} {unit:>max_size_unit_width$}")
             }
