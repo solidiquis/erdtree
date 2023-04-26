@@ -260,7 +260,17 @@ Lastly, if you'd like to omit disk usage from the output:
 For a more traditional `du`-like view without the ASCII tree, use `-F, --flat`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat_non_human.png?raw=true" alt="failed to load picture" />
+</p>
+
+#### Human readable disk usage
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat_human.png?raw=true" alt="failed to load picture" />
+</p>
+
+#### Human readable and long view
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v2.0/assets/flat_human_long.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### gitignore
