@@ -88,9 +88,9 @@ jobs:
         VERSION: ${{  github.ref_name }}
       run: |
         curl -L https://github.com/probonopd/uploadtool/raw/master/upload.sh --output upload.sh
-        mv target/${{ matrix.target }}/release/et et
-        tar -cavf et-${VERSION}-${{ matrix.target }}.tar.gz et CHANGELOG.md README.md LICENSE
-        bash upload.sh et-${VERSION}-${{ matrix.target }}.tar.gz
+        mv target/${{ matrix.target }}/release/erd erd
+        tar -cavf erd-${VERSION}-${{ matrix.target }}.tar.gz erd CHANGELOG.md README.md LICENSE
+        bash upload.sh erd-${VERSION}-${{ matrix.target }}.tar.gz
     
     - name: Rename files (only for Windows)
       if: matrix.target == 'x86_64-pc-windows-msvc'
@@ -98,7 +98,7 @@ jobs:
         VERSION: ${{ github.ref_name }}
       run: |
         mkdir output/
-        mv target/${{ matrix.target }}/release/et.exe output/et-$env:VERSION-${{ matrix.target }}.exe
+        mv target/${{ matrix.target }}/release/erd.exe output/erd-$env:VERSION-${{ matrix.target }}.exe
     
     - name: Upload files (only for Windows)
       uses: ncipollo/release-action@v1
