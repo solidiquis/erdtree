@@ -470,7 +470,7 @@ For empirical data on the subject checkout [this article](https://pkolaczk.githu
 `--completions` is used to generate auto-completions for common shells so that the `tab` key can attempt to complete your command or give you hints; where you place the output highly depends on your shell as well as your setup. In my environment where I use `zshell` with `oh-my-zsh`, I would install completions like so:
 
 ```
-$ et --completions zsh > ~/.oh-my-zsh/completions/_et
+$ erd --completions zsh > ~/.oh-my-zsh/completions/_erd
 $ source ~/.zshrc
 ```
 
