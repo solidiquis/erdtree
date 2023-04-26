@@ -1,26 +1,29 @@
-# erdtree (et)
+# erdtree (erd)
 
 [![Build status](https://github.com/solidiquis/erdtree/actions/workflows/ci.yml/badge.svg)](https://github.com/solidiquis/erdtree/actions)
 [![Crates.io](https://img.shields.io/crates/v/erdtree.svg)](https://crates.io/crates/erdtree)
 [![Packaging status](https://repology.org/badge/tiny-repos/erdtree.svg)](https://repology.org/project/erdtree/versions)
 [![Crates.io](https://img.shields.io/crates/d/erdtree)](https://crates.io/crates/erdtree)
 
-A modern, multi-threaded file-tree visualization and disk usage analysis tool that respects hidden file and `.gitignore` rules i.e. the secret love child of [tree](https://en.wikipedia.org/wiki/Tree_(command)) and [du](https://en.wikipedia.org/wiki/Du_(Unix)).
+*Erdtree* is a modern, cross-platform, and multi-threaded filesystem and disk-usage analysis tool. The following are some feature highlights:
+* Respects hidden file and gitignore rules by default.
+* Supports regular expressions and glob based searching by file-type.
+* Supports Unix-based file permissions (Unix systems only).
+* Comes with a variety of layouts.
+* Support icons.
+* Colorized with `LS_COLORS`.
+
+You can think of `erdtree` as a combination of `du`, `tree`, `find`, and `ls`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/demo.png?raw=true" alt="failed to load picture" />
-</p>
-
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/left_aligned.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/showcase_top.png?raw=true" alt="failed to load picture" />
 </p>
 
 ## Table of Contents
 
-* [Description](#description)
 * [Usage](#usage)
 * [Installation](#installation)
-* [Info](#info)
+* [Documentation](#documentation)
   - [Configuration file](#configuration-file)
   - [Parallelism](#parallelism)
   - [Binary prefix or SI prefix](#binary-prefix-or-si-prefix)
@@ -41,55 +44,56 @@ A modern, multi-threaded file-tree visualization and disk usage analysis tool th
 * [Special Thanks](#special-thanks)
 * [Questions you might have](#questions-you-might-have)
 
-## Description
-
-**erdtree** is a modern alternative to `tree` and `du` in that it:
-- offers a minimal and user-friendly CLI
-- respects hidden files and `.gitignore` rules by default
-- displays file sizes in human-readable format by default
-- leverages parallism to traverse the file-system
-- displays files using ANSI colors by default
-- supports icons! (checkout the [Icons](#icons) section before using)
-
-If the chosen defaults don't meet your requirements and you don't want to bloat your shell configs with aliases, you can use a [configuration file](#configuration-file) instead.
-
 ## Usage
 
 ```
-erdtree (et) is a multi-threaded file-tree visualization and disk usage analysis tool.
+erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage analysis tool.
 
-Usage: et [OPTIONS] [DIR]
+Usage: erd [OPTIONS] [DIR]
 
 Arguments:
   [DIR]  Directory to traverse; defaults to current working directory
 
 Options:
+  -C, --force-color                Turn on colorization always
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
-  -., --hidden                     Show hidden files
-      --no-git                     Disable traversal of .git directory when traversing hidden files
+  -f, --follow                     Follow symlinks
+  -F, --flat                       Print disk usage information in plain format without the ASCII tree
+  -H, --human                      Print disk usage in human-readable format
   -i, --no-ignore                  Do not respect .gitignore files
   -I, --icons                      Display file icons
-  -L, --follow                     Follow symlinks and consider their disk usage
-  -l, --level <NUM>                Maximum depth to display
+  -l, --long                       Show extended metadata and attributes
+      --octal                      Show permissions in numeric octal format instead of symbolic
+      --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
+  -L, --level <NUM>                Maximum depth to display
   -p, --pattern <PATTERN>          Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
       --glob                       Enables glob based searching
       --iglob                      Enables case-insensitive glob based searching
+  -t, --file-type <FILE_TYPE>      Restrict regex or glob search to a particular file-type [possible values: file, dir, link]
   -P, --prune                      Remove empty directories from output
-  -n, --scale <NUM>                Total number of digits after the decimal to display for disk usage [default: 2]
-  -r, --report                     Print disk usage information in plain format without ASCII tree
-      --human                      Print human-readable disk usage in report
-      --file-name                  Print file-name in report as opposed to full path
-  -s, --sort <SORT>                Sort-order to display directory content [default: none] [possible values: name, size, size-rev, none]
+  -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
       --dirs-first                 Sort directories above files
-  -t, --threads <THREADS>          Number of threads to use [default: 3]
+  -T, --threads <THREADS>          Number of threads to use [default: 3]
   -u, --unit <UNIT>                Report disk usage in binary or SI units [default: bin] [possible values: bin, si]
+  -., --hidden                     Show hidden files
+      --no-git                     Disable traversal of .git directory when traversing hidden files
       --completions <COMPLETIONS>  Print completions for a given shell to stdout [possible values: bash, elvish, fish, powershell, zsh]
       --dirs-only                  Only print directories
+      --inverted                   Print tree with the root directory at the topmost position
       --no-color                   Print plainly without ANSI escapes
       --no-config                  Don't read configuration file
       --suppress-size              Omit disk usage from output
+      --truncate                   Truncate output to fit terminal emulator window
   -h, --help                       Print help (see more with '--help')
   -V, --version                    Print version
+```
+
+Of all the arguments, the following are not available on Windows:
+
+```
+  -l, --long                       Show extended metadata and attributes
+      --octal                      Show permissions in numeric octal format instead of symbolic
+      --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
 ```
 
 ## Installation
@@ -148,7 +152,7 @@ $ cargo install --git https://github.com/solidiquis/erdtree --branch master
 
 Other means of installation to come.
 
-## Info
+## Documentation
 
 ### Configuration file
 
@@ -167,39 +171,30 @@ The format of a config file is as follows:
 
 Arguments passed to `erdtree` take precedence. If you have a config that you would like to ignore without deleting you can use `--no-config`.
 
-Here is an example of a valid config:
+Here is an example of a valid configuration file:
 
 ```
-$ cat $HOME/.config/erdtree/.erdtreerc
-# Long or short names work
--s size
-
-# I prefer physical size
---disk-usage physical
-
-# ooo pwetty
+# Long argument
 --icons
+--human
 
-# This is prettier.. thanks bryceberger
---size-left
---prune
+# or short argument
+-l
+
+# args can be passed like this
+-d logical
+
+# or like this
+--unit=si
 ```
 
-### Parallelism
+### Hardlinks
 
-A common question people have about `erdtree` is how it benefits from parallelism when disk I/O does serial processing, i.e. it can only ever service one request at a time.
+If multiple hardlinks that point to the same inode are in the same file-tree, both will be included in the output but only one is considered when computing overall disk usage.
 
-The idea behind leveraging parallelism for disk reads is that despite serial processing you'll still get higher throughput as saturating the disk queue depth with user-space requests allows it to process requests in aggregate rather than waiting for a single-thread to send a single request at a time and doing some CPU-bound work with the response before sending another.
+### Symlinks (`-f, --follow`)
 
-Here are some crude benchmarks demonstrating the relationship between performance and thread-count.
-
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/thread_performance.png?raw=true" alt="failed to load png" />
-</p>
-
-It's important to note that some parallelism does improve performance but after a certain threshold you do get dimishing returns. As [Amdahl's law](https://en.wikipedia.org/wiki/Amdahl%27s_law) suggests, there is an asymptotic threshold for the speedup which is a function of thread-count. Once you've approached that threshold you're just paying the additional cost of managing a larger thread-pool with no added benefit.
-
-If you'd like more rigorous empirical data going into how parallelism benefits both SSD and HDD checkout [this article](https://pkolaczk.github.io/disk-parallelism/).
+Symlinks will never be counted towards the total disk usage. When a symlink to a directory is followed all of its descendents will be painted a different
 
 ### Binary prefix or SI Prefix
 
