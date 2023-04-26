@@ -209,7 +209,7 @@ Symlinks will never be counted towards the total disk usage. When a symlink to a
 be painted in a different color for better visual feedback:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlink.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlinks.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### Disk usage
@@ -260,12 +260,12 @@ Lastly, if you'd like to omit disk usage from the output:
 For a more traditional `du`-like view without the ASCII tree, use `-F, --flat`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_non_human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_inhuman.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human readable disk usage
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_human_readable.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human readable and long view
@@ -307,7 +307,7 @@ Icons are an opt-in feature because for icons to render properly it is required 
 If your icons look something like this:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icon.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icons.png?raw=true" alt="failed to load png" />
 </p>
 
 this means that the font you are using doesn't include the relevant glyphs. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
@@ -533,7 +533,7 @@ _Q: Is it any good?_
 
 A: Yes.
 
-_Q: Why is there no mention of this project being blazing fast or written in Rust? Is it slow or something?_
+_Q: Why is there no mention of this project being blazingly fast or written in Rust? Is it slow or something?_
 
 A: Okay fine. `erdtree` is written in Rust and is blazingly fast.
 
