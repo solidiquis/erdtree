@@ -456,7 +456,7 @@ The amount of threads by the program can be adjusted with the following:
 
 A common question that gets asked is how parallelism benefits disk reads when filesystem I/O is processed serially.
 
-While this is true, parallelism still results in improved throughput due to the fact that the disk's have a [queue depth](https://en.wikipedia.org/wiki/IOPS)
+While this is true, parallelism still results in improved throughput due to the fact that disks have a [queue depth](https://en.wikipedia.org/wiki/IOPS)
 that, when saturated, allows requests to be processed in aggregate keeping the disk busy as opposed to having it wait on `erdtree` to due CPU-bound processing
 in between requests.
 
