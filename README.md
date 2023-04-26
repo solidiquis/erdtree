@@ -495,7 +495,7 @@ comparison.
 
 `exa` and `erdtree` are similar in that they both have tree-views and display information about file-permissions.
 
-As it stands, however, `exa` [does not provide information about the disk usages of directories[(https://github.com/ogham/exa/issues/91) which makes sorting files by
+As it stands, however, `exa` [does not provide information about the disk usages of directories](https://github.com/ogham/exa/issues/91) which makes sorting files by
 size a little dubious.
 
 The advantage `exa` has over `erdtree`, however, is in the fact that `exa` is much more comprehensive as an `ls` replacement. `erdtree`
