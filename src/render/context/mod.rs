@@ -64,7 +64,7 @@ pub struct Context {
     ///
     /// None: Print plainly without ANSI escapes
     #[arg(short = 'C', long, value_enum, default_value_t = Coloring::default())]
-    pub coloring: Coloring,
+    pub color: Coloring,
 
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
@@ -284,11 +284,11 @@ impl Context {
     }
 
     /// Determines whether or not it's appropriate to display color in output based on
-    /// `--no-color`, `--force-color`, and whether or not stdout is connected to a tty.
+    /// the Coloring, and whether or not stdout is connected to a tty.
     ///
-    /// If `--force-color` is `true` then this will always evaluate to `false`.
+    /// If Coloring is Forced then this will always evaluate to `false`.
     pub const fn no_color(&self) -> bool {
-        match self.coloring {
+        match self.color {
             Coloring::Auto if !self.stdout_is_tty => true,
             Coloring::None => true,
             Coloring::Auto | Coloring::Forced => false,
