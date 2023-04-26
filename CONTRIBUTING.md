@@ -4,5 +4,8 @@ Thank you for taking an interest in *erdtree*! If you'd like to play a part in t
   * New issues: feature requests, bug reports, questions, ideas, etc..
   * Pull requests: documentation improvements, bug fixes, code improvements, new features, etc..
 
-**Note**: Before you take the time to open a pull request, please open an issue first to open the floor for discussion.
+The following are the general rules for contributing code:
+  * Every function, struct, traits, etc. no matter how trivial, should be documented in `cargo doc` fashion.
+  * When adding or amending a new feature and if warranted, the `usage` as well as the `documentation` section of the README should be updated appropriately.
 
+**Note**: Before you take the time to open a pull request, please open an issue first to open the floor for discussion.

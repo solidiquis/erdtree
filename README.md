@@ -42,6 +42,9 @@ You can think of `erdtree` as a combination of `du`, `tree`, `find`, and `ls`.
   - [Redirecting output and colorization](#redirecting-output-and-colorization)
   - [Parallelism](#parallelism)
   - [Completions](#completions)
+* [Comparisons against similar programs](#comparisons-against-similar-programs)
+* [Rules for contributing](#rules-for-contributing)
+* [Security policy](#security-policy)
 * [Questions you might have](#questions-you-might-have)
 
 ## Usage
@@ -453,6 +456,44 @@ For empirical data on the subject checkout [this article](https://pkolaczk.githu
 $ et --completions zsh > ~/.oh-my-zsh/completions/_et
 $ source ~/.zshrc
 ```
+
+## Rules for contributing
+
+For rules on how to contribute please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Security policy
+
+For information regarding `erdtree`'s security policy and how to report a security vulnerability please refer to [SECURITY_POLICY.md](SECURITY.md)
+
+## Comparisons against similar programs
+
+### [exa](https://github.com/ogham/exa)
+
+`exa` and `erdtree` are similar in that they both have tree-views and display information about file-permissions.
+
+As it stands, however, `exa` [does not provide information about the disk usages of directories[(https://github.com/ogham/exa/issues/91) which makes sorting files by
+size a little dubious.
+
+The advantage `exa` has over `erdtree`, however, is in the fact that `exa` is much more comprehensive as an `ls` replacement. `erdtree`
+does not share this goal.
+
+Both tools are complimentary to one another and it is encouraged that you have both in your toolkit.
+
+### [dua](https://github.com/Byron/dua-cli)
+
+`dua` is a fantastic interactive disk usage tool that serves as a modern alternative to
+[ncdu](https://en.wikipedia.org/wiki/Ncdu). If you're in the mood for something interactive and solely focused on disk usage then `dua` might suit you more.
+If you're interested in file permissions and doing quick static analysis of your disk usage without spinning up an entire interactive UI then perhaps consider `erdtree`.
+
+### [dust](https://github.com/bootandy/dust)
+
+`dust` is another fantastic tool that is closer in geneology to the traditional `du` command. If you're strictly looking for
+a modern replace to `du` then `dust` is a great choice.
+
+### [fd](https://github.com/sharkdp/fd)
+
+`fd` is much more comprehensive as a general finder tool, offering itself as a modern replacement to `find`. If you're looking for more granularity in your ability to search beyond just globbing, regular
+expressions, and the three basic file types (files, directories, and symlinks) then `fd` is the optimal choice.
 
 ## Questions you might have
 
