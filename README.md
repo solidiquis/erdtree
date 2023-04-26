@@ -5,7 +5,7 @@
 [![Packaging status](https://repology.org/badge/tiny-repos/erdtree.svg)](https://repology.org/project/erdtree/versions)
 [![Crates.io](https://img.shields.io/crates/d/erdtree)](https://crates.io/crates/erdtree)
 
-*Erdtree* is a modern, cross-platform, and multi-threaded filesystem and disk-usage analysis tool. The following are some feature highlights:
+`erdtree` is a modern, cross-platform, and multi-threaded filesystem and disk-usage analysis tool. The following are some feature highlights:
 * Respects hidden file and gitignore rules by default.
 * Supports regular expressions and glob based searching by file-type.
 * Supports Unix-based file permissions (Unix systems only).
