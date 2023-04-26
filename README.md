@@ -485,8 +485,8 @@ For information regarding `erdtree`'s security policy and how to report a securi
 ## Comparisons against similar programs
 
 It goes without saying that the following programs are all amazing in their own right and were highly influential in `erdtree`'s development. While each of the following are highly
-specialized in acting as modern replacements for the more traditional POSIX commands that we all know and love, `erdtree` aims to take bits and pieces of
-them and their ancestors that people might use most frequently assembling them into a unified highly practical tool.
+specialized in acting as modern replacements for the more traditional Unix commands that we all know and love, `erdtree` aims to take bits and pieces of
+them and their ancestors that people might use most frequently and assembles them into a unified highly practical tool.
 
 No case will be made as to why `erdtree` should be preferred over X, Y, or Z, but because of some notable similarities with the following programs it is worth a brief
 comparison.
