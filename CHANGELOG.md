@@ -19,6 +19,9 @@ arguments were either renamed, removed, or fundamentally modified. The following
 - https://github.com/solidiquis/erdtree/pull/139
 - https://github.com/solidiquis/erdtree/pull/131
 
+Perhaps the most important change to note is that the compiled binary has been renamed from `et` to `erd` in order to address the following issue
+regarding name collisions with other programs: https://github.com/solidiquis/erdtree/issues/23
+
 For a more comprehensive overview of `erdtree` v2.0.0, please refer to the [README.md](README.md).
 
 **Full Changelog**: https://github.com/solidiquis/erdtree/compare/v1.8.1...v2.0.0
