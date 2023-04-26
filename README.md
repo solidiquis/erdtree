@@ -223,13 +223,13 @@ Disk usage is reported in total amount of bytes by default but can output in a h
 #### Regular format:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/non_human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/inhuman_readable.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human-readable format:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/human.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/h_readable.png?raw=true" alt="failed to load picture" />
 </p>
 
 Additionally, disk usage is reported using binary prefixes by default (e.g. `1 KiB = 1024 B`) but SI prefixes can be used as well (`1 KB = 1000 B`) using:
@@ -260,12 +260,12 @@ Lastly, if you'd like to omit disk usage from the output:
 For a more traditional `du`-like view without the ASCII tree, use `-F, --flat`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_inhuman.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/inhuman_readable_flat.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human readable disk usage
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_human_readable.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/human_readable_flat.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human readable and long view
