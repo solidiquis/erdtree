@@ -43,7 +43,7 @@ pub enum Coloring {
     None,
 
     #[default]
-    Colored,
+    Auto,
 
     Forced,
 }
@@ -289,9 +289,9 @@ impl Context {
     /// If `--force-color` is `true` then this will always evaluate to `false`.
     pub const fn no_color(&self) -> bool {
         match self.coloring {
-            Coloring::Colored if !self.stdout_is_tty => true,
+            Coloring::Auto if !self.stdout_is_tty => true,
             Coloring::None => true,
-            Coloring::Colored | Coloring::Forced => false,
+            Coloring::Auto | Coloring::Forced => false,
         }
     }
 

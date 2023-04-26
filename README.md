@@ -62,7 +62,7 @@ Arguments:
   [DIR]  Directory to traverse; defaults to current working directory
 
 Options:
-  -C,                              Output Coloring [default: colored] [possible values: none, colored, forced]
+  -C, --color                      Output Coloring [default: auto] [possible values: none, auto, forced]
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
   -f, --follow                     Follow symlinks
   -F, --flat                       Print disk usage information in plain format without the ASCII tree
@@ -431,7 +431,7 @@ Colorization is also turned off if the output is redirected to something that is
 preserve the colors as in the case of piping) the following may be used:
 
 ```
--C, --force-color                Turn on colorization always
+-C, forced                Turn on colorization always
 ```
 
 <p align="center">
