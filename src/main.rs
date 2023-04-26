@@ -23,11 +23,14 @@ use clap::CommandFactory;
 use render::{
     context::Context,
     tree::{
-        display::{Regular, Report},
+        display::{Flat, Inverted, Regular},
         Tree,
     },
 };
 use std::{io::stdout, process::ExitCode};
+
+/// Operations to wrangle ANSI escaped strings.
+mod ansi;
 
 /// Filesystem operations.
 mod fs;
@@ -38,10 +41,10 @@ mod icons;
 /// Tools and operations to display root-directory.
 mod render;
 
-/// Determine if standard streams are connected to a tty.
+/// Utilities relating to interacting with tty properties.
 mod tty;
 
-/// Common utilities.
+/// Common utilities across all modules.
 mod utils;
 
 fn main() -> ExitCode {
@@ -61,12 +64,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    if ctx.report {
-        let tree = Tree::<Report>::init(ctx)?;
+    render::styles::init(ctx.no_color());
+
+    if ctx.flat {
+        let tree = Tree::<Flat>::try_init(ctx)?;
+        println!("{tree}");
+    } else if ctx.inverted {
+        let tree = Tree::<Inverted>::try_init(ctx)?;
         println!("{tree}");
     } else {
-        render::styles::init(ctx.no_color());
-        let tree = Tree::<Regular>::init(ctx)?;
+        let tree = Tree::<Regular>::try_init(ctx)?;
         println!("{tree}");
     }
 

@@ -4,7 +4,17 @@ use strip_ansi_escapes::strip as strip_ansi_escapes;
 
 pub fn run_cmd(args: &[&str]) -> String {
     let mut cmd = Command::new("cargo");
-    cmd.args(["run", "--", "--threads", "1", "--no-config"]);
+    cmd.args([
+        "run",
+        "--",
+        "--threads",
+        "1",
+        "--disk-usage",
+        "logical",
+        "--sort",
+        "name",
+        "--no-config",
+    ]);
 
     for arg in args {
         cmd.arg(arg);

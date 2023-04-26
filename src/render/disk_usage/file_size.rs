@@ -1,8 +1,12 @@
 use super::units::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
-use crate::{render::styles::get_du_theme, Context};
+use crate::{
+    render::styles::{self, get_du_theme, get_placeholder_style},
+    utils, Context,
+};
+use ansi_term::Style;
 use clap::ValueEnum;
 use filesize::PathExt;
-use std::{fs::Metadata, ops::AddAssign, path::Path};
+use std::{borrow::Cow, fs::Metadata, ops::AddAssign, path::Path};
 
 /// Represents either logical or physical size and handles presentation.
 #[derive(Clone, Debug)]
@@ -11,23 +15,27 @@ pub struct FileSize {
     #[allow(dead_code)]
     disk_usage: DiskUsage,
     prefix_kind: PrefixKind,
-    scale: usize,
-}
+    human_readable: bool,
+    unpadded_display: Option<String>,
 
-/// Disk usage information in human readable format
-pub struct HumanReadableComponents {
-    pub size: String,
-    pub unit: String,
+    // Precomputed style to use
+    style: Option<&'static Style>,
+
+    // Does this file size use `B` without a prefix?
+    uses_base_unit: Option<()>,
+
+    // How many columns are required for the size (without prefix).
+    pub size_columns: usize,
 }
 
 /// Determines between logical or physical size for display
 #[derive(Copy, Clone, Debug, ValueEnum, Default)]
 pub enum DiskUsage {
     /// How many bytes does a file contain
-    #[default]
     Logical,
 
     /// How much actual space on disk, taking into account sparse files and compression.
+    #[default]
     Physical,
 }
 
@@ -36,21 +44,25 @@ impl FileSize {
     pub const fn new(
         bytes: u64,
         disk_usage: DiskUsage,
+        human_readable: bool,
         prefix_kind: PrefixKind,
-        scale: usize,
     ) -> Self {
         Self {
             bytes,
             disk_usage,
+            human_readable,
             prefix_kind,
-            scale,
+            unpadded_display: None,
+            style: None,
+            uses_base_unit: None,
+            size_columns: 0,
         }
     }
 
     /// Computes the logical size of a file given its [Metadata].
-    pub fn logical(md: &Metadata, prefix_kind: PrefixKind, scale: usize) -> Self {
+    pub fn logical(md: &Metadata, prefix_kind: PrefixKind, human_readable: bool) -> Self {
         let bytes = md.len();
-        Self::new(bytes, DiskUsage::Logical, prefix_kind, scale)
+        Self::new(bytes, DiskUsage::Logical, human_readable, prefix_kind)
     }
 
     /// Computes the physical size of a file given its [Path] and [Metadata].
@@ -58,134 +70,121 @@ impl FileSize {
         path: &Path,
         md: &Metadata,
         prefix_kind: PrefixKind,
-        scale: usize,
+        human_readable: bool,
     ) -> Option<Self> {
         path.size_on_disk_fast(md)
             .ok()
-            .map(|bytes| Self::new(bytes, DiskUsage::Physical, prefix_kind, scale))
+            .map(|bytes| Self::new(bytes, DiskUsage::Physical, human_readable, prefix_kind))
     }
 
-    /// Transforms the `FileSize` into a string.
-    /// `Display` / `ToString` traits not used in order to have control over alignment.
-    ///
-    /// `align` false makes strings such as
-    /// `123.45 KiB`
-    /// `1.23 MiB`
-    /// `12 B`
-    ///
-    /// `align` true makes strings such as
-    /// `123.45 KiB`
-    /// `  1.23 MiB`
-    /// `    12   B`
-    pub fn format(&self, align: bool) -> String {
-        let du_themes = get_du_theme().ok();
-
-        let HumanReadableComponents { size, unit } = Self::human_readable_components(self);
-        let color = du_themes.and_then(|th| th.get(unit.as_str()));
-
-        match color {
-            Some(col) if align => match self.prefix_kind {
-                PrefixKind::Bin => col
-                    .paint(format!("{size:>len$} {unit:>3}", len = self.scale + 4))
-                    .to_string(),
-                PrefixKind::Si => col
-                    .paint(format!("{size:>len$} {unit:>2}", len = self.scale + 4))
-                    .to_string(),
-            },
-
-            Some(col) => col.paint(format!("{size} {unit}")).to_string(),
-
-            None if align => match self.prefix_kind {
-                PrefixKind::Bin => format!("{size:>len$} {unit:>3}", len = self.scale + 4),
-                PrefixKind::Si => format!("{size:>len$} {unit:>2}", len = self.scale + 4),
-            },
-
-            _ => format!("{size} {unit}"),
-        }
+    pub fn unpadded_display(&self) -> Option<&str> {
+        self.unpadded_display.as_deref()
     }
 
-    /// Returns spaces times the length of a file size, formatted with the given options
-    /// " " * len(123.45 KiB)
-    pub fn empty_string(ctx: &Context) -> String {
-        format!("{:len$}", "", len = Self::empty_string_len(ctx))
-    }
-
-    const fn empty_string_len(ctx: &Context) -> usize {
-        // 3 places before the decimal
-        // 1 for the decimal
-        // ctx.scale after the decimal
-        // 1 space before unit
-        // 2/3 spaces per unit, depending
-        3 + 1
-            + ctx.scale
-            + 1
-            + match ctx.prefix {
-                PrefixKind::Bin => 3,
-                PrefixKind::Si => 2,
-            }
-    }
-
-    /// Returns a tuple of the human readable size and prefix.
-    pub fn human_readable_components(&self) -> HumanReadableComponents {
+    /// Precompute the raw (unpadded) display and sets the number of columns the size (without
+    /// the prefix) will occupy. Also sets the [Style] to use in advance to style the size output.
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    pub fn precompute_unpadded_display(&mut self) {
         let fbytes = self.bytes as f64;
-        let scale = self.scale;
-        let power = u32::try_from(scale).unwrap();
 
-        let (size, unit) = match self.prefix_kind {
-            PrefixKind::Bin => {
-                let unit = BinPrefix::from(fbytes);
-                let base_value = unit.base_value();
-
-                if matches!(unit, BinPrefix::Base) {
-                    (format!("{}", self.bytes), format!("{unit}"))
-                } else {
-                    // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if self.bytes <= 10_u64.pow(power) {
-                        (format!("{}", self.bytes), format!("{}", BinPrefix::Base))
-                    } else {
-                        (
-                            format!("{:.scale$}", fbytes / (base_value as f64)),
-                            format!("{unit}"),
-                        )
-                    }
-                }
-            }
-
+        match self.prefix_kind {
             PrefixKind::Si => {
                 let unit = SiPrefix::from(fbytes);
                 let base_value = unit.base_value();
 
-                if matches!(unit, SiPrefix::Base) {
-                    (format!("{}", self.bytes), format!("{unit}"))
+                if !self.human_readable {
+                    self.unpadded_display = Some(format!("{} B", self.bytes));
+                    self.size_columns = utils::num_integral(self.bytes);
+                } else if matches!(unit, SiPrefix::Base) {
+                    self.unpadded_display = Some(format!("{} {unit}", self.bytes));
+                    self.size_columns = utils::num_integral(self.bytes);
+                    self.uses_base_unit = Some(());
                 } else {
-                    // Checks if the `scale` provided results in a value that implies fractional bytes.
-                    if 10_u64.pow(power) >= base_value {
-                        (format!("{}", self.bytes), format!("{}", SiPrefix::Base))
-                    } else {
-                        (
-                            format!("{:.scale$}", fbytes / (base_value as f64)),
-                            format!("{unit}"),
-                        )
-                    }
+                    let size = fbytes / (base_value as f64);
+                    self.unpadded_display = Some(format!("{size:.2} {unit}"));
+                    self.size_columns = utils::num_integral((size * 100.0).floor() as u64) + 1;
+                }
+
+                if let Ok(theme) = get_du_theme() {
+                    let style = theme.get(format!("{unit}").as_str());
+                    self.style = style;
                 }
             }
+            PrefixKind::Bin => {
+                let unit = BinPrefix::from(fbytes);
+                let base_value = unit.base_value();
+
+                if !self.human_readable {
+                    self.unpadded_display = Some(format!("{} B", self.bytes));
+                    self.size_columns = utils::num_integral(self.bytes);
+                } else if matches!(unit, BinPrefix::Base) {
+                    self.unpadded_display = Some(format!("{} {unit}", self.bytes));
+                    self.size_columns = utils::num_integral(self.bytes);
+                    self.uses_base_unit = Some(());
+                } else {
+                    let size = fbytes / (base_value as f64);
+                    self.unpadded_display = Some(format!("{size:.2} {unit}"));
+                    self.size_columns = utils::num_integral((size * 100.0).floor() as u64) + 1;
+                }
+
+                if let Ok(theme) = get_du_theme() {
+                    let style = theme.get(format!("{unit}").as_str());
+                    self.style = style;
+                }
+            }
+        }
+    }
+
+    /// Formats [FileSize] for presentation.
+    pub fn format(&self, max_size_width: usize, max_size_unit_width: usize) -> String {
+        let out = if self.human_readable {
+            let mut precomputed = self.unpadded_display().unwrap().split(' ');
+            let size = precomputed.next().unwrap();
+            let unit = precomputed.next().unwrap();
+
+            if self.uses_base_unit.is_some() {
+                format!("{:>max_size_width$} {unit:>max_size_unit_width$}", self.bytes)
+            } else {
+                format!("{size:>max_size_width$} {unit:>max_size_unit_width$}")
+            }
+        } else {
+            format!("{:<max_size_width$} B", self.bytes)
         };
 
-        HumanReadableComponents { size, unit }
-    }
-}
-
-impl AddAssign<u64> for FileSize {
-    fn add_assign(&mut self, rhs: u64) {
-        self.bytes += rhs;
-    }
-}
-
-impl Default for HumanReadableComponents {
-    fn default() -> Self {
-        Self {
-            size: String::from("0"),
-            unit: String::from("B"),
+        if let Some(style) = self.style {
+            style.paint(out).to_string()
+        } else {
+            out
         }
+    }
+
+    /// Returns a placeholder or empty string.
+    pub fn placeholder(ctx: &Context) -> String {
+        if ctx.suppress_size || ctx.max_size_width == 0 {
+            return String::new();
+        }
+
+        let placeholder = get_placeholder_style().map_or_else(
+            |_| Cow::from(styles::PLACEHOLDER),
+            |style| Cow::from(style.paint(styles::PLACEHOLDER).to_string()),
+        );
+
+        let placeholder_padding = placeholder.len()
+            + ctx.max_size_width
+            + match ctx.unit {
+                PrefixKind::Si if ctx.human => 2,
+                PrefixKind::Bin if ctx.human => 3,
+                PrefixKind::Si => 0,
+                PrefixKind::Bin => 1,
+            };
+
+        format!("{placeholder:>placeholder_padding$}")
+    }
+}
+
+impl AddAssign<&Self> for FileSize {
+    fn add_assign(&mut self, rhs: &Self) {
+        self.bytes += rhs.bytes;
     }
 }

@@ -19,12 +19,17 @@ mod test {
             .canonicalize()
             .map(|c| c.to_string_lossy().into_owned())?;
 
+        let out = super::utils::run_cmd(&["--sort", "name", "--follow", &link_canonical]);
+
+        println!("{}", out);
+
         assert_eq!(
-            super::utils::run_cmd(&["--sort", "name", "--follow-links", &link_canonical]),
+            out,
             indoc!(
-                "
-                the_yellow_king (143 B)
-                └─ cassildas_song.md (143 B)"
+                "143 B ┌─ cassildas_song.md
+                143 B the_yellow_king
+
+                1 file"
             ),
             "Failed to print symlink"
         );

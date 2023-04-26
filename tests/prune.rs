@@ -5,32 +5,18 @@ mod utils;
 #[test]
 fn prune() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "name", "--glob", "*.txt", "--prune", "tests/data"]),
+        utils::run_cmd(&["--glob", "--pattern", "*.txt", "--prune", "tests/data"]),
         indoc!(
-            "
-            data (1.07 KiB)
-            ├─ dream_cycle (308 B)
-            │  └─ polaris.txt (308 B)
-            ├─ lipsum (446 B)
-            │  └─ lipsum.txt (446 B)
-            ├─ necronomicon.txt (83 B)
-            ├─ nemesis.txt (161 B)
-            └─ nylarlathotep.txt (100 B)"
+            "100  B ┌─ nylarlathotep.txt
+            161  B ├─ nemesis.txt
+            83   B ├─ necronomicon.txt
+            446  B │  ┌─ lipsum.txt
+            446  B ├─ lipsum
+            308  B │  ┌─ polaris.txt
+            308  B ├─ dream_cycle
+            1098 B data
+
+            2 directories, 5 files"
         )
     );
-
-    assert_eq!(
-        utils::run_cmd(&[
-            "--sort",
-            "name",
-            "--glob",
-            "something_that_does_not_exist.txt",
-            "--prune",
-            "tests/data"
-        ]),
-        indoc!(
-            "
-            data"
-        )
-    )
 }
