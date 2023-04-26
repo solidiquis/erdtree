@@ -62,7 +62,7 @@ Arguments:
   [DIR]  Directory to traverse; defaults to current working directory
 
 Options:
-  -C,                              Ouput Coloring [default: colored] [possible values: none, colored, forced]
+  -C,                              Output Coloring [default: colored] [possible values: none, colored, forced]
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
   -f, --follow                     Follow symlinks
   -F, --flat                       Print disk usage information in plain format without the ASCII tree
