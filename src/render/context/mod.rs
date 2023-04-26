@@ -38,6 +38,15 @@ pub mod time;
 #[cfg(test)]
 mod test;
 
+#[derive(Clone, Copy, Debug, clap::ValueEnum, PartialEq, Eq, Default)]
+pub enum Coloring {
+    None,
+
+    #[default]
+    Colored,
+
+    Forced,
+}
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
@@ -48,9 +57,14 @@ pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Turn on colorization always
-    #[arg(short = 'C', long)]
-    pub force_color: bool,
+    /// Coloring of the Output:
+    /// Colored: (Default)
+    ///
+    /// Forced: Turn on colorization always
+    ///
+    /// None: Print plainly without ANSI escapes
+    #[arg(short = 'C', long, value_enum, default_value_t = Coloring::default())]
+    pub coloring: Coloring,
 
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
@@ -151,10 +165,6 @@ pub struct Context {
     #[arg(long)]
     pub inverted: bool,
 
-    /// Print plainly without ANSI escapes
-    #[arg(long)]
-    pub no_color: bool,
-
     /// Don't read configuration file
     #[arg(long)]
     pub no_config: bool,
@@ -205,7 +215,6 @@ pub struct Context {
     #[clap(skip)]
     pub window_width: Option<usize>,
 }
-
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
@@ -279,11 +288,11 @@ impl Context {
     ///
     /// If `--force-color` is `true` then this will always evaluate to `false`.
     pub const fn no_color(&self) -> bool {
-        if self.force_color {
-            return false;
+        match self.coloring {
+            Coloring::Colored if !self.stdout_is_tty => true,
+            Coloring::None => true,
+            Coloring::Colored | Coloring::Forced => false,
         }
-
-        self.no_color || !self.stdout_is_tty
     }
 
     /// Returns [Path] of the root directory to be traversed.
@@ -310,7 +319,7 @@ impl Context {
         self.time.unwrap_or_default()
     }
 
-    /// Which filetype to filter on; defaults to regular file.
+    /// Which `FileType` to filter on; defaults to regular file.
     pub fn file_type(&self) -> file::Type {
         self.file_type.unwrap_or_default()
     }
@@ -346,19 +355,21 @@ impl Context {
 
         let file_type = self.file_type();
 
-        match file_type {
-            file::Type::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
-                let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
+        Ok(match file_type {
+            file::Type::Dir => Box::new(move |dir_entry: &DirEntry| {
+                {
+                    let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
-                if is_dir {
-                    // Problem right here.
-                    return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
+                    if is_dir {
+                        // Problem right here.
+                        return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
+                    }
+
+                    Self::ancestor_regex_match(dir_entry.path(), &re, 1)
                 }
+            }),
 
-                Self::ancestor_regex_match(dir_entry.path(), &re, 1)
-            })),
-
-            _ => Ok(Box::new(move |dir_entry: &DirEntry| {
+            _ => Box::new(move |dir_entry: &DirEntry| {
                 let entry_type = dir_entry.file_type();
                 let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
 
@@ -367,7 +378,9 @@ impl Context {
                 }
 
                 match file_type {
-                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
+                        return false
+                    }
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
@@ -375,8 +388,8 @@ impl Context {
                 }
                 let file_name = dir_entry.file_name().to_string_lossy();
                 re.is_match(&file_name)
-            })),
-        }
+            }),
+        })
     }
 
     /// Predicate used for filtering via globs and file-types.
@@ -437,7 +450,9 @@ impl Context {
                 }
 
                 match file_type {
-                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
+                        return false
+                    }
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
