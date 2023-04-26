@@ -307,7 +307,7 @@ Icons are an opt-in feature because for icons to render properly it is required 
 If your icons look something like this:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icons.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icon.png?raw=true" alt="failed to load png" />
 </p>
 
 this means that the font you are using doesn't include the relevant glyphs. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
