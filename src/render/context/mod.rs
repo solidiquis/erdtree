@@ -357,16 +357,12 @@ impl Context {
 
         Ok(match file_type {
             file::Type::Dir => Box::new(move |dir_entry: &DirEntry| {
-                {
-                    let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
-
-                    if is_dir {
-                        // Problem right here.
-                        return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
-                    }
-
-                    Self::ancestor_regex_match(dir_entry.path(), &re, 1)
+                let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
+                if is_dir {
+                    return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
                 }
+
+                Self::ancestor_regex_match(dir_entry.path(), &re, 1)
             }),
 
             _ => Box::new(move |dir_entry: &DirEntry| {
