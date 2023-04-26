@@ -43,6 +43,10 @@ You can think of `erdtree` as a combination of `du`, `tree`, `find`, and `ls`.
   - [Parallelism](#parallelism)
   - [Completions](#completions)
 * [Comparisons against similar programs](#comparisons-against-similar-programs)
+  - [exa](#exa)
+  - [dua](#dua)
+  - [dust](#dust)
+  - [fd](#fd)
 * [Rules for contributing](#rules-for-contributing)
 * [Security policy](#security-policy)
 * [Questions you might have](#questions-you-might-have)
@@ -466,6 +470,13 @@ For rules on how to contribute please refer to [CONTRIBUTING.md](CONTRIBUTING.md
 For information regarding `erdtree`'s security policy and how to report a security vulnerability please refer to [SECURITY_POLICY.md](SECURITY.md)
 
 ## Comparisons against similar programs
+
+It goes without saying that the following programs are all amazing in their own right and were highly influential in `erdtree`'s development. While each of the following are highly
+specialized in acting as modern replacements for the more traditional POSIX commands that we all know and love, `erdtree` aims to take bits and pieces of
+them and their ancestors that people might use most frequently assembling them into a unified highly practical tool.
+
+No case will be made as to why `erdtree` should be preferred over X, Y, or Z, but because of some notable similarities with the following programs it is worth a brief
+comparison.
 
 ### [exa](https://github.com/ogham/exa)
 
