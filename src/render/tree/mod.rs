@@ -234,7 +234,11 @@ where
 
             let node = tree[index].get();
 
+            #[cfg(unix)]
             Self::update_column_properties(column_properties, node, ctx.long);
+
+            #[cfg(not(unix))]
+            Self::update_column_properties(column_properties, node);
 
             // If a hard-link is already accounted for then don't increment parent dir size.
             if let Some(inode) = node.inode() {
@@ -257,7 +261,12 @@ where
         }
 
         let dir = tree[current_node_id].get();
+
+        #[cfg(unix)]
         Self::update_column_properties(column_properties, dir, ctx.long);
+
+        #[cfg(not(unix))]
+        Self::update_column_properties(column_properties, dir);
 
         children.sort_by(|id_a, id_b| {
             let node_a = tree[*id_a].get();
@@ -327,6 +336,7 @@ where
     }
 
     /// Updates [ColumnProperties] with provided [Node].
+    #[cfg(unix)]
     fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, long: bool) {
         if let Some(file_size) = node.file_size() {
             let file_size_cols = file_size.size_columns;
@@ -336,32 +346,41 @@ where
             }
         }
 
-        #[cfg(unix)]
-        {
-            if long {
-                if let Some(ino) = node.ino() {
-                    let ino_num_integral = utils::num_integral(ino);
+        if long {
+            if let Some(ino) = node.ino() {
+                let ino_num_integral = utils::num_integral(ino);
 
-                    if ino_num_integral > col_props.max_ino_width {
-                        col_props.max_ino_width = ino_num_integral;
-                    }
+                if ino_num_integral > col_props.max_ino_width {
+                    col_props.max_ino_width = ino_num_integral;
                 }
+            }
 
-                if let Some(nlink) = node.nlink() {
-                    let nlink_num_integral = utils::num_integral(nlink);
+            if let Some(nlink) = node.nlink() {
+                let nlink_num_integral = utils::num_integral(nlink);
 
-                    if nlink_num_integral > col_props.max_nlink_width {
-                        col_props.max_nlink_width = nlink_num_integral;
-                    }
+                if nlink_num_integral > col_props.max_nlink_width {
+                    col_props.max_nlink_width = nlink_num_integral;
                 }
+            }
 
-                if let Some(blocks) = node.blocks() {
-                    let blocks_num_integral = utils::num_integral(blocks);
+            if let Some(blocks) = node.blocks() {
+                let blocks_num_integral = utils::num_integral(blocks);
 
-                    if blocks_num_integral > col_props.max_block_width {
-                        col_props.max_block_width = blocks_num_integral;
-                    }
+                if blocks_num_integral > col_props.max_block_width {
+                    col_props.max_block_width = blocks_num_integral;
                 }
+            }
+        }
+    }
+
+    /// Updates [ColumnProperties] with provided [Node].
+    #[cfg(not(unix))]
+    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node) {
+        if let Some(file_size) = node.file_size() {
+            let file_size_cols = file_size.size_columns;
+
+            if file_size_cols > col_props.max_size_width {
+                col_props.max_size_width = file_size_cols;
             }
         }
     }
