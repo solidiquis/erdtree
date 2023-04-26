@@ -2,8 +2,7 @@ use std::fmt::{self, Display};
 
 /// The set of permissions for a particular class i.e. user, group, or other.
 #[derive(Debug)]
-#[allow(clippy::module_name_repetitions)]
-pub struct ClassPermissions {
+pub struct Permissions {
     class: Class,
     attr: Option<Attribute>,
     pub(super) triad: PermissionsTriad,
@@ -42,7 +41,7 @@ pub enum PermissionsTriad {
 
 /// All `permissions_mask` arguments represents the bits of `st_mode` which excludes the file-type
 /// and the setuid, setgid, and sticky bit.
-impl ClassPermissions {
+impl Permissions {
     /// Computes user permissions.
     pub fn user_permissions_from(st_mode: u32) -> Self {
         let read = Self::enabled(st_mode, libc::S_IRUSR);
@@ -111,8 +110,8 @@ impl ClassPermissions {
     }
 }
 
-/// The symbolic representation of a [PermissionsTriad].
-impl Display for ClassPermissions {
+/// The symbolic representation of a [`PermissionsTriad`].
+impl Display for Permissions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.class {
             Class::Other if self.attr_is_sticky() => match self.triad {

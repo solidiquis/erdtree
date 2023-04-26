@@ -1,4 +1,4 @@
-use crate::render::context::sort::SortType;
+use crate::render::context::sort;
 use clap::{CommandFactory, FromArgMatches};
 
 use super::{config, Context};
@@ -17,7 +17,7 @@ fn config() {
 
     assert_eq!(
         sort,
-        SortType::Size,
+        sort::Type::Size,
         "Failed to properly read 'sort' from config"
     );
 

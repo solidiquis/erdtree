@@ -1,5 +1,5 @@
 use super::Node;
-use crate::render::context::{sort::SortType, Context};
+use crate::render::context::{sort, Context};
 use std::cmp::Ordering;
 
 /// Comparator type used to sort [Node]s.
@@ -17,11 +17,11 @@ pub fn comparator(ctx: &Context) -> Box<NodeComparator> {
 }
 
 /// Grabs the comparator for two non-dir type [Node]s.
-fn base_comparator(sort_type: SortType) -> Box<NodeComparator> {
+fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
     match sort_type {
-        SortType::Name => Box::new(name_comparator),
-        SortType::Size => Box::new(size_comparator),
-        SortType::SizeRev => Box::new(size_rev_comparator),
+        sort::Type::Name => Box::new(name_comparator),
+        sort::Type::Size => Box::new(size_comparator),
+        sort::Type::SizeRev => Box::new(size_rev_comparator),
     }
 }
 

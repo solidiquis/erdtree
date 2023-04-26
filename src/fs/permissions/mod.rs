@@ -1,4 +1,3 @@
-use class::ClassPermissions;
 use error::Error;
 use file_type::FileType;
 use std::{
@@ -21,10 +20,10 @@ mod test;
 
 impl SymbolicNotation for std::fs::Permissions {}
 
-/// Trait that is used to extend [std::fs::Permissions] behavior such that it allows for `mode` to
+/// Trait that is used to extend [`std::fs::Permissions`] behavior such that it allows for `mode` to
 /// be expressed in Unix's symbolic notation for file permissions.
 pub trait SymbolicNotation: PermissionsExt {
-    /// Attempts to return a [FileMode] which implements [Display] allowing it to be presented in
+    /// Attempts to return a [`FileMode`] which implements [Display] allowing it to be presented in
     /// symbolic notation for file permissions.
     fn try_mode_symbolic_notation(&self) -> Result<FileMode, Error> {
         let mode = self.mode();
@@ -32,25 +31,25 @@ pub trait SymbolicNotation: PermissionsExt {
     }
 }
 
-/// A struct which holds information about the permissions of a particular file. [FileMode]
+/// A struct which holds information about the permissions of a particular file. [`FileMode`]
 /// implements [Display] which allows it to be conveniently presented in symbolic notation when
 /// expressing file permissions.
 pub struct FileMode {
     pub st_mode: u32,
     file_type: FileType,
-    user_permissions: ClassPermissions,
-    group_permissions: ClassPermissions,
-    other_permissions: ClassPermissions,
+    user_permissions: class::Permissions,
+    group_permissions: class::Permissions,
+    other_permissions: class::Permissions,
 }
 
 impl FileMode {
-    /// Constructor for [FileMode].
+    /// Constructor for [`FileMode`].
     pub const fn new(
         st_mode: u32,
         file_type: FileType,
-        user_permissions: ClassPermissions,
-        group_permissions: ClassPermissions,
-        other_permissions: ClassPermissions,
+        user_permissions: class::Permissions,
+        group_permissions: class::Permissions,
+        other_permissions: class::Permissions,
     ) -> Self {
         Self {
             st_mode,
@@ -66,23 +65,23 @@ impl FileMode {
         &self.file_type
     }
 
-    /// Returns a reference to a [ClassPermissions] which represents the permissions of the user class.
-    pub const fn user_permissions(&self) -> &ClassPermissions {
+    /// Returns a reference to a [`class::Permissions`] which represents the permissions of the user class.
+    pub const fn user_permissions(&self) -> &class::Permissions {
         &self.user_permissions
     }
 
-    /// Returns a reference to a [ClassPermissions] which represents the permissions of the group class.
-    pub const fn group_permissions(&self) -> &ClassPermissions {
+    /// Returns a reference to a [`class::Permissions`] which represents the permissions of the group class.
+    pub const fn group_permissions(&self) -> &class::Permissions {
         &self.group_permissions
     }
 
-    /// Returns a reference to a [ClassPermissions] which represents the permissions of the other class.
-    pub const fn other_permissions(&self) -> &ClassPermissions {
+    /// Returns a reference to a [`class::Permissions`] which represents the permissions of the other class.
+    pub const fn other_permissions(&self) -> &class::Permissions {
         &self.other_permissions
     }
 }
 
-/// For representing [FileMode] in symbolic notation.
+/// For representing [`FileMode`] in symbolic notation.
 impl Display for FileMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let file_iden = self.file_type().identifier();
@@ -100,20 +99,20 @@ impl Display for FileMode {
 /// For the octal representation of permissions
 impl Octal for FileMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let modes_mask = self.st_mode & !u32::from(libc::S_IFMT);
+        let modes_mask = self.st_mode & !libc::S_IFMT;
         fmt::Octal::fmt(&modes_mask, f)
     }
 }
 
-/// The argument `st_mode` is meant to come from the `mode` method of [std::fs::Permissions].
+/// The argument `st_mode` is meant to come from the `mode` method of [`std::fs::Permissions`].
 impl TryFrom<u32> for FileMode {
     type Error = Error;
 
     fn try_from(st_mode: u32) -> Result<Self, Self::Error> {
         let file_type = FileType::try_from(st_mode)?;
-        let user_permissions = ClassPermissions::user_permissions_from(st_mode);
-        let group_permissions = ClassPermissions::group_permissions_from(st_mode);
-        let other_permissions = ClassPermissions::other_permissions_from(st_mode);
+        let user_permissions = class::Permissions::user_permissions_from(st_mode);
+        let group_permissions = class::Permissions::group_permissions_from(st_mode);
+        let other_permissions = class::Permissions::other_permissions_from(st_mode);
 
         Ok(Self::new(
             st_mode,
