@@ -3,6 +3,26 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.0] - 2023-04-26
+
+## What's Changed
+
+`erdtree` v2.0.0 introduces numerous breaking changes as well as a plethora of new features. Most breaking changes are predicated on the fact that
+arguments were either renamed, removed, or fundamentally modified. The following is a list of all the PRs that document these changes and feature additions:
+
+- https://github.com/solidiquis/erdtree/pull/130
+- https://github.com/solidiquis/erdtree/pull/132
+- https://github.com/solidiquis/erdtree/pull/135
+- https://github.com/solidiquis/erdtree/pull/136
+- https://github.com/solidiquis/erdtree/pull/137
+- https://github.com/solidiquis/erdtree/pull/138
+- https://github.com/solidiquis/erdtree/pull/139
+- https://github.com/solidiquis/erdtree/pull/131
+
+For a more comprehensive overview of `erdtree` v2.0.0, please refer to the [README.md](README.md).
+
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/v1.8.1...v2.0.0
+
 ## [1.8.1] - 2023-04-11
 
 ## What's Changed
