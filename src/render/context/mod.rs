@@ -38,13 +38,17 @@ pub mod time;
 #[cfg(test)]
 mod test;
 
+
 #[derive(Clone, Copy, Debug, clap::ValueEnum, PartialEq, Eq, Default)]
 pub enum Coloring {
+    /// Print plainly without ANSI escapes
     None,
 
+    /// Default
     #[default]
     Auto,
 
+    /// Turn on colorization always
     Forced,
 }
 /// Defines the CLI.
@@ -57,12 +61,7 @@ pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Coloring of the Output:
-    /// Colored: (Default)
-    ///
-    /// Forced: Turn on colorization always
-    ///
-    /// None: Print plainly without ANSI escapes
+    /// Coloring of the Output
     #[arg(short = 'C', long, value_enum, default_value_t = Coloring::default())]
     pub color: Coloring,
 
