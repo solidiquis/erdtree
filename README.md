@@ -512,7 +512,7 @@ If you're interested in file permissions and doing quick static analysis of your
 ### [dust](https://github.com/bootandy/dust)
 
 `dust` is another fantastic tool that is closer in geneology to the traditional `du` command. If you're strictly looking for
-a modern replace to `du` then `dust` is a great choice.
+a modern replacement to `du` then `dust` is a great choice.
 
 ### [fd](https://github.com/sharkdp/fd)
 
