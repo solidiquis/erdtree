@@ -60,7 +60,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let ctx = Context::init()?;
 
     if let Some(shell) = ctx.completions {
-        clap_complete::generate(shell, &mut Context::command(), "et", &mut stdout().lock());
+        clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout().lock());
         return Ok(());
     }
 
