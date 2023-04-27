@@ -398,11 +398,12 @@ impl TryFrom<&Context> for WalkParallel {
             .threads(ctx.threads);
 
         if ctx.pattern.is_some() {
-            if ctx.glob == context::Glob::None {
-                builder.filter_entry(ctx.regex_predicate()?);
-            } else {
-                builder.filter_entry(ctx.glob_predicate()?);
-            }
+            match ctx.glob {
+                context::Glob::None => builder.filter_entry(ctx.regex_predicate()?),
+                context::Glob::Sensitive | context::Glob::Insensitive => {
+                    builder.filter_entry(ctx.glob_predicate()?)
+                }
+            };
         }
 
         Ok(builder.build_parallel())

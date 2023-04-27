@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn glob() {
     assert_eq!(
-        utils::run_cmd(&["--glob", "--pattern", "*.txt", "tests/data"]),
+        utils::run_cmd(&["--glob", "sensitive", "--pattern", "*.txt", "tests/data"]),
         indoc!(
             "100  B ┌─ nylarlathotep.txt
             161  B ├─ nemesis.txt
@@ -24,7 +24,7 @@ fn glob() {
 #[test]
 fn glob_negative() {
     assert_eq!(
-        utils::run_cmd(&["--glob", "--pattern", "!*.txt", "tests/data"]),
+        utils::run_cmd(&["--glob", "sensitive", "--pattern", "!*.txt", "tests/data"]),
         indoc!(
             "143 B    ┌─ cassildas_song.md
             143 B ┌─ the_yellow_king
@@ -38,7 +38,7 @@ fn glob_negative() {
 #[test]
 fn glob_case_insensitive() {
     assert_eq!(
-        utils::run_cmd(&["--iglob", "--pattern", "*.TXT", "tests/data"]),
+        utils::run_cmd(&["--glob", "insensitive", "--pattern", "*.TXT", "tests/data"]),
         indoc!(
             "100  B ┌─ nylarlathotep.txt
             161  B ├─ nemesis.txt
@@ -59,6 +59,7 @@ fn glob_with_filetype() {
     assert_eq!(
         utils::run_cmd(&[
             "--glob",
+            "sensitive",
             "--pattern",
             "dream*",
             "--file-type",
@@ -80,6 +81,7 @@ fn negated_glob_with_filetype() {
     assert_eq!(
         utils::run_cmd(&[
             "--glob",
+            "sensitive",
             "--pattern",
             "!dream*",
             "--file-type",
@@ -106,6 +108,7 @@ fn negated_glob_with_filetype() {
 fn glob_empty_set_dir() {
     utils::run_cmd(&[
         "--glob",
+        "sensitive",
         "--pattern",
         "*.txt",
         "--file-type",
@@ -117,5 +120,5 @@ fn glob_empty_set_dir() {
 #[test]
 #[should_panic]
 fn glob_empty_set_file() {
-    utils::run_cmd(&["--glob", "--pattern", "*weewoo*", "tests/data"]);
+    utils::run_cmd(&["--glob", "sensitive", "--pattern", "*weewoo*", "tests/data"]);
 }
