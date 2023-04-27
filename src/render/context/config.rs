@@ -55,6 +55,7 @@ fn config_from_config_path() -> Option<String> {
 /// Try to read in config from either one of the following locations:
 /// - `$HOME/.config/erdtree/.erdtreerc`
 /// - `$HOME/.erdtreerc`
+#[cfg(not(windows))]
 fn config_from_home() -> Option<String> {
     let home = env::var_os(HOME).map(PathBuf::from)?;
 
@@ -67,6 +68,19 @@ fn config_from_home() -> Option<String> {
         let config_path = home.join(ERDTREE_CONFIG_NAME);
         fs::read_to_string(config_path).ok()
     })
+}
+
+/// Windows specific: Try to read in config from the following location:
+/// - `%APPDATA%/erdtree/.erdtreerc`
+#[cfg(windows)]
+fn config_from_home() -> Option<String> {
+    let app_data = dirs::config_dir()?;
+
+    let config_path = app_data
+        .join(ERDTREE_DIR)
+        .join(ERDTREE_CONFIG_NAME);
+
+    fs::read_to_string(config_path).ok()
 }
 
 /// Try to read in config from either one of the following locations:

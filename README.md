@@ -168,8 +168,9 @@ If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, yo
 - `$ERDTREE_CONFIG_PATH`
 - `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
 - `$XDG_CONFIG_HOME/.erdtreerc`
-- `$HOME/.config/erdtree/.erdtreerc`
-- `$HOME/.erdtreerc`
+- `$HOME/.config/erdtree/.erdtreerc` (on non-Windows)
+- `$HOME/.erdtreerc` (on non-Windows)
+- `%APPDATA%/erdtree/.erdtreerc` (on Windows only)
 
 The format of a config file is as follows:
 - Every line is an `erdtree` option/argument.
