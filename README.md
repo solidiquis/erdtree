@@ -62,7 +62,7 @@ Arguments:
   [DIR]  Directory to traverse; defaults to current working directory
 
 Options:
-  -C, --force-color                Turn on colorization always
+  -C, --color                      Output Coloring [default: auto] [possible values: none, auto, forced]
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
   -f, --follow                     Follow symlinks
   -F, --flat                       Print disk usage information in plain format without the ASCII tree
@@ -87,7 +87,6 @@ Options:
       --completions <COMPLETIONS>  Print completions for a given shell to stdout [possible values: bash, elvish, fish, powershell, zsh]
       --dirs-only                  Only print directories
       --inverted                   Print tree with the root directory at the topmost position
-      --no-color                   Print plainly without ANSI escapes
       --no-config                  Don't read configuration file
       --suppress-size              Omit disk usage from output
       --truncate                   Truncate output to fit terminal emulator window
@@ -118,13 +117,13 @@ $ cargo install erdtree
 The Windows version relies on some experimental features in order to properly support hard-link detection. If you want to build from `crates.io` you'll first need to install the nightly toolchain before installing `erdtree`:
 
 ```
-$ rustup toolchain install nightly-2023-03-05         
+$ rustup toolchain install nightly-2023-03-05
 ```
 
 Thereafter:
 
 ```
-$ cargo +nightly-2023-03-05 install erdtree                    
+$ cargo +nightly-2023-03-05 install erdtree
 ```
 
 ### Homebrew-core
@@ -424,22 +423,21 @@ In these situations the following may be used:
 ### Redirecting output and colorization
 
 If you wish to force a colorless output the following may be used:
-
 ```
---no-color                   Print plainly without ANSI escapes
+-C none         Print plainly without ANSI escapes
 ```
 
 Colorization is also turned off if the output is redirected to something that is not a tty. If you wish to preserve the ANSI escape sequences (e.g.
 preserve the colors as in the case of piping) the following may be used:
 
 ```
--C, --force-color                Turn on colorization always
+-C, forced                Turn on colorization always
 ```
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/no_color.png?raw=true" alt="failed to load picture" />
 </p>
- 
+
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/force_color.png?raw=true" alt="failed to load picture" />
 </p>
