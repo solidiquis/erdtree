@@ -1,5 +1,7 @@
-use super::styles::error::Error as StyleError;
-use crate::render::context::error::Error as CtxError;
+use crate::{
+    context::error::Error as CtxError,
+    styles::error::Error as StyleError,
+};
 use ignore::Error as IgnoreError;
 use std::io::Error as IoError;
 

@@ -1,4 +1,4 @@
-use crate::render::{
+use crate::{
     styles::{self, ThemesMap},
     tree::Node,
 };

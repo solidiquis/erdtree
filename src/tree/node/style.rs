@@ -5,7 +5,7 @@ use std::{borrow::Cow, ffi::OsStr};
 #[cfg(unix)]
 use crate::{
     fs::permissions::FileMode,
-    render::styles::{get_octal_permissions_style, get_permissions_theme},
+    styles::{get_octal_permissions_style, get_permissions_theme},
 };
 
 impl Node {

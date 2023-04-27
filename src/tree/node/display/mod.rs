@@ -1,6 +1,7 @@
 use crate::{
     ansi::Escaped,
-    render::{context::Context, tree::node::Node},
+    context::Context,
+    tree::node::Node,
 };
 use std::{
     borrow::Cow,

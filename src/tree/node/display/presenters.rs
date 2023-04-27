@@ -1,8 +1,8 @@
-use crate::render::{context::Context, disk_usage::file_size::FileSize, tree::Node};
+use crate::{context::Context, disk_usage::file_size::FileSize, tree::Node};
 use std::borrow::Cow;
 
 #[cfg(unix)]
-use crate::render::{
+use crate::{
     context::time::Stamp,
     styles::{self, error::Error, PLACEHOLDER},
 };

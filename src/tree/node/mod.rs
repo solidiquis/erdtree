@@ -1,12 +1,10 @@
 use crate::{
     fs::inode::Inode,
     icons,
-    render::{
-        context::Context,
-        disk_usage::file_size::{DiskUsage, FileSize},
-        styles::get_ls_colors,
-        tree::error::Error,
-    },
+    context::Context,
+    disk_usage::file_size::{DiskUsage, FileSize},
+    styles::get_ls_colors,
+    tree::error::Error,
 };
 use ansi_term::Style;
 use ignore::DirEntry;

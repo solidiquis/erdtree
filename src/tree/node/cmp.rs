@@ -1,5 +1,5 @@
 use super::Node;
-use crate::render::context::{sort, Context};
+use crate::context::{sort, Context};
 use std::cmp::Ordering;
 
 /// Comparator type used to sort [Node]s.

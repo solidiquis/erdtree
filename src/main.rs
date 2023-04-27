@@ -16,26 +16,34 @@
     clippy::cast_possible_truncation
 )]
 use clap::CommandFactory;
-use render::{
-    context::Context,
-    tree::{
-        display::{Flat, Inverted, Regular},
-        Tree,
-    },
+use context::Context;
+use tree::{
+    display::{Flat, Inverted, Regular},
+    Tree,
 };
 use std::{io::stdout, process::ExitCode};
 
 /// Operations to wrangle ANSI escaped strings.
 mod ansi;
 
+/// CLI rules and definitions as well as context to be injected throughout the entire program.
+mod context;
+
+/// Operations relevant to the computation and presentation of disk usage.
+mod disk_usage;
+
 /// Filesystem operations.
 mod fs;
 
-/// Dev icons.
+/// All things related to icons on how to map certain files to the appropriate icons.
 mod icons;
 
-/// Tools and operations to display root-directory.
-mod render;
+/// Global used throughout the program to paint the output.
+mod styles;
+
+/// Houses the primary data structures that are used to virtualize the filesystem, containing also
+/// information on how the tree output should be ultimately rendered.
+mod tree;
 
 /// Utilities relating to interacting with tty properties.
 mod tty;
@@ -60,7 +68,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    render::styles::init(ctx.no_color());
+    styles::init(ctx.no_color());
 
     if ctx.flat {
         let tree = Tree::<Flat>::try_init(ctx)?;

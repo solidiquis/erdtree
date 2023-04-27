@@ -1,10 +1,7 @@
 use crate::{
     fs::inode::Inode,
-    render::{
-        context::{file, output::ColumnProperties, Context},
-        disk_usage::file_size::FileSize,
-        styles,
-    },
+    context::{file, output::ColumnProperties, Context},
+    disk_usage::file_size::FileSize,
     utils,
 };
 use count::FileCount;

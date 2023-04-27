@@ -1,4 +1,4 @@
-use crate::render::{
+use crate::{
     styles,
     tree::{count::FileCount, node::Node, Tree},
 };
