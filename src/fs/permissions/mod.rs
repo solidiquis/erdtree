@@ -99,7 +99,7 @@ impl Display for FileMode {
 /// For the octal representation of permissions
 impl Octal for FileMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let modes_mask = self.st_mode & !libc::S_IFMT;
+        let modes_mask = self.st_mode & !u32::from(libc::S_IFMT);
         fmt::Octal::fmt(&modes_mask, f)
     }
 }
