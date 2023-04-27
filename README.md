@@ -458,7 +458,7 @@ A common question that gets asked is how parallelism benefits disk reads when fi
 
 While this is true, parallelism still results in improved throughput due to the fact that disks have a [queue depth](https://en.wikipedia.org/wiki/IOPS)
 that, when saturated, allows requests to be processed in aggregate keeping the disk busy as opposed to having it wait on `erdtree` to do CPU-bound processing
-in between requests. Additionally these threads aren't just parallelizing disk reads, they're also prallelizing the processing of the data that is ultimately retrieved.
+in between requests. Additionally these threads aren't just parallelizing disk reads, they're also parallelizing the processing of the data that is ultimately retrieved.
 
 It should be noted however that the performance as a function of thread-count is asymptotic in nature (see [Amdahl's Law](https://en.wikipedia.org/wiki/Amdahl%27s_law))
 so you'll quickly reach a point of dimishing returns after a certain thread-count threshold as you'd be paying the cost of managing a larger threadpool with no added benefit.
