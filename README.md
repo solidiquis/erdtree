@@ -165,12 +165,17 @@ Other means of installation to come.
 If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, you can set your own defaults using a configuration file.
 
 `erdtree` will look for a configuration file in any of these locations:
+
+On Linux/Mac/Unix-like:
 - `$ERDTREE_CONFIG_PATH`
 - `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
 - `$XDG_CONFIG_HOME/.erdtreerc`
-- `$HOME/.config/erdtree/.erdtreerc` (on non-Windows)
-- `$HOME/.erdtreerc` (on non-Windows)
-- `%APPDATA%/erdtree/.erdtreerc` (on Windows only)
+- `$HOME/.config/erdtree/.erdtreerc`
+- `$HOME/.erdtreerc`
+
+On Windows:
+- `$ERDTREE_CONFIG_PATH`
+- `%APPDATA%/erdtree/.erdtreerc`
 
 The format of a config file is as follows:
 - Every line is an `erdtree` option/argument.

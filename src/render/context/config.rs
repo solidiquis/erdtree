@@ -18,12 +18,27 @@ const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 /// - `$XDG_CONFIG_HOME/.erdtreerc`
 /// - `$HOME/.config/erdtree/.erdtreerc`
 /// - `$HOME/.erdtreerc`
+#[cfg(not(windows))]
 pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
     path.map(fs::read_to_string)
         .and_then(Result::ok)
         .or_else(config_from_config_path)
         .or_else(config_from_xdg_path)
         .or_else(config_from_home)
+        .map(|e| prepend_arg_prefix(&e))
+}
+
+/// Reads the config file into a `String` if there is one. When `None` is provided then the config
+/// is looked for in the following locations in order (Windows specific):
+///
+/// - `$ERDTREE_CONFIG_PATH`
+/// - `%APPDATA%/erdtree/.erdtreerc`
+#[cfg(windows)]
+pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
+    path.map(fs::read_to_string)
+        .and_then(Result::ok)
+        .or_else(config_from_config_path)
+        .or_else(config_from_appdata)
         .map(|e| prepend_arg_prefix(&e))
 }
 
@@ -73,7 +88,7 @@ fn config_from_home() -> Option<String> {
 /// Windows specific: Try to read in config from the following location:
 /// - `%APPDATA%/erdtree/.erdtreerc`
 #[cfg(windows)]
-fn config_from_home() -> Option<String> {
+fn config_from_appdata() -> Option<String> {
     let app_data = dirs::config_dir()?;
 
     let config_path = app_data
