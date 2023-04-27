@@ -6,6 +6,7 @@
 [![Crates.io](https://img.shields.io/crates/d/erdtree)](https://crates.io/crates/erdtree)
 
 `erdtree` is a modern, cross-platform, and multi-threaded filesystem and disk-usage analysis tool. The following are some feature highlights:
+
 * Respects hidden file and gitignore rules by default.
 * Supports regular expressions and glob based searching by file-type.
 * Supports Unix-based file permissions (Unix systems only).
@@ -24,36 +25,36 @@ You can think of `erdtree` as a combination of `du`, `tree`, `find`, and `ls`.
 * [Usage](#usage)
 * [Installation](#installation)
 * [Documentation](#documentation)
-  - [Configuration file](#configuration-file)
-  - [Hardlinks](#hardlinks)
-  - [Symlinks](#symlinks)
-  - [Disk usage](#disk-usage)
-  - [Flat view](#flat-view)
-  - [gitignore](#gitignore)
-  - [Hidden files](#hidden-files)
-  - [Icons](#icons)
-  - [Maximum depth](#maximum-depth)
-  - [Pruning empty directories](#pruning-empty-directories)
-  - [Sorting](#sorting)
-  - [Directories only](#directories-only)
-  - [Permissions](#permissions)
-  - [Regular expressions and globbing](#regular-expressions-and-globbing)
-  - [Truncating output](#truncating-output)
-  - [Redirecting output and colorization](#redirecting-output-and-colorization)
-  - [Parallelism](#parallelism)
-  - [Completions](#completions)
+  * [Configuration file](#configuration-file)
+  * [Hardlinks](#hardlinks)
+  * [Symlinks](#symlinks)
+  * [Disk usage](#disk-usage)
+  * [Flat view](#flat-view)
+  * [gitignore](#gitignore)
+  * [Hidden files](#hidden-files)
+  * [Icons](#icons)
+  * [Maximum depth](#maximum-depth)
+  * [Pruning empty directories](#pruning-empty-directories)
+  * [Sorting](#sorting)
+  * [Directories only](#directories-only)
+  * [Permissions](#permissions)
+  * [Regular expressions and globbing](#regular-expressions-and-globbing)
+  * [Truncating output](#truncating-output)
+  * [Redirecting output and colorization](#redirecting-output-and-colorization)
+  * [Parallelism](#parallelism)
+  * [Completions](#completions)
 * [Comparisons against similar programs](#comparisons-against-similar-programs)
-  - [exa](#exa)
-  - [dua](#dua)
-  - [dust](#dust)
-  - [fd](#fd)
+  * [exa](#exa)
+  * [dua](#dua)
+  * [dust](#dust)
+  * [fd](#fd)
 * [Rules for contributing](#rules-for-contributing)
 * [Security policy](#security-policy)
 * [Questions you might have](#questions-you-might-have)
 
 ## Usage
 
-```
+```txt
 erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage analysis tool.
 
 Usage: erd [OPTIONS] [DIR]
@@ -73,9 +74,8 @@ Options:
       --octal                      Show permissions in numeric octal format instead of symbolic
       --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
   -L, --level <NUM>                Maximum depth to display
-  -p, --pattern <PATTERN>          Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
-      --glob                       Enables glob based searching
-      --iglob                      Enables case-insensitive glob based searching
+  -p, --pattern <PATTERN>          Regular expression (or glob if '--glob' is used) used to match files
+      --glob                       Enables glob based searching [default: none] [possible values: none, sensitive, insensitive]
   -t, --file-type <FILE_TYPE>      Restrict regex or glob search to a particular file-type [possible values: file, dir, link]
   -P, --prune                      Remove empty directories from output
   -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
@@ -96,7 +96,7 @@ Options:
 
 Of all the above arguments, the following are not yet available on Windows but will be in the near future:
 
-```
+```txt
   -l, --long                       Show extended metadata and attributes
       --octal                      Show permissions in numeric octal format instead of symbolic
       --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
@@ -108,40 +108,40 @@ Of all the above arguments, the following are not yet available on Windows but w
 
 Make sure you have [Rust and its toolchain](https://www.rust-lang.org/tools/install) installed.
 
-```
-$ cargo install erdtree
+```sh
+cargo install erdtree
 ```
 
 ### crates.io (Windows)
 
 The Windows version relies on some experimental features in order to properly support hard-link detection. If you want to build from `crates.io` you'll first need to install the nightly toolchain before installing `erdtree`:
 
-```
-$ rustup toolchain install nightly-2023-03-05
+```sh
+rustup toolchain install nightly-2023-03-05
 ```
 
 Thereafter:
 
-```
-$ cargo +nightly-2023-03-05 install erdtree
+```sh
+cargo +nightly-2023-03-05 install erdtree
 ```
 
 ### Homebrew-core
 
-```
-$ brew install erdtree
+```sh
+brew install erdtree
 ```
 
 ### Scoop
 
-```
-$ scoop install erdtree
+```sh
+scoop install erdtree
 ```
 
 ### NetBSD
 
-```
-$ pkgin install erdtree
+```sh
+pkgin install erdtree
 ```
 
 ### Releases
@@ -152,8 +152,8 @@ Binaries for common architectures can be downloaded from latest releases.
 
 If you'd like the latest features that are on `master` but aren't yet included as part of a release:
 
-```
-$ cargo install --git https://github.com/solidiquis/erdtree --branch master
+```sh
+cargo install --git https://github.com/solidiquis/erdtree --branch master
 ```
 
 Other means of installation to come.
@@ -165,21 +165,23 @@ Other means of installation to come.
 If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, you can set your own defaults using a configuration file.
 
 `erdtree` will look for a configuration file in any of these locations:
-- `$ERDTREE_CONFIG_PATH`
-- `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
-- `$XDG_CONFIG_HOME/.erdtreerc`
-- `$HOME/.config/erdtree/.erdtreerc`
-- `$HOME/.erdtreerc`
+
+* `$ERDTREE_CONFIG_PATH`
+* `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
+* `$XDG_CONFIG_HOME/.erdtreerc`
+* `$HOME/.config/erdtree/.erdtreerc`
+* `$HOME/.erdtreerc`
 
 The format of a config file is as follows:
-- Every line is an `erdtree` option/argument.
-- Lines starting with `#` are considered comments and are thus ignored.
+
+* Every line is an `erdtree` option/argument.
+* Lines starting with `#` are considered comments and are thus ignored.
 
 Arguments passed to `erdtree` take precedence. If you have a config that you would like to ignore without deleting you can use `--no-config`.
 
 Here is an example of a valid configuration file:
 
-```
+```txt
 # Long argument
 --icons
 --human
@@ -200,7 +202,7 @@ If multiple hardlinks that point to the same inode are in the same file-tree, al
 
 ### Symlinks
 
-```
+```txt
 -f, --follow                     Follow symlinks
 ```
 
@@ -215,17 +217,17 @@ be painted in a different color for better visual feedback:
 
 Disk usage is reported in total amount of bytes by default but can output in a human readable format using:
 
-```
+```txt
 -H, --human                      Print disk usage in human-readable format
 ```
 
-#### Regular format:
+#### Regular format
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/inhuman_readable.png?raw=true" alt="failed to load picture" />
 </p>
 
-#### Human-readable format:
+#### Human-readable format
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/h_readable.png?raw=true" alt="failed to load picture" />
@@ -233,26 +235,26 @@ Disk usage is reported in total amount of bytes by default but can output in a h
 
 Additionally, disk usage is reported using binary prefixes by default (e.g. `1 KiB = 1024 B`) but SI prefixes can be used as well (`1 KB = 1000 B`) using:
 
-```
+```txt
 -u, --unit <UNIT>                Report disk usage in binary or SI units [default: bin] [possible values: bin, si]
 ```
 
 Furthermore, physical size which takes into account compression, sparse files, and actual blocks allocated to a particular file are used by default.
 Logical size which just reports the total number of bytes in a file may also be used.
 
-```
+```txt
 -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
 ```
 
 Lastly, if you'd like to omit disk usage from the output:
 
-```
+```txt
 --suppress-size              Omit disk usage from output
 ```
 
 ### Flat view
 
-```
+```txt
 -F, --flat                       Print disk usage information in plain format without the ASCII tree
 ```
 
@@ -263,18 +265,20 @@ For a more traditional `du`-like view without the ASCII tree, use `-F, --flat`.
 </p>
 
 #### Human readable disk usage
+
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/human_readable_flat.png?raw=true" alt="failed to load picture" />
 </p>
 
 #### Human readable and long view
+
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/flat_human_long.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### gitignore
 
-```
+```txt
 -i, --no-ignore                  Do not respect .gitignore files
 ```
 
@@ -285,7 +289,7 @@ If `.gitignore` is respected any file that is ignored will not be included in th
 
 ### Hidden files
 
-```
+```txt
 -., --hidden                     Show hidden files
     --no-git                     Disable traversal of .git directory when traversing hidden files
 ```
@@ -297,7 +301,7 @@ If hidden files are ignored it will not be included in the total disk usage.
 
 ### Icons
 
-```
+```txt
 -I, --icons                      Display file icons
 ```
 
@@ -315,7 +319,7 @@ this means that the font you are using doesn't include the relevant glyphs. To r
 
 Directories are fully traversed by default. To limit the maximum depth:
 
-```
+```txt
 -L, --level <NUM>                Maximum depth to display
 ```
 
@@ -325,7 +329,7 @@ Limiting the maximum depth to display will not affect the total disk usage repor
 
 Sometimes empty directories may appear in the output. To remove them:
 
-```
+```txt
 -P, --prune                      Remove empty directories from output
 ```
 
@@ -333,14 +337,14 @@ Sometimes empty directories may appear in the output. To remove them:
 
 Various sorting methods are provided:
 
-```
+```txt
 -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
     --dirs-first                 Sort directories above files
 ```
 
 To ensure that directories appear before all other file-types:
 
-```
+```txt
 --dirs-first                 Sort directories above files
 ```
 
@@ -348,7 +352,7 @@ To ensure that directories appear before all other file-types:
 
 You output only directories with:
 
-```
+```txt
 --dirs-only                  Only print directories
 ```
 
@@ -358,7 +362,7 @@ This will not affect total disk usage.
 
 Unix file permissions as well as metadata associated with directory entries can be shown using the following:
 
-```
+```txt
 -l, --long                       Show extended metadata and attributes
     --octal                      Show permissions in numeric octal format instead of symbolic
     --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
@@ -369,11 +373,12 @@ Unix file permissions as well as metadata associated with directory entries can 
 </p>
 
 The columns shown in the order of left to right are:
-  * inode number
-  * [permissions](https://en.wikipedia.org/wiki/File-system_permissions#Notation_of_traditional_Unix_permissions)
-  * The number of hardlinks of the underlying inode
-  * The number of blocks allocated to that particular file
-  * The date the file was last modified (or created or last accessed)
+
+* inode number
+* [permissions](https://en.wikipedia.org/wiki/File-system_permissions#Notation_of_traditional_Unix_permissions)
+* The number of hardlinks of the underlying inode
+* The number of blocks allocated to that particular file
+* The date the file was last modified (or created or last accessed)
 
 File permissions are currently not supported for Windows but will be sometime in the near future.
 
@@ -384,10 +389,9 @@ attributes will not be supported.
 
 Searching for a particular file using a regular expression or glob is supported using the following:
 
-```
--p, --pattern <PATTERN>          Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
-    --glob                       Enables glob based searching
-    --iglob                      Enables case-insensitive glob based searching
+```txt
+-p, --pattern <PATTERN>          Regular expression (or glob if '--glob' is used) used to match files
+    --glob  <MODE>               Enables glob based searching [default: none] [possible values: none, sensitive, insensitive]
 -t, --file-type <FILE_TYPE>      Restrict regex or glob search to a particular file-type [possible values: file, dir, link]
 ```
 
@@ -399,8 +403,9 @@ Lastly, when applying a regular expression or glob to directories, off its desce
 If you desire to only show directories you may use `--dirs-only`.
 
 References:
-  * [Globbing rules](https://git-scm.com/docs/gitignore#_pattern_format)
-  * [Regular expressions](https://docs.rs/regex/latest/regex/#syntax)
+
+* [Globbing rules](https://git-scm.com/docs/gitignore#_pattern_format)
+* [Regular expressions](https://docs.rs/regex/latest/regex/#syntax)
 
 ### Truncating output
 
@@ -412,7 +417,7 @@ In instances where the output does not fit the terminal emulator's window, the o
 
 In these situations the following may be used:
 
-```
+```txt
 --truncate                   Truncate output to fit terminal emulator window
 ```
 
@@ -423,14 +428,15 @@ In these situations the following may be used:
 ### Redirecting output and colorization
 
 If you wish to force a colorless output the following may be used:
-```
+
+```txt
 -C none         Print plainly without ANSI escapes
 ```
 
 Colorization is also turned off if the output is redirected to something that is not a tty. If you wish to preserve the ANSI escape sequences (e.g.
 preserve the colors as in the case of piping) the following may be used:
 
-```
+```txt
 -C, forced                Turn on colorization always
 ```
 
@@ -446,7 +452,7 @@ preserve the colors as in the case of piping) the following may be used:
 
 The amount of threads used by `erdtree` can be adjusted with the following:
 
-```
+```txt
 -T, --threads <THREADS>          Number of threads to use [default: 3]
 ```
 
@@ -467,9 +473,9 @@ For empirical data on the subject checkout [this article](https://pkolaczk.githu
 
 `--completions` is used to generate auto-completions for common shells so that the `tab` key can attempt to complete your command or give you hints; where you place the output highly depends on your shell as well as your setup. In my environment where I use `zshell` with `oh-my-zsh`, I would install completions like so:
 
-```
-$ et --completions zsh > ~/.oh-my-zsh/completions/_erd
-$ source ~/.zshrc
+```sh
+et --completions zsh > ~/.oh-my-zsh/completions/_erd
+source ~/.zshrc
 ```
 
 ## Rules for contributing
@@ -535,4 +541,4 @@ _Q: Why is there no mention of this project being blazingly fast or written in R
 
 A: Okay fine. `erdtree` is written in Rust and is blazingly fast.
 
-<img src="https://i.redd.it/t7ns9qtb5gh81.jpg">
+![failed to load picture](https://i.redd.it/t7ns9qtb5gh81.jpg)
