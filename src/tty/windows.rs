@@ -26,8 +26,7 @@ pub(super) unsafe fn win_width() -> Option<usize> {
     };
 
     (GetConsoleScreenBufferInfo(stdout_handle, &mut console_data) != 0)
-        .then(|| console_data.srWindow.Right - console_data.srWindow.Left + 1)
+        .then_some(console_data.srWindow.Right - console_data.srWindow.Left + 1)
         .map(usize::try_from)
-        .map(Result::ok)
-        .flatten()
+        .and_then(Result::ok)
 }

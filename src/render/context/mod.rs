@@ -52,6 +52,19 @@ pub enum Coloring {
     /// Turn on colorization always
     Forced,
 }
+
+#[derive(Clone, Copy, Debug, clap::ValueEnum, PartialEq, Eq, Default)]
+pub enum Glob {
+    // Disables glob based searching
+    #[default]
+    None,
+
+    /// Enables glob based searching
+    Sensitive,
+
+    /// Enables case-insensitive glob based searching
+    Insensitive,
+}
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
@@ -114,12 +127,8 @@ pub struct Context {
     pub pattern: Option<String>,
 
     /// Enables glob based searching
-    #[arg(long, requires = "pattern")]
-    pub glob: bool,
-
-    /// Enables case-insensitive glob based searching
-    #[arg(long, requires = "pattern")]
-    pub iglob: bool,
+    #[arg(long, requires = "pattern", value_enum, default_value_t = Glob::default())]
+    pub glob: Glob,
 
     /// Restrict regex or glob search to a particular file-type
     #[arg(short = 't', long, requires = "pattern", value_enum)]
@@ -220,6 +229,15 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
+        trait IntoVecOfStr {
+            fn as_vec_of_str(&self) -> Vec<&str>;
+        }
+        impl IntoVecOfStr for ArgMatches {
+            fn as_vec_of_str(&self) -> Vec<&str> {
+                self.ids().map(Id::as_str).collect()
+            }
+        }
+
         let user_args = Self::command().args_override_self(true).get_matches();
 
         let no_config = user_args
@@ -244,16 +262,13 @@ impl Context {
             // user arguments.
             let mut args = vec![OsString::from("--")];
 
-            let mut ids = user_args.ids().map(Id::as_str).collect::<Vec<&str>>();
+            let mut ids = user_args.as_vec_of_str();
 
-            ids.extend(config_args.ids().map(Id::as_str).collect::<Vec<&str>>());
+            ids.extend(config_args.as_vec_of_str());
 
             ids = crate::utils::uniq(ids);
 
-            for id in ids {
-                if id == "Context" {
-                    continue;
-                }
+            for id in ids.into_iter().filter(|&id| id != "Context") {
                 if id == "dir" {
                     if let Ok(Some(raw)) = user_args.try_get_raw(id) {
                         let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
@@ -394,11 +409,8 @@ impl Context {
 
         let mut negated_glob = false;
 
-        let overrides = if !self.glob && !self.iglob {
-            // Shouldn't really ever be hit but placing here as a safeguard.
-            return Err(Error::EmptyGlob);
-        } else {
-            if self.iglob {
+        let overrides = {
+            if self.glob == Glob::Insensitive {
                 builder.case_insensitive(true)?;
             }
 

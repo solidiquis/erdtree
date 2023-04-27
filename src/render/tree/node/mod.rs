@@ -128,13 +128,21 @@ impl Node {
     }
 
     /// Returns the underlying `ino` of the [`DirEntry`].
-    pub fn ino(&self) -> Option<u64> {
-        self.inode.map(|inode| inode.ino)
+    pub const fn ino(&self) -> Option<u64> {
+        if let Some(inode) = self.inode {
+            Some(inode.ino)
+        } else {
+            None
+        }
     }
 
     /// Returns the underlying `nlink` of the [`DirEntry`].
-    pub fn nlink(&self) -> Option<u64> {
-        self.inode.map(|inode| inode.nlink)
+    pub const fn nlink(&self) -> Option<u64> {
+        if let Some(inode) = self.inode {
+            Some(inode.nlink)
+        } else {
+            None
+        }
     }
 
     /// Returns `true` if node is a directory.
