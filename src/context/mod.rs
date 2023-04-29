@@ -24,6 +24,9 @@ pub mod error;
 /// Common cross-platform file-types.
 pub mod file;
 
+/// For determining the output layout.
+pub mod layout;
+
 /// Utilities to print output.
 pub mod output;
 
@@ -59,10 +62,6 @@ pub struct Context {
     /// Follow symlinks
     #[arg(short = 'f', long)]
     pub follow: bool,
-
-    /// Print disk usage information in plain format without the ASCII tree
-    #[arg(short = 'F', long)]
-    pub flat: bool,
 
     /// Print disk usage in human-readable format
     #[arg(short = 'H', long)]
@@ -147,9 +146,9 @@ pub struct Context {
     #[arg(long)]
     pub dirs_only: bool,
 
-    /// Print tree with the root directory at the topmost position
-    #[arg(long)]
-    pub inverted: bool,
+    /// Which kind of layout to use when rendering the output
+    #[arg(long, value_enum, default_value_t = layout::Type::default())]
+    pub layout: layout::Type,
 
     /// Print plainly without ANSI escapes
     #[arg(long)]
@@ -207,6 +206,7 @@ pub struct Context {
 }
 
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
+
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
@@ -336,7 +336,7 @@ impl Context {
     /// files, directories will always be included since matched files will need to be bridged back
     /// to the root node somehow. Empty sets not producing an output is handled by [`Tree`].
     ///
-    /// [`Tree`]: crate::render::tree::Tree
+    /// [`Tree`]: crate::tree::Tree
     pub fn regex_predicate(&self) -> Predicate {
         let Some(pattern) = self.pattern.as_ref() else {
             return Err(Error::PatternNotProvided);

@@ -16,7 +16,7 @@
     clippy::cast_possible_truncation
 )]
 use clap::CommandFactory;
-use context::Context;
+use context::{Context, layout};
 use tree::{
     display::{Flat, Inverted, Regular},
     Tree,
@@ -37,6 +37,12 @@ mod fs;
 
 /// All things related to icons on how to map certain files to the appropriate icons.
 mod icons;
+
+/// Concerned with taking an initialized [`Tree`] and its [`Node`]s and rendering the output.
+///
+/// [`Tree`]: tree::Tree
+/// [`Node`]: tree::node::Node
+mod render;
 
 /// Global used throughout the program to paint the output.
 mod styles;
@@ -70,15 +76,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     styles::init(ctx.no_color());
 
-    if ctx.flat {
-        let tree = Tree::<Flat>::try_init(ctx)?;
-        println!("{tree}");
-    } else if ctx.inverted {
-        let tree = Tree::<Inverted>::try_init(ctx)?;
-        println!("{tree}");
-    } else {
-        let tree = Tree::<Regular>::try_init(ctx)?;
-        println!("{tree}");
+    match ctx.layout {
+        layout::Type::Flat => {
+            let tree = Tree::<Flat>::try_init(ctx)?;
+            println!("{tree}");
+        },
+        layout::Type::Inverted => {
+            let tree = Tree::<Inverted>::try_init(ctx)?;
+            println!("{tree}");
+        },
+        layout::Type::Regular => {
+            let tree = Tree::<Regular>::try_init(ctx)?;
+            println!("{tree}");
+        },
     }
 
     Ok(())

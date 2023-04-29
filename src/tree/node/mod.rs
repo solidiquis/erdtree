@@ -202,7 +202,7 @@ impl Node {
 
     /// Formats the [Node] for the [`Flat`] presentation.
     ///
-    /// [`Flat`]: crate::render::tree::display::Flat
+    /// [`Flat`]: crate::tree::display::Flat
     pub fn flat_display(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
         self.flat(f, ctx)
     }
