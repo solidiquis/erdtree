@@ -30,7 +30,7 @@ unsafe fn has_xattrs(path: &Path) -> bool {
         slice_ptr.cast::<c_char>()
     };
 
-    #[cfg(target_os = "linux")]
+    #[cfg(not(target_os = "macos"))]
     return 0 < listxattr(path_ptr, ptr::null_mut::<c_char>(), 0);
 
     #[cfg(target_os = "macos")]
