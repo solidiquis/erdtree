@@ -5,14 +5,7 @@ mod utils;
 #[test]
 fn prune() {
     assert_eq!(
-        utils::run_cmd(&[
-            "--glob",
-            "sensitive",
-            "--pattern",
-            "*.txt",
-            "--prune",
-            "tests/data"
-        ]),
+        utils::run_cmd(&["--glob", "--pattern", "*.txt", "--prune", "tests/data"]),
         indoc!(
             "100  B ┌─ nylarlathotep.txt
             161  B ├─ nemesis.txt
