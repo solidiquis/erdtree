@@ -15,21 +15,21 @@ pub enum Type {
     /// Sort entries by size largest to smallest, bottom to top
     SizeRev,
 
-    /// Sort entries by newer to older Accessing Date
-    Access,
+    // Sort entries by newer to older Accessing Date
+    //Access,
 
-    /// Sort entries by older to newer Accessing Date
-    AccessRev,
+    // Sort entries by older to newer Accessing Date
+    //AccessRev,
 
-    /// Sort entries by newer to older Creation Date
-    Creation,
+    // Sort entries by newer to older Creation Date
+    //Creation,
 
-    /// Sort entries by older to newer Creation Date
-    CreationRev,
+    // Sort entries by older to newer Creation Date
+    //CreationRev,
 
-    /// Sort entries by newer to older Alteration Date
-    Modification,
+    // Sort entries by newer to older Alteration Date
+    //Modification,
 
-    /// Sort entries by older to newer Alteration Date
-    ModificationRev,
+    // Sort entries by older to newer Alteration Date
+    //ModificationRev,
 }
