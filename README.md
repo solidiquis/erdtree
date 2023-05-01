@@ -341,13 +341,21 @@ Various sorting methods are provided:
 
 ```
 -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
-    --dirs-first                 Sort directories above files
+    --dir-order <DIR_ORDER>      Sort directories before or after all other file types [default: none] [possible values: none, first, last]
 ```
 
-To ensure that directories appear before all other file-types:
+To add extra granularity to how directories are sorted relative to other file-types, use `--dir-order`:
 
 ```
---dirs-first                 Sort directories above files
+--dir-order <DIR_ORDER>
+    Sort directories before or after all other file types
+    
+    [default: none]
+
+    Possible values:
+    - none:  Directories are ordered as if they were regular nodes
+    - first: Sort directories above files
+    - last:  Sort directories below files
 ```
 
 ### Directories only
