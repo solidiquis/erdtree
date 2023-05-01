@@ -1,7 +1,7 @@
 use crate::{
     fs::inode::Inode,
     render::{
-        context::{self, file, output::ColumnProperties, Context},
+        context::{file, output::ColumnProperties, Context},
         disk_usage::file_size::FileSize,
         styles,
     },
@@ -398,12 +398,11 @@ impl TryFrom<&Context> for WalkParallel {
             .threads(ctx.threads);
 
         if ctx.pattern.is_some() {
-            match ctx.glob {
-                context::Glob::None => builder.filter_entry(ctx.regex_predicate()?),
-                context::Glob::Sensitive | context::Glob::Insensitive => {
-                    builder.filter_entry(ctx.glob_predicate()?)
-                }
-            };
+            if ctx.glob || ctx.iglob {
+                builder.filter_entry(ctx.glob_predicate()?);
+            } else {
+                builder.filter_entry(ctx.regex_predicate()?);
+            }
         }
 
         Ok(builder.build_parallel())

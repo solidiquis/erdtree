@@ -53,18 +53,6 @@ pub enum Coloring {
     Forced,
 }
 
-#[derive(Clone, Copy, Debug, clap::ValueEnum, PartialEq, Eq, Default)]
-pub enum Glob {
-    // Disables glob based searching
-    #[default]
-    None,
-
-    /// Enables glob based searching
-    Sensitive,
-
-    /// Enables case-insensitive glob based searching
-    Insensitive,
-}
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = env!("CARGO_PKG_NAME", "The Package Name is missing!"))]
@@ -128,8 +116,11 @@ pub struct Context {
     pub pattern: Option<String>,
 
     /// Enables glob based searching
-    #[arg(long, requires = "pattern", value_enum, default_value_t)]
-    pub glob: Glob,
+    #[arg(group = "searching", long, requires = "pattern")]
+    pub glob: bool,
+
+    #[arg(group = "searching", long, requires = "pattern")]
+    pub iglob: bool,
 
     /// Restrict regex or glob search to a particular file-type
     #[arg(short = 't', long, requires = "pattern", value_enum)]
@@ -412,7 +403,7 @@ impl Context {
         let mut negated_glob = false;
 
         let overrides = {
-            if self.glob == Glob::Insensitive {
+            if self.iglob {
                 builder.case_insensitive(true)?;
             }
 
