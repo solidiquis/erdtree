@@ -13,10 +13,10 @@ pub fn comparator(ctx: &Context) -> Box<NodeComparator> {
         dir::Order::None => (),
         dir::Order::First => {
             return Box::new(move |a, b| dir_first_comparator(a, b, base_comparator(sort_type)));
-        },
+        }
         dir::Order::Last => {
             return Box::new(move |a, b| dir_last_comparator(a, b, base_comparator(sort_type)));
-        },
+        }
     };
 
     base_comparator(sort_type)
@@ -32,7 +32,11 @@ fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
 }
 
 /// Orders directories first. Provides a fallback if inputs are not directories.
-fn dir_first_comparator(a: &Node, b: &Node, fallback: impl Fn(&Node, &Node) -> Ordering) -> Ordering {
+fn dir_first_comparator(
+    a: &Node,
+    b: &Node,
+    fallback: impl Fn(&Node, &Node) -> Ordering,
+) -> Ordering {
     match (a.is_dir(), b.is_dir()) {
         (true, false) => Ordering::Greater,
         (false, true) => Ordering::Less,
@@ -41,7 +45,11 @@ fn dir_first_comparator(a: &Node, b: &Node, fallback: impl Fn(&Node, &Node) -> O
 }
 
 /// Orders directories last. Provides a fallback if inputs are not directories.
-fn dir_last_comparator(a: &Node, b: &Node, fallback: impl Fn(&Node, &Node) -> Ordering) -> Ordering {
+fn dir_last_comparator(
+    a: &Node,
+    b: &Node,
+    fallback: impl Fn(&Node, &Node) -> Ordering,
+) -> Ordering {
     match (a.is_dir(), b.is_dir()) {
         (true, false) => Ordering::Less,
         (false, true) => Ordering::Greater,

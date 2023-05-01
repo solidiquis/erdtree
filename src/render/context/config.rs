@@ -91,9 +91,7 @@ fn config_from_home() -> Option<String> {
 fn config_from_appdata() -> Option<String> {
     let app_data = dirs::config_dir()?;
 
-    let config_path = app_data
-        .join(ERDTREE_DIR)
-        .join(ERDTREE_CONFIG_NAME);
+    let config_path = app_data.join(ERDTREE_DIR).join(ERDTREE_CONFIG_NAME);
 
     fs::read_to_string(config_path).ok()
 }

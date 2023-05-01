@@ -29,7 +29,7 @@ fn sort_name_dir_order() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--dir-order", "first", "tests/data"]),
         indoc!(
-           "143  B    ┌─ cassildas_song.md
+            "143  B    ┌─ cassildas_song.md
             143  B ┌─ the_yellow_king
             446  B │  ┌─ lipsum.txt
             446  B ├─ lipsum
@@ -47,7 +47,7 @@ fn sort_name_dir_order() {
     assert_eq!(
         utils::run_cmd(&["--sort", "name", "--dir-order", "last", "tests/data"]),
         indoc!(
-           "100  B ┌─ nylarlathotep.txt
+            "100  B ┌─ nylarlathotep.txt
             161  B ├─ nemesis.txt
             83   B ├─ necronomicon.txt
             143  B │  ┌─ cassildas_song.md

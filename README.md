@@ -210,8 +210,9 @@ If multiple hardlinks that point to the same inode are in the same file-tree, al
 -f, --follow                     Follow symlinks
 ```
 
-Symlinks will never be counted towards the total disk usage. When a symlink to a directory is followed all of the box-drawing characters of its descendants will
-be painted in a different color for better visual feedback:
+Symlinks when followed will have their targets (and descendants) counted towards total disk usage, otherwise the size of the symlink itself will be reported.
+If a symlink's target happens to be in the same file-tree as the symlink itself, the target and its descendants will not be double-counted towards the total disk-usage.
+When a symlink to a directory is followed all of the box-drawing characters of its descendants will be painted in a different color for better visual feedback:
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlinks.png?raw=true" alt="failed to load picture" />
