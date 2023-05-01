@@ -1,6 +1,7 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
 use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
+use color::Coloring;
 use error::Error;
 use ignore::{
     overrides::{Override, OverrideBuilder},
@@ -17,6 +18,12 @@ use std::{
 
 /// Operations to load in defaults from configuration file.
 pub mod config;
+
+/// Controlling color of output.
+pub mod color;
+
+/// Controlling order of directories in output.
+pub mod dir;
 
 /// [Context] related errors.
 pub mod error;
@@ -51,9 +58,9 @@ pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Turn on colorization always
-    #[arg(short = 'C', long)]
-    pub force_color: bool,
+    /// Mode of coloring output
+    #[arg(short = 'C', long, value_enum, default_value_t = Coloring::default())]
+    pub color: Coloring,
 
     /// Print physical or logical file size
     #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
@@ -118,9 +125,9 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = sort::Type::default())]
     pub sort: sort::Type,
 
-    /// Sort directories above files
-    #[arg(long)]
-    pub dirs_first: bool,
+    /// Sort directories before or after all other file types
+    #[arg(long, value_enum, default_value_t = dir::Order::default())]
+    pub dir_order: dir::Order,
 
     /// Number of threads to use
     #[arg(short = 'T', long, default_value_t = 3)]
@@ -149,10 +156,6 @@ pub struct Context {
     /// Which kind of layout to use when rendering the output
     #[arg(long, value_enum, default_value_t = layout::Type::default())]
     pub layout: layout::Type,
-
-    /// Print plainly without ANSI escapes
-    #[arg(long)]
-    pub no_color: bool,
 
     /// Don't read configuration file
     #[arg(long)]
@@ -204,7 +207,6 @@ pub struct Context {
     #[clap(skip)]
     pub window_width: Option<usize>,
 }
-
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
 
 impl Context {
@@ -275,15 +277,15 @@ impl Context {
     }
 
     /// Determines whether or not it's appropriate to display color in output based on
-    /// `--no-color`, `--force-color`, and whether or not stdout is connected to a tty.
+    /// the Coloring, and whether or not stdout is connected to a tty.
     ///
-    /// If `--force-color` is `true` then this will always evaluate to `false`.
+    /// If Coloring is Forced then this will always evaluate to `false`.
     pub const fn no_color(&self) -> bool {
-        if self.force_color {
-            return false;
+        match self.color {
+            Coloring::Auto if !self.stdout_is_tty => true,
+            Coloring::None => true,
+            Coloring::Auto | Coloring::Forced => false,
         }
-
-        self.no_color || !self.stdout_is_tty
     }
 
     /// Returns [Path] of the root directory to be traversed.
@@ -310,7 +312,7 @@ impl Context {
         self.time.unwrap_or_default()
     }
 
-    /// Which filetype to filter on; defaults to regular file.
+    /// Which `FileType` to filter on; defaults to regular file.
     pub fn file_type(&self) -> file::Type {
         self.file_type.unwrap_or_default()
     }
@@ -346,19 +348,17 @@ impl Context {
 
         let file_type = self.file_type();
 
-        match file_type {
-            file::Type::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
+        Ok(match file_type {
+            file::Type::Dir => Box::new(move |dir_entry: &DirEntry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
-
                 if is_dir {
-                    // Problem right here.
                     return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
                 }
 
                 Self::ancestor_regex_match(dir_entry.path(), &re, 1)
-            })),
+            }),
 
-            _ => Ok(Box::new(move |dir_entry: &DirEntry| {
+            _ => Box::new(move |dir_entry: &DirEntry| {
                 let entry_type = dir_entry.file_type();
                 let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
 
@@ -367,7 +367,9 @@ impl Context {
                 }
 
                 match file_type {
-                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
+                        return false
+                    }
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
@@ -375,8 +377,8 @@ impl Context {
                 }
                 let file_name = dir_entry.file_name().to_string_lossy();
                 re.is_match(&file_name)
-            })),
-        }
+            }),
+        })
     }
 
     /// Predicate used for filtering via globs and file-types.
@@ -437,7 +439,9 @@ impl Context {
                 }
 
                 match file_type {
-                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => return false,
+                    file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
+                        return false
+                    }
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }

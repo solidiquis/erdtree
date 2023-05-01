@@ -62,7 +62,7 @@ Arguments:
   [DIR]  Directory to traverse; defaults to current working directory
 
 Options:
-  -C, --force-color                Turn on colorization always
+  -C, --color <COLOR>              Mode of coloring output [default: auto] [possible values: none, auto, forced]
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
   -f, --follow                     Follow symlinks
   -F, --flat                       Print disk usage information in plain format without the ASCII tree
@@ -79,7 +79,7 @@ Options:
   -t, --file-type <FILE_TYPE>      Restrict regex or glob search to a particular file-type [possible values: file, dir, link]
   -P, --prune                      Remove empty directories from output
   -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
-      --dirs-first                 Sort directories above files
+      --dir-order <DIR_ORDER>      Sort directories before or after all other file types [default: none] [possible values: none, first, last]
   -T, --threads <THREADS>          Number of threads to use [default: 3]
   -u, --unit <UNIT>                Report disk usage in binary or SI units [default: bin] [possible values: bin, si]
   -., --hidden                     Show hidden files
@@ -87,7 +87,6 @@ Options:
       --completions <COMPLETIONS>  Print completions for a given shell to stdout [possible values: bash, elvish, fish, powershell, zsh]
       --dirs-only                  Only print directories
       --inverted                   Print tree with the root directory at the topmost position
-      --no-color                   Print plainly without ANSI escapes
       --no-config                  Don't read configuration file
       --suppress-size              Omit disk usage from output
       --truncate                   Truncate output to fit terminal emulator window
@@ -118,13 +117,13 @@ $ cargo install erdtree
 The Windows version relies on some experimental features in order to properly support hard-link detection. If you want to build from `crates.io` you'll first need to install the nightly toolchain before installing `erdtree`:
 
 ```
-$ rustup toolchain install nightly-2023-03-05         
+$ rustup toolchain install nightly-2023-03-05
 ```
 
 Thereafter:
 
 ```
-$ cargo +nightly-2023-03-05 install erdtree                    
+$ cargo +nightly-2023-03-05 install erdtree
 ```
 
 ### Homebrew-core
@@ -166,11 +165,17 @@ Other means of installation to come.
 If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, you can set your own defaults using a configuration file.
 
 `erdtree` will look for a configuration file in any of these locations:
+
+On Linux/Mac/Unix-like:
 - `$ERDTREE_CONFIG_PATH`
 - `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
 - `$XDG_CONFIG_HOME/.erdtreerc`
 - `$HOME/.config/erdtree/.erdtreerc`
 - `$HOME/.erdtreerc`
+
+On Windows:
+- `$ERDTREE_CONFIG_PATH`
+- `%APPDATA%/erdtree/.erdtreerc`
 
 The format of a config file is as follows:
 - Every line is an `erdtree` option/argument.
@@ -205,8 +210,9 @@ If multiple hardlinks that point to the same inode are in the same file-tree, al
 -f, --follow                     Follow symlinks
 ```
 
-Symlinks will never be counted towards the total disk usage. When a symlink to a directory is followed all of the box-drawing characters of its descendants will
-be painted in a different color for better visual feedback:
+Symlinks when followed will have their targets (and descendants) counted towards total disk usage, otherwise the size of the symlink itself will be reported.
+If a symlink's target happens to be in the same file-tree as the symlink itself, the target and its descendants will not be double-counted towards the total disk-usage.
+When a symlink to a directory is followed all of the box-drawing characters of its descendants will be painted in a different color for better visual feedback:
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symlinks.png?raw=true" alt="failed to load picture" />
@@ -336,13 +342,21 @@ Various sorting methods are provided:
 
 ```
 -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
-    --dirs-first                 Sort directories above files
+    --dir-order <DIR_ORDER>      Sort directories before or after all other file types [default: none] [possible values: none, first, last]
 ```
 
-To ensure that directories appear before all other file-types:
+To add extra granularity to how directories are sorted relative to other file-types, use `--dir-order`:
 
 ```
---dirs-first                 Sort directories above files
+--dir-order <DIR_ORDER>
+    Sort directories before or after all other file types
+    
+    [default: none]
+
+    Possible values:
+    - none:  Directories are ordered as if they were regular nodes
+    - first: Sort directories above files
+    - last:  Sort directories below files
 ```
 
 ### Directories only
@@ -424,22 +438,21 @@ In these situations the following may be used:
 ### Redirecting output and colorization
 
 If you wish to force a colorless output the following may be used:
-
 ```
---no-color                   Print plainly without ANSI escapes
+-C none         Print plainly without ANSI escapes
 ```
 
 Colorization is also turned off if the output is redirected to something that is not a tty. If you wish to preserve the ANSI escape sequences (e.g.
 preserve the colors as in the case of piping) the following may be used:
 
 ```
--C, --force-color                Turn on colorization always
+-C, forced                Turn on colorization always
 ```
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/no_color.png?raw=true" alt="failed to load picture" />
 </p>
- 
+
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/force_color.png?raw=true" alt="failed to load picture" />
 </p>
@@ -457,8 +470,8 @@ The amount of threads used by `erdtree` can be adjusted with the following:
 A common question that gets asked is how parallelism benefits disk reads when filesystem I/O is processed serially.
 
 While this is true, parallelism still results in improved throughput due to the fact that disks have a [queue depth](https://en.wikipedia.org/wiki/IOPS)
-that, when saturated, allows requests to be processed in aggregate keeping the disk busy as opposed to having it wait on `erdtree` to due CPU-bound processing
-in between requests. Additionally these threads aren't just parallelizing disk reads, they're also prallelizing the processing of the data that is ultimately retrieved.
+that, when saturated, allows requests to be processed in aggregate keeping the disk busy as opposed to having it wait on `erdtree` to do CPU-bound processing
+in between requests. Additionally these threads aren't just parallelizing disk reads, they're also parallelizing the processing of the data that is ultimately retrieved.
 
 It should be noted however that the performance as a function of thread-count is asymptotic in nature (see [Amdahl's Law](https://en.wikipedia.org/wiki/Amdahl%27s_law))
 so you'll quickly reach a point of dimishing returns after a certain thread-count threshold as you'd be paying the cost of managing a larger threadpool with no added benefit.

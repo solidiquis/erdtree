@@ -120,7 +120,7 @@ impl Node {
 
         if ctx.truncate && ctx.window_width.is_some() {
             let window_width = ctx.window_width.unwrap();
-            let out = <str as AnsiEscaped>::truncate(&ln, window_width);
+            let out = <str as Escaped>::truncate(&ln, window_width);
             writeln!(f, "{out}")
         } else {
             writeln!(f, "{ln}")
@@ -144,7 +144,7 @@ impl Node {
 
         if ctx.truncate && ctx.window_width.is_some() {
             let window_width = ctx.window_width.unwrap();
-            let out = <str as AnsiEscaped>::truncate(&ln, window_width);
+            let out = <str as Escaped>::truncate(&ln, window_width);
             write!(f, "{out}")
         } else {
             write!(f, "{ln}")
