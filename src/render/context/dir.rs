@@ -11,5 +11,5 @@ pub enum Order {
     First,
 
     /// Sort directories below files
-    Last
+    Last,
 }
