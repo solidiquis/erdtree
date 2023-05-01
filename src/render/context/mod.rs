@@ -1,6 +1,7 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
 use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
+use color::Coloring;
 use error::Error;
 use ignore::{
     overrides::{Override, OverrideBuilder},
@@ -17,6 +18,12 @@ use std::{
 
 /// Operations to load in defaults from configuration file.
 pub mod config;
+
+/// Controlling color of output.
+pub mod color;
+
+/// Controlling order of directories in output.
+pub mod dir;
 
 /// [Context] related errors.
 pub mod error;
@@ -38,20 +45,6 @@ pub mod time;
 #[cfg(test)]
 mod test;
 
-#[derive(Clone, Copy, Debug, clap::ValueEnum, PartialEq, Eq, Default)]
-pub enum Coloring {
-    /// Print plainly without ANSI escapes
-    None,
-
-    /// Check the [`no_color`] function for the Auto behaviour
-    ///
-    /// [`no_color`]: no_color
-    #[default]
-    Auto,
-
-    /// Turn on colorization always
-    Forced,
-}
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
@@ -62,7 +55,7 @@ pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Coloring of the Output
+    /// Mode of coloring output
     #[arg(short = 'C', long, value_enum, default_value_t = Coloring::default())]
     pub color: Coloring,
 
@@ -133,9 +126,9 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = sort::Type::default())]
     pub sort: sort::Type,
 
-    /// Sort directories above files
-    #[arg(long)]
-    pub dirs_first: bool,
+    /// Sort directories before or after all other file types
+    #[arg(long, value_enum, default_value_t = dir::Order::default())]
+    pub dir_order: dir::Order,
 
     /// Number of threads to use
     #[arg(short = 'T', long, default_value_t = 3)]
@@ -216,6 +209,7 @@ pub struct Context {
     pub window_width: Option<usize>,
 }
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
+
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
