@@ -350,7 +350,7 @@ To add extra granularity to how directories are sorted relative to other file-ty
 ```
 --dir-order <DIR_ORDER>
     Sort directories before or after all other file types
-    
+
     [default: none]
 
     Possible values:

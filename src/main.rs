@@ -7,7 +7,8 @@
     clippy::complexity,
     clippy::perf,
     clippy::pedantic,
-    clippy::nursery
+    clippy::nursery,
+    clippy::cargo
 )]
 #![allow(
     clippy::struct_excessive_bools,
@@ -15,6 +16,7 @@
     clippy::cast_sign_loss,
     clippy::cast_possible_truncation
 )]
+
 use clap::CommandFactory;
 use render::{
     context::Context,
@@ -23,7 +25,7 @@ use render::{
         Tree,
     },
 };
-use std::{io::stdout, process::ExitCode};
+use std::{error::Error, io::stdout};
 
 /// Operations to wrangle ANSI escaped strings.
 mod ansi;
@@ -43,16 +45,7 @@ mod tty;
 /// Common utilities across all modules.
 mod utils;
 
-fn main() -> ExitCode {
-    if let Err(e) = run() {
-        eprintln!("{e}");
-        return ExitCode::FAILURE;
-    }
-
-    ExitCode::SUCCESS
-}
-
-fn run() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let ctx = Context::init()?;
 
     if let Some(shell) = ctx.completions {

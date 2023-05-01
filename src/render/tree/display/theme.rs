@@ -3,15 +3,17 @@ use crate::render::{
     tree::Node,
 };
 
+type Theme = Box<dyn FnMut(&Node) -> &'static ThemesMap>;
+
 /// Returns a closure that retrieves the regular theme.
-pub fn regular_theme_getter() -> Box<dyn FnMut(&Node) -> &'static ThemesMap> {
+pub fn regular_theme_getter() -> Theme {
     Box::new(|_node: &Node| styles::get_tree_theme().unwrap())
 }
 
 /// Returns a closure that can smartly determine when a symlink is being followed and when it is
 /// not being followed. When a symlink is being followed, all of its descendents should have tree
 /// branches that are colored differently.
-pub fn link_theme_getter() -> Box<dyn FnMut(&Node) -> &'static ThemesMap> {
+pub fn link_theme_getter() -> Theme {
     let mut link_depth = None;
 
     Box::new(move |node: &Node| {

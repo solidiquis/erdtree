@@ -22,15 +22,6 @@ pub fn comparator(ctx: &Context) -> Box<NodeComparator> {
     base_comparator(sort_type)
 }
 
-/// Grabs the comparator for two non-dir type [Node]s.
-fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
-    match sort_type {
-        sort::Type::Name => Box::new(name_comparator),
-        sort::Type::Size => Box::new(size_comparator),
-        sort::Type::SizeRev => Box::new(size_rev_comparator),
-    }
-}
-
 /// Orders directories first. Provides a fallback if inputs are not directories.
 fn dir_first_comparator(
     a: &Node,
@@ -57,22 +48,109 @@ fn dir_last_comparator(
     }
 }
 
-/// Comparator that sorts [Node]s by size, smallest to largest.
-fn size_rev_comparator(a: &Node, b: &Node) -> Ordering {
-    let a_size = a.file_size().map_or(0, |fs| fs.bytes);
-    let b_size = b.file_size().map_or(0, |fs| fs.bytes);
+/// Grabs the comparator for two non-dir type [Node]s.
+fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
+    Box::new(match sort_type {
+        sort::Type::Name => naming::comparator,
+        sort::Type::NameRev => naming::rev_comparator,
 
-    a_size.cmp(&b_size)
+        sort::Type::Size => sizing::comparator,
+        sort::Type::SizeRev => sizing::rev_comparator,
+
+        sort::Type::Access => time_stamping::accessed::comparator,
+        sort::Type::AccessRev => time_stamping::accessed::rev_comparator,
+
+        sort::Type::Creation => time_stamping::created::comparator,
+        sort::Type::CreationRev => time_stamping::created::rev_comparator,
+
+        sort::Type::Modification => time_stamping::modified::comparator,
+        sort::Type::ModificationRev => time_stamping::modified::rev_comparator,
+    })
 }
 
-/// Comparator that sorts [Node]s by size, largest to smallest.
-fn size_comparator(a: &Node, b: &Node) -> Ordering {
-    let a_size = a.file_size().map_or(0, |fs| fs.bytes);
-    let b_size = b.file_size().map_or(0, |fs| fs.bytes);
-    b_size.cmp(&a_size)
+mod time_stamping {
+    pub mod accessed {
+        use crate::render::tree::node::Node;
+        use core::cmp::Ordering;
+        use std::time::SystemTime;
+
+        /// Comparator that sorts [Node]s by Last Access timestamp, newer to older.
+        pub fn comparator(a: &Node, b: &Node) -> Ordering {
+            let a_stamp = a.accessed().unwrap_or_else(SystemTime::now);
+            let b_stamp = b.accessed().unwrap_or_else(SystemTime::now);
+            a_stamp.cmp(&b_stamp)
+        }
+
+        /// Comparator that sorts [Node]s by Access timestamp, older to newer.
+        pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+            comparator(b, a)
+        }
+    }
+
+    pub mod created {
+        use crate::render::tree::node::Node;
+        use core::cmp::Ordering;
+        use std::time::SystemTime;
+
+        /// Comparator that sorts [Node]s by Creation timestamp, newer to older.
+        pub fn comparator(a: &Node, b: &Node) -> Ordering {
+            let a_stamp = a.created().unwrap_or_else(SystemTime::now);
+            let b_stamp = b.created().unwrap_or_else(SystemTime::now);
+            a_stamp.cmp(&b_stamp)
+        }
+
+        /// Comparator that sorts [Node]s by Creation timestamp, older to newer.
+        pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+            comparator(b, a)
+        }
+    }
+
+    pub mod modified {
+        use crate::render::tree::node::Node;
+        use core::cmp::Ordering;
+        use std::time::SystemTime;
+
+        /// Comparator that sorts [Node]s by Alteration timestamp, newer to older.
+        pub fn comparator(a: &Node, b: &Node) -> Ordering {
+            let a_stamp = a.modified().unwrap_or_else(SystemTime::now);
+            let b_stamp = b.modified().unwrap_or_else(SystemTime::now);
+            a_stamp.cmp(&b_stamp)
+        }
+
+        /// Comparator that sorts [Node]s by Alteration timestamp, older to newer.
+        pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+            comparator(b, a)
+        }
+    }
 }
 
-/// Comparator based on [Node] file names.
-fn name_comparator(a: &Node, b: &Node) -> Ordering {
-    a.file_name().cmp(b.file_name())
+mod sizing {
+    use crate::render::tree::node::Node;
+    use core::cmp::Ordering;
+
+    /// Comparator that sorts [Node]s by size, largest to smallest.
+    pub fn comparator(a: &Node, b: &Node) -> Ordering {
+        let a_size = a.file_size().map_or(0, |fs| fs.bytes);
+        let b_size = b.file_size().map_or(0, |fs| fs.bytes);
+        b_size.cmp(&a_size)
+    }
+    /// Comparator that sorts [Node]s by size, smallest to largest.
+    pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+        comparator(b, a)
+    }
+}
+
+mod naming {
+    use crate::render::tree::node::Node;
+    use core::cmp::Ordering;
+
+    /// Comparator based on [Node] file names in lexicographical order.
+    pub fn comparator(a: &Node, b: &Node) -> Ordering {
+        a.file_name().cmp(b.file_name())
+    }
+
+    /// Comparator based on [Node] file names in reversed lexicographical order.
+    pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+        comparator(b, a)
+    }
 }

@@ -7,6 +7,7 @@ description = """
 erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage
 analysis tool that respects gitignore and hidden file rules.
 """
+categories = ["command-line-utilities"]
 documentation = "https://github.com/solidiquis/erdtree"
 homepage = "https://github.com/solidiquis/erdtree"
 repository = "https://github.com/solidiquis/erdtree"

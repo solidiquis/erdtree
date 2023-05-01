@@ -47,10 +47,11 @@ mod test;
 
 /// Defines the CLI.
 #[derive(Parser, Debug)]
-#[command(name = "erdtree")]
-#[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "2.0.0")]
-#[command(about = "erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage analysis tool.", long_about = None)]
+#[command(name = env!("CARGO_PKG_NAME", "The Package Name is missing!"))]
+#[command(author = env!("CARGO_PKG_AUTHORS", "The Author of the Package is missing!"))]
+#[command(version = env!("CARGO_PKG_VERSION_MAJOR", "The Package version is missing!"))]
+#[command(about = "erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage analysis tool.",
+          long_about = env!("CARGO_PKG_DESCRIPTION", "The Long Package Description is missing!"))]
 pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
@@ -60,7 +61,7 @@ pub struct Context {
     pub color: Coloring,
 
     /// Print physical or logical file size
-    #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
+    #[arg(short, long, value_enum, default_value_t)]
     pub disk_usage: DiskUsage,
 
     /// Follow symlinks
@@ -107,11 +108,10 @@ pub struct Context {
     pub pattern: Option<String>,
 
     /// Enables glob based searching
-    #[arg(long, requires = "pattern")]
+    #[arg(group = "searching", long, requires = "pattern")]
     pub glob: bool,
 
-    /// Enables case-insensitive glob based searching
-    #[arg(long, requires = "pattern")]
+    #[arg(group = "searching", long, requires = "pattern")]
     pub iglob: bool,
 
     /// Restrict regex or glob search to a particular file-type
@@ -123,7 +123,7 @@ pub struct Context {
     pub prune: bool,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = sort::Type::default())]
+    #[arg(short, long, value_enum, default_value_t)]
     pub sort: sort::Type,
 
     /// Sort directories before or after all other file types
@@ -208,6 +208,16 @@ pub struct Context {
     #[clap(skip)]
     pub window_width: Option<usize>,
 }
+
+trait AsVecOfStr {
+    fn as_vec_of_str(&self) -> Vec<&str>;
+}
+impl AsVecOfStr for ArgMatches {
+    fn as_vec_of_str(&self) -> Vec<&str> {
+        self.ids().map(Id::as_str).collect()
+    }
+}
+
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
 
 impl Context {
@@ -238,16 +248,13 @@ impl Context {
             // user arguments.
             let mut args = vec![OsString::from("--")];
 
-            let mut ids = user_args.ids().map(Id::as_str).collect::<Vec<&str>>();
+            let mut ids = user_args.as_vec_of_str();
 
-            ids.extend(config_args.ids().map(Id::as_str).collect::<Vec<&str>>());
+            ids.extend(config_args.as_vec_of_str());
 
             ids = crate::utils::uniq(ids);
 
-            for id in ids {
-                if id == "Context" {
-                    continue;
-                }
+            for id in ids.into_iter().filter(|&id| id != "Context") {
                 if id == "dir" {
                     if let Ok(Some(raw)) = user_args.try_get_raw(id) {
                         let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
@@ -388,10 +395,7 @@ impl Context {
 
         let mut negated_glob = false;
 
-        let overrides = if !self.glob && !self.iglob {
-            // Shouldn't really ever be hit but placing here as a safeguard.
-            return Err(Error::EmptyGlob);
-        } else {
+        let overrides = {
             if self.iglob {
                 builder.case_insensitive(true)?;
             }
