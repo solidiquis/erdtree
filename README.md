@@ -167,11 +167,12 @@ If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, yo
 
 `erdtree` will look for a configuration file in any of these locations:
 
-* `$ERDTREE_CONFIG_PATH`
-* `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
-* `$XDG_CONFIG_HOME/.erdtreerc`
-* `$HOME/.config/erdtree/.erdtreerc`
-* `$HOME/.erdtreerc`
+On Linux/Mac/Unix-like:
+- `$ERDTREE_CONFIG_PATH`
+- `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
+- `$XDG_CONFIG_HOME/.erdtreerc`
+- `$HOME/.config/erdtree/.erdtreerc`
+- `$HOME/.erdtreerc`
 
 The format of a config file is as follows:
 
