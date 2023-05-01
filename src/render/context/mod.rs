@@ -111,6 +111,7 @@ pub struct Context {
     #[arg(group = "searching", long, requires = "pattern")]
     pub glob: bool,
 
+    /// Enables case-insensitive glob based searching
     #[arg(group = "searching", long, requires = "pattern")]
     pub iglob: bool,
 
