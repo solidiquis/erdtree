@@ -154,7 +154,7 @@ impl Node {
 
     /// Returns the file name of the symlink target if [Node] represents a symlink.
     pub fn symlink_target_file_name(&self) -> Option<&OsStr> {
-        self.symlink_target_path().and_then(Path::file_name)
+        self.symlink_target_path().map(Path::as_os_str)
     }
 
     /// Returns reference to underlying [`FileType`].
