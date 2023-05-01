@@ -347,7 +347,15 @@ Various sorting methods are provided:
 To ensure that directories appear before all other file-types:
 
 ```txt
---dirs-first                 Sort directories above files
+--dir-order <DIR_ORDER>
+    Sort directories before or after all other file types
+
+    [default: none]
+
+    Possible values:
+    - none:  Directories are ordered as if they were regular nodes
+    - first: Sort directories above files
+    - last:  Sort directories below files
 ```
 
 ### Directories only
