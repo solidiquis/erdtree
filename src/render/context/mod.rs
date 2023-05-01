@@ -76,11 +76,11 @@ pub struct Context {
     dir: Option<PathBuf>,
 
     /// Coloring of the Output
-    #[arg(short = 'C', long, value_enum, default_value_t = Coloring::default())]
+    #[arg(short = 'C', long, value_enum, default_value_t)]
     pub color: Coloring,
 
     /// Print physical or logical file size
-    #[arg(short, long, value_enum, default_value_t = DiskUsage::default())]
+    #[arg(short, long, value_enum, default_value_t)]
     pub disk_usage: DiskUsage,
 
     /// Follow symlinks
@@ -127,7 +127,7 @@ pub struct Context {
     pub pattern: Option<String>,
 
     /// Enables glob based searching
-    #[arg(long, requires = "pattern", value_enum, default_value_t = Glob::default())]
+    #[arg(long, requires = "pattern", value_enum, default_value_t)]
     pub glob: Glob,
 
     /// Restrict regex or glob search to a particular file-type
@@ -139,7 +139,7 @@ pub struct Context {
     pub prune: bool,
 
     /// Sort-order to display directory content
-    #[arg(short, long, value_enum, default_value_t = sort::Type::default())]
+    #[arg(short, long, value_enum, default_value_t)]
     pub sort: sort::Type,
 
     /// Sort directories above files
