@@ -7,7 +7,8 @@
     clippy::complexity,
     clippy::perf,
     clippy::pedantic,
-    clippy::nursery
+    clippy::nursery,
+    clippy::cargo
 )]
 #![allow(
     clippy::struct_excessive_bools,
@@ -15,6 +16,7 @@
     clippy::cast_sign_loss,
     clippy::cast_possible_truncation
 )]
+
 use clap::CommandFactory;
 use render::{
     context::Context,
