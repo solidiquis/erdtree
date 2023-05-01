@@ -74,8 +74,9 @@ Options:
       --octal                      Show permissions in numeric octal format instead of symbolic
       --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
   -L, --level <NUM>                Maximum depth to display
-  -p, --pattern <PATTERN>          Regular expression (or glob if '--glob' is used) used to match files
-      --glob                       Enables glob based searching [default: none] [possible values: none, sensitive, insensitive]
+  -p, --pattern <PATTERN>          Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
+      --glob                       Enables glob based searching
+      --iglob                      Enables case-insensitive glob based searching
   -t, --file-type <FILE_TYPE>      Restrict regex or glob search to a particular file-type [possible values: file, dir, link]
   -P, --prune                      Remove empty directories from output
   -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
