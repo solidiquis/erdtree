@@ -224,20 +224,21 @@ pub struct Context {
     #[clap(skip)]
     pub window_width: Option<usize>,
 }
+
+trait AsVecOfStr {
+    fn as_vec_of_str(&self) -> Vec<&str>;
+}
+impl AsVecOfStr for ArgMatches {
+    fn as_vec_of_str(&self) -> Vec<&str> {
+        self.ids().map(Id::as_str).collect()
+    }
+}
+
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn init() -> Result<Self, Error> {
-        trait IntoVecOfStr {
-            fn as_vec_of_str(&self) -> Vec<&str>;
-        }
-        impl IntoVecOfStr for ArgMatches {
-            fn as_vec_of_str(&self) -> Vec<&str> {
-                self.ids().map(Id::as_str).collect()
-            }
-        }
-
         let user_args = Self::command().args_override_self(true).get_matches();
 
         let no_config = user_args
