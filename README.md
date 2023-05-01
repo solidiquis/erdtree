@@ -62,7 +62,7 @@ Arguments:
   [DIR]  Directory to traverse; defaults to current working directory
 
 Options:
-  -C, --color                      Output Coloring [default: auto] [possible values: none, auto, forced]
+  -C, --color <COLOR>              Mode of coloring output [default: auto] [possible values: none, auto, forced]
   -d, --disk-usage <DISK_USAGE>    Print physical or logical file size [default: physical] [possible values: logical, physical]
   -f, --follow                     Follow symlinks
   -F, --flat                       Print disk usage information in plain format without the ASCII tree
@@ -79,7 +79,7 @@ Options:
   -t, --file-type <FILE_TYPE>      Restrict regex or glob search to a particular file-type [possible values: file, dir, link]
   -P, --prune                      Remove empty directories from output
   -s, --sort <SORT>                Sort-order to display directory content [default: size] [possible values: name, size, size-rev]
-      --dirs-first                 Sort directories above files
+      --dir-order <DIR_ORDER>      Sort directories before or after all other file types [default: none] [possible values: none, first, last]
   -T, --threads <THREADS>          Number of threads to use [default: 3]
   -u, --unit <UNIT>                Report disk usage in binary or SI units [default: bin] [possible values: bin, si]
   -., --hidden                     Show hidden files

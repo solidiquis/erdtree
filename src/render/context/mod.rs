@@ -126,7 +126,7 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = sort::Type::default())]
     pub sort: sort::Type,
 
-    /// Sort directories above files
+    /// Sort directories before or after all other file types
     #[arg(long, value_enum, default_value_t = dir::Order::default())]
     pub dir_order: dir::Order,
 
