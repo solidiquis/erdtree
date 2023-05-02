@@ -279,19 +279,14 @@ where
 
     /// Function to remove empty directories.
     fn prune_directories(root_id_id: NodeId, tree: &mut Arena<Node>) {
-        let mut to_prune = vec![];
-
-        for node_id in root_id_id.descendants(tree).skip(1) {
-            let node = tree[node_id].get();
-
-            if !node.is_dir() {
-                continue;
-            }
-
-            if node_id.children(tree).count() == 0 {
-                to_prune.push(node_id);
-            }
-        }
+        let to_prune = root_id_id
+            .descendants(tree)
+            .skip(1)
+            .map(|node_id| (node_id, tree[node_id].get()))
+            .filter(|(_, node)| node.is_dir())
+            .map(|(node_id, _)| node_id)
+            .filter(|node_id| node_id.children(tree).count() == 0)
+            .collect::<Vec<_>>();
 
         if to_prune.is_empty() {
             return;
@@ -306,13 +301,11 @@ where
 
     /// Filter for only directories.
     fn filter_directories(root_id: NodeId, tree: &mut Arena<Node>) {
-        let mut to_detach = vec![];
-
-        for descendant_id in root_id.descendants(tree).skip(1) {
-            if !tree[descendant_id].get().is_dir() {
-                to_detach.push(descendant_id);
-            }
-        }
+        let to_detach = root_id
+            .descendants(tree)
+            .skip(1)
+            .filter(|&descendant_id| !tree[descendant_id].get().is_dir())
+            .collect::<Vec<_>>();
 
         for descendant_id in to_detach {
             descendant_id.detach(tree);

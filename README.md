@@ -175,7 +175,7 @@ On Linux/Mac/Unix-like:
 
 On Windows:
 - `$ERDTREE_CONFIG_PATH`
-- `%APPDATA%/erdtree/.erdtreerc`
+- `%APPDATA%\erdtree\.erdtreerc`
 
 The format of a config file is as follows:
 - Every line is an `erdtree` option/argument.
@@ -350,7 +350,7 @@ To add extra granularity to how directories are sorted relative to other file-ty
 ```
 --dir-order <DIR_ORDER>
     Sort directories before or after all other file types
-    
+
     [default: none]
 
     Possible values:
