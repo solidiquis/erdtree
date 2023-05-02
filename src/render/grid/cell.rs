@@ -1,10 +1,11 @@
 use crate::{
-    context::Context,
+    context::{time, Context},
     disk_usage::file_size::FileSize,
     render::theme,
     styles::{self, PLACEHOLDER},
     tree::node::Node,
 };
+use chrono::{DateTime, Local};
 use std::{
     ffi::OsStr,
     fmt::{self, Display},
@@ -182,9 +183,6 @@ impl<'a> Cell<'a> {
     #[cfg(unix)]
     #[inline]
     fn fmt_datetime(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use crate::context::time;
-        use chrono::{offset::Local, DateTime};
-
         let node = self.node;
         let ctx = self.ctx;
 
@@ -196,7 +194,7 @@ impl<'a> Cell<'a> {
 
         let out = datetime.map(DateTime::<Local>::from).map_or_else(
             || format!("{PLACEHOLDER:>12}"),
-            |dt| format!("{:>12}", dt.format("%d %h %H:%M %g")),
+            |dt| format!("{:>12}", self.fmt_timestamp(dt)),
         );
 
         let formatted_datetime = if let Ok(style) = styles::get_datetime_style() {
@@ -206,6 +204,20 @@ impl<'a> Cell<'a> {
         };
 
         write!(f, "{formatted_datetime}")
+    }
+
+    #[cfg(unix)]
+    #[inline]
+    fn fmt_timestamp(&self, dt: DateTime<Local>) -> String {
+        let time_format = self.ctx.time_format();
+        let delayed_format = match time_format {
+            time::Format::Default => dt.format("%d %h %H:%M %g"),
+            time::Format::Iso => dt.format("%Y-%m-%d %H:%M:%S"),
+            time::Format::IsoStrict => dt.format("%Y-%m-%dT%H:%M:%S%Z"),
+            time::Format::Short => dt.format("%Y-%m-%d"),
+        };
+
+        format!("{:>12}", delayed_format)
     }
 
     /// Rules on how to format permissions for rendering

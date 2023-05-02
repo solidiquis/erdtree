@@ -13,3 +13,15 @@ pub enum Stamp {
     #[default]
     Modified,
 }
+
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub enum Format {
+    Iso,
+
+    IsoStrict,
+
+    Short,
+
+    #[default]
+    Default,
+}
