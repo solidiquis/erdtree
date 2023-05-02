@@ -127,7 +127,7 @@ fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
 //}
 
 mod sizing {
-    use crate::render::tree::node::Node;
+    use crate::tree::node::Node;
     use core::cmp::Ordering;
 
     /// Comparator that sorts [Node]s by size, largest to smallest.
@@ -143,7 +143,7 @@ mod sizing {
 }
 
 mod naming {
-    use crate::render::tree::node::Node;
+    use crate::tree::node::Node;
     use core::cmp::Ordering;
 
     /// Comparator based on [Node] file names in lexicographical order.

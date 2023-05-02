@@ -5,7 +5,7 @@ mod utils;
 #[test]
 fn flat() {
     assert_eq!(
-        utils::run_cmd(&["--flat", "tests/data"]),
+        utils::run_cmd(&["--layout", "flat", "tests/data"]),
         indoc!(
             "1241 B   data
     308  B   dream_cycle
@@ -26,7 +26,7 @@ fn flat() {
 #[test]
 fn flat_human() {
     assert_eq!(
-        utils::run_cmd(&["--flat", "--human", "tests/data"]),
+        utils::run_cmd(&["--layout", "flat", "--human", "tests/data"]),
         indoc!(
             "1.21 KiB   data
      308   B   dream_cycle
@@ -47,7 +47,7 @@ fn flat_human() {
 #[test]
 fn flat_with_level() {
     assert_eq!(
-        utils::run_cmd(&["--flat", "--level", "1", "tests/data"]),
+        utils::run_cmd(&["--layout", "flat", "--level", "1", "tests/data"]),
         indoc!(
             "1241 B   data
     308  B   dream_cycle

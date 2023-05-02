@@ -1,10 +1,8 @@
 use crate::{
-    render::Engine,
+    render::{Engine, Flat},
     tree::{count::FileCount, Tree},
 };
 use std::fmt::{self, Display};
-
-pub struct Flat;
 
 impl Display for Engine<Flat> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

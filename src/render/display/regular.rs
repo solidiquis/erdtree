@@ -1,12 +1,10 @@
 use crate::{
-    render::{Engine, theme},
+    render::{Engine, Regular, theme},
     styles,
     tree::{count::FileCount, node::Node, Tree},
 };
 use indextree::{NodeEdge, NodeId};
 use std::fmt::{self, Display};
-
-pub struct Regular;
 
 impl Display for Engine<Regular> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

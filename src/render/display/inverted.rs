@@ -1,12 +1,10 @@
 use crate::{
-    render::{Engine, theme},
+    render::{Engine, Inverted, theme},
     styles,
     tree::{count::FileCount, node::Node, Tree},
 };
 use indextree::NodeId;
 use std::fmt::{self, Display};
-
-pub struct Inverted;
 
 impl Display for Engine<Inverted> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

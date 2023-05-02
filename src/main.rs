@@ -19,10 +19,8 @@
 
 use clap::CommandFactory;
 use context::{Context, layout};
-use tree::{
-    display::{Flat, Inverted, Regular},
-    Tree,
-};
+use render::{Engine, Flat, Inverted, Regular};
+use tree::Tree;
 use std::{error::Error, io::stdout};
 
 /// Operations to wrangle ANSI escaped strings.
@@ -69,18 +67,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     styles::init(ctx.no_color());
 
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx)?;
+
     match ctx.layout {
         layout::Type::Flat => {
-            let tree = Tree::<Flat>::try_init(ctx)?;
-            println!("{tree}");
+            let render = Engine::<Flat>::new(tree, ctx);
+            println!("{render}");
         },
         layout::Type::Inverted => {
-            let tree = Tree::<Inverted>::try_init(ctx)?;
-            println!("{tree}");
+            let render = Engine::<Inverted>::new(tree, ctx);
+            println!("{render}");
         },
         layout::Type::Regular => {
-            let tree = Tree::<Regular>::try_init(ctx)?;
-            println!("{tree}");
+            let render = Engine::<Regular>::new(tree, ctx);
+            println!("{render}");
         },
     }
 
