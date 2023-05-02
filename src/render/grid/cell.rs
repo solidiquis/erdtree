@@ -206,6 +206,7 @@ impl<'a> Cell<'a> {
         write!(f, "{formatted_datetime}")
     }
 
+	/// Rules on how to format timestamp
     #[cfg(unix)]
     #[inline]
     fn fmt_timestamp(&self, dt: DateTime<Local>) -> String {
