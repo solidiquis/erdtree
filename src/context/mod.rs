@@ -50,11 +50,10 @@ mod test;
 
 /// Defines the CLI.
 #[derive(Parser, Debug)]
-#[command(name = env!("CARGO_PKG_NAME", "The Package Name is missing!"))]
-#[command(author = env!("CARGO_PKG_AUTHORS", "The Author of the Package is missing!"))]
-#[command(version = env!("CARGO_PKG_VERSION_MAJOR", "The Package version is missing!"))]
-#[command(about = "erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage analysis tool.",
-          long_about = env!("CARGO_PKG_DESCRIPTION", "The Long Package Description is missing!"))]
+#[command(name = "erdtree")]
+#[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
+#[command(version = "2.0.0")]
+#[command(about = "erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage analysis tool.", long_about = None)]
 pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
