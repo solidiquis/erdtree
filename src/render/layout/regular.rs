@@ -1,12 +1,13 @@
 use crate::{
-    render::{Engine, theme},
+    render::{
+        grid::{self, Row},
+        theme, Engine, Regular,
+    },
     styles,
     tree::{count::FileCount, node::Node, Tree},
 };
 use indextree::{NodeEdge, NodeId};
 use std::fmt::{self, Display};
-
-pub struct Regular;
 
 impl Display for Engine<Regular> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -18,9 +19,9 @@ impl Display for Engine<Regular> {
         let mut file_count_data = vec![];
 
         let mut display_node = |node_id: NodeId, node: &Node, prefix: &str| -> fmt::Result {
-            node.tree_display(f, prefix, ctx)?;
+            let row = Row::<grid::Tree>::new(node, ctx, Some(prefix));
             file_count_data.push(Tree::compute_file_count(node_id, arena));
-            writeln!(f)
+            writeln!(f, "{row}")
         };
 
         let mut get_theme = if ctx.follow {

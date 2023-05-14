@@ -18,26 +18,38 @@
 )]
 
 use clap::CommandFactory;
-use render::{
-    context::Context,
-    tree::{
-        display::{Flat, Inverted, Regular},
-        Tree,
-    },
-};
+use context::{layout, Context};
+use render::{Engine, Flat, Inverted, Regular};
 use std::{error::Error, io::stdout};
+use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
 mod ansi;
 
+/// CLI rules and definitions as well as context to be injected throughout the entire program.
+mod context;
+
+/// Operations relevant to the computation and presentation of disk usage.
+mod disk_usage;
+
 /// Filesystem operations.
 mod fs;
 
-/// Dev icons.
+/// All things related to icons on how to map certain files to the appropriate icons.
 mod icons;
 
-/// Tools and operations to display root-directory.
+/// Concerned with taking an initialized [`Tree`] and its [`Node`]s and rendering the output.
+///
+/// [`Tree`]: tree::Tree
+/// [`Node`]: tree::node::Node
 mod render;
+
+/// Global used throughout the program to paint the output.
+mod styles;
+
+/// Houses the primary data structures that are used to virtualize the filesystem, containing also
+/// information on how the tree output should be ultimately rendered.
+mod tree;
 
 /// Utilities relating to interacting with tty properties.
 mod tty;
@@ -53,17 +65,23 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    render::styles::init(ctx.no_color());
+    styles::init(ctx.no_color());
 
-    if ctx.flat {
-        let tree = Tree::<Flat>::try_init(ctx)?;
-        println!("{tree}");
-    } else if ctx.inverted {
-        let tree = Tree::<Inverted>::try_init(ctx)?;
-        println!("{tree}");
-    } else {
-        let tree = Tree::<Regular>::try_init(ctx)?;
-        println!("{tree}");
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx)?;
+
+    match ctx.layout {
+        layout::Type::Flat => {
+            let render = Engine::<Flat>::new(tree, ctx);
+            println!("{render}");
+        }
+        layout::Type::Inverted => {
+            let render = Engine::<Inverted>::new(tree, ctx);
+            println!("{render}");
+        }
+        layout::Type::Regular => {
+            let render = Engine::<Regular>::new(tree, ctx);
+            println!("{render}");
+        }
     }
 
     Ok(())

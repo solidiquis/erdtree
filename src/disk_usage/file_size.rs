@@ -1,6 +1,6 @@
 use super::units::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
 use crate::{
-    render::styles::{self, get_du_theme, get_placeholder_style},
+    styles::{self, get_du_theme, get_placeholder_style},
     utils, Context,
 };
 use ansi_term::Style;

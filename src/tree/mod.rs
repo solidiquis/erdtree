@@ -1,10 +1,7 @@
 use crate::{
+    context::{file, output::ColumnProperties, Context},
+    disk_usage::file_size::FileSize,
     fs::inode::Inode,
-    render::{
-        context::{file, output::ColumnProperties, Context},
-        disk_usage::file_size::FileSize,
-        styles,
-    },
     utils,
 };
 use count::FileCount;
@@ -16,7 +13,6 @@ use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
     fs,
-    marker::PhantomData,
     path::PathBuf,
     result::Result as StdResult,
     sync::mpsc::{self, Sender},
@@ -25,10 +21,7 @@ use std::{
 use visitor::{BranchVisitorBuilder, TraversalState};
 
 /// Operations to handle and display aggregate file counts based on their type.
-mod count;
-
-/// Display variants for [Tree].
-pub mod display;
+pub mod count;
 
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
@@ -43,34 +36,22 @@ pub mod node;
 mod visitor;
 
 /// Virtual data structure that represents local file-system hierarchy.
-pub struct Tree<T>
-where
-    T: display::TreeVariant,
-{
+pub struct Tree {
     arena: Arena<Node>,
     root_id: NodeId,
-    ctx: Context,
-    display_variant: PhantomData<T>,
 }
 
 pub type Result<T> = StdResult<T, Error>;
 
-impl<T> Tree<T>
-where
-    T: display::TreeVariant,
-{
+impl Tree {
     /// Constructor for [Tree].
-    pub const fn new(arena: Arena<Node>, root_id: NodeId, ctx: Context) -> Self {
-        Self {
-            arena,
-            root_id,
-            ctx,
-            display_variant: PhantomData,
-        }
+    pub const fn new(arena: Arena<Node>, root_id: NodeId) -> Self {
+        Self { arena, root_id }
     }
 
-    /// Initiates file-system traversal and [Tree construction].
-    pub fn try_init(mut ctx: Context) -> Result<Self> {
+    /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
+    /// various properties necessary to render output.
+    pub fn try_init_and_update_context(mut ctx: Context) -> Result<(Self, Context)> {
         let mut column_properties = ColumnProperties::from(&ctx);
 
         let (arena, root_id) = Self::traverse(&ctx, &mut column_properties)?;
@@ -81,13 +62,13 @@ where
             ctx.set_window_width();
         }
 
-        let tree = Self::new(arena, root_id, ctx);
+        let tree = Self::new(arena, root_id);
 
         if tree.is_stump() {
             return Err(Error::NoMatches);
         }
 
-        Ok(tree)
+        Ok((tree, ctx))
     }
 
     /// Returns `true` if there are no entries to show excluding the `root_id`.
@@ -100,18 +81,13 @@ where
             .is_none()
     }
 
-    /// Grab a reference to [Context].
-    pub const fn context(&self) -> &Context {
-        &self.ctx
-    }
-
     /// Grab a reference to `root_id`.
-    const fn root_id(&self) -> NodeId {
+    pub const fn root_id(&self) -> NodeId {
         self.root_id
     }
 
     /// Grabs a reference to `arena`.
-    const fn arena(&self) -> &Arena<Node> {
+    pub const fn arena(&self) -> &Arena<Node> {
         &self.arena
     }
 
@@ -318,7 +294,7 @@ where
     /// Compute total number of files for a single directory without recurring into child
     /// directories. Files are grouped into three categories: directories, regular files, and
     /// symlinks.
-    fn compute_file_count(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
+    pub fn compute_file_count(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
         let mut count = FileCount::default();
 
         for child_id in node_id.children(tree) {
