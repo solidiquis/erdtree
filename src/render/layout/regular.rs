@@ -4,9 +4,9 @@ use crate::{
         theme, Engine, Regular,
     },
     styles,
-    tree::{count::FileCount, node::Node, Tree},
+    tree::{count::FileCount, Tree},
 };
-use indextree::{NodeEdge, NodeId};
+use indextree::NodeEdge;
 use std::fmt::{self, Display};
 
 impl Display for Engine<Regular> {
@@ -17,12 +17,6 @@ impl Display for Engine<Regular> {
         let arena = tree.arena();
         let max_depth = ctx.level();
         let mut file_count_data = vec![];
-
-        let mut display_node = |node_id: NodeId, node: &Node, prefix: &str| -> fmt::Result {
-            let row = Row::<grid::Tree>::new(node, ctx, Some(prefix));
-            file_count_data.push(Tree::compute_file_count(node_id, arena));
-            writeln!(f, "{row}")
-        };
 
         let mut get_theme = if ctx.follow {
             theme::link_theme_getter()
@@ -59,6 +53,8 @@ impl Display for Engine<Regular> {
                 }
             };
 
+            file_count_data.push(Tree::compute_file_count(current_node_id, arena));
+
             let current_node = arena[current_node_id].get();
 
             let node_depth = current_node.depth();
@@ -69,7 +65,8 @@ impl Display for Engine<Regular> {
 
             if node_depth <= max_depth {
                 if node_depth == 0 {
-                    display_node(current_node_id, current_node, "")?;
+                    let row = Row::<grid::Tree>::new(current_node, ctx, Some(""));
+                    writeln!(f, "{row}")?;
                 } else {
                     let prefix_part = if topmost_sibling {
                         theme.get("drt").unwrap()
@@ -83,7 +80,8 @@ impl Display for Engine<Regular> {
 
                     let prefix = current_prefix_components.join("");
 
-                    display_node(current_node_id, current_node, &prefix)?;
+                    let row = Row::<grid::Tree>::new(current_node, ctx, Some(&prefix));
+                    writeln!(f, "{row}")?;
                 }
             }
 

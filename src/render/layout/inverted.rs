@@ -4,9 +4,8 @@ use crate::{
         theme, Engine, Inverted,
     },
     styles,
-    tree::{count::FileCount, node::Node, Tree},
+    tree::{count::FileCount, Tree},
 };
-use indextree::NodeId;
 use std::fmt::{self, Display};
 
 impl Display for Engine<Inverted> {
@@ -21,13 +20,10 @@ impl Display for Engine<Inverted> {
 
         let mut descendants = root_id.descendants(arena).skip(1).peekable();
 
-        let mut display_node = |node_id: NodeId, node: &Node, prefix: &str| -> fmt::Result {
-            let row = Row::<grid::Tree>::new(node, ctx, Some(prefix));
-            file_count_data.push(Tree::compute_file_count(node_id, arena));
-            writeln!(f, "{row}")
-        };
+        let root = Row::<grid::Tree>::new(arena[root_id].get(), ctx, Some(""));
+        writeln!(f, "{root}")?;
 
-        display_node(root_id, arena[root_id].get(), "")?;
+        file_count_data.push(Tree::compute_file_count(root_id, arena));
 
         let mut get_theme = if ctx.follow {
             theme::link_theme_getter()
@@ -38,6 +34,8 @@ impl Display for Engine<Inverted> {
         let mut base_prefix_components = vec![""];
 
         while let Some(current_node_id) = descendants.next() {
+            file_count_data.push(Tree::compute_file_count(current_node_id, arena));
+
             let current_node = arena[current_node_id].get();
 
             let current_depth = current_node.depth();
@@ -61,7 +59,8 @@ impl Display for Engine<Inverted> {
 
                 let prefix = current_prefix_components.join("");
 
-                display_node(current_node_id, current_node, &prefix)?;
+                let row = Row::<grid::Tree>::new(current_node, ctx, Some(&prefix));
+                writeln!(f, "{row}")?;
             }
 
             if let Some(next_id) = descendants.peek() {
