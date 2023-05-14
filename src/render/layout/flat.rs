@@ -22,6 +22,8 @@ impl Display for Engine<Flat> {
                 NodeEdge::Start(id) => id,
                 NodeEdge::End(_) => continue,
             };
+            file_count_data.push(Tree::compute_file_count(node_id, arena));
+
             let node = arena[node_id].get();
 
             if node.depth() > max_depth {
@@ -31,8 +33,6 @@ impl Display for Engine<Flat> {
             let row = Row::<grid::Flat>::new(node, ctx, None);
 
             writeln!(f, "{row}")?;
-
-            file_count_data.push(Tree::compute_file_count(node_id, arena));
         }
 
         if !file_count_data.is_empty() {
