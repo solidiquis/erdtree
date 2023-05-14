@@ -1,5 +1,8 @@
 use crate::{
-    render::{Engine, Inverted, theme},
+    render::{
+        grid::{self, Row},
+        theme, Engine, Inverted,
+    },
     styles,
     tree::{count::FileCount, node::Node, Tree},
 };
@@ -19,9 +22,9 @@ impl Display for Engine<Inverted> {
         let mut descendants = root_id.descendants(arena).skip(1).peekable();
 
         let mut display_node = |node_id: NodeId, node: &Node, prefix: &str| -> fmt::Result {
-            node.tree_display(f, prefix, ctx)?;
+            let row = Row::<grid::Tree>::new(node, ctx, Some(prefix));
             file_count_data.push(Tree::compute_file_count(node_id, arena));
-            writeln!(f)
+            writeln!(f, "{row}")
         };
 
         display_node(root_id, arena[root_id].get(), "")?;

@@ -18,10 +18,10 @@
 )]
 
 use clap::CommandFactory;
-use context::{Context, layout};
+use context::{layout, Context};
 use render::{Engine, Flat, Inverted, Regular};
-use tree::Tree;
 use std::{error::Error, io::stdout};
+use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
 mod ansi;
@@ -73,15 +73,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         layout::Type::Flat => {
             let render = Engine::<Flat>::new(tree, ctx);
             println!("{render}");
-        },
+        }
         layout::Type::Inverted => {
             let render = Engine::<Inverted>::new(tree, ctx);
             println!("{render}");
-        },
+        }
         layout::Type::Regular => {
             let render = Engine::<Regular>::new(tree, ctx);
             println!("{render}");
-        },
+        }
     }
 
     Ok(())

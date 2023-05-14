@@ -71,59 +71,59 @@ fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
 }
 
 //mod time_stamping {
-    //pub mod accessed {
-        //use crate::render::tree::node::Node;
-        //use core::cmp::Ordering;
-        //use std::time::SystemTime;
+//pub mod accessed {
+//use crate::render::tree::node::Node;
+//use core::cmp::Ordering;
+//use std::time::SystemTime;
 
-        ///// Comparator that sorts [Node]s by Last Access timestamp, newer to older.
-        //pub fn comparator(a: &Node, b: &Node) -> Ordering {
-            //let a_stamp = a.accessed().unwrap_or_else(SystemTime::now);
-            //let b_stamp = b.accessed().unwrap_or_else(SystemTime::now);
-            //a_stamp.cmp(&b_stamp)
-        //}
+///// Comparator that sorts [Node]s by Last Access timestamp, newer to older.
+//pub fn comparator(a: &Node, b: &Node) -> Ordering {
+//let a_stamp = a.accessed().unwrap_or_else(SystemTime::now);
+//let b_stamp = b.accessed().unwrap_or_else(SystemTime::now);
+//a_stamp.cmp(&b_stamp)
+//}
 
-        ///// Comparator that sorts [Node]s by Access timestamp, older to newer.
-        //pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
-            //comparator(b, a)
-        //}
-    //}
+///// Comparator that sorts [Node]s by Access timestamp, older to newer.
+//pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+//comparator(b, a)
+//}
+//}
 
-    //pub mod created {
-        //use crate::render::tree::node::Node;
-        //use core::cmp::Ordering;
-        //use std::time::SystemTime;
+//pub mod created {
+//use crate::render::tree::node::Node;
+//use core::cmp::Ordering;
+//use std::time::SystemTime;
 
-        ///// Comparator that sorts [Node]s by Creation timestamp, newer to older.
-        //pub fn comparator(a: &Node, b: &Node) -> Ordering {
-            //let a_stamp = a.created().unwrap_or_else(SystemTime::now);
-            //let b_stamp = b.created().unwrap_or_else(SystemTime::now);
-            //a_stamp.cmp(&b_stamp)
-        //}
+///// Comparator that sorts [Node]s by Creation timestamp, newer to older.
+//pub fn comparator(a: &Node, b: &Node) -> Ordering {
+//let a_stamp = a.created().unwrap_or_else(SystemTime::now);
+//let b_stamp = b.created().unwrap_or_else(SystemTime::now);
+//a_stamp.cmp(&b_stamp)
+//}
 
-        ///// Comparator that sorts [Node]s by Creation timestamp, older to newer.
-        //pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
-            //comparator(b, a)
-        //}
-    //}
+///// Comparator that sorts [Node]s by Creation timestamp, older to newer.
+//pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+//comparator(b, a)
+//}
+//}
 
-    //pub mod modified {
-        //use crate::render::tree::node::Node;
-        //use core::cmp::Ordering;
-        //use std::time::SystemTime;
+//pub mod modified {
+//use crate::render::tree::node::Node;
+//use core::cmp::Ordering;
+//use std::time::SystemTime;
 
-        ///// Comparator that sorts [Node]s by Alteration timestamp, newer to older.
-        //pub fn comparator(a: &Node, b: &Node) -> Ordering {
-            //let a_stamp = a.modified().unwrap_or_else(SystemTime::now);
-            //let b_stamp = b.modified().unwrap_or_else(SystemTime::now);
-            //a_stamp.cmp(&b_stamp)
-        //}
+///// Comparator that sorts [Node]s by Alteration timestamp, newer to older.
+//pub fn comparator(a: &Node, b: &Node) -> Ordering {
+//let a_stamp = a.modified().unwrap_or_else(SystemTime::now);
+//let b_stamp = b.modified().unwrap_or_else(SystemTime::now);
+//a_stamp.cmp(&b_stamp)
+//}
 
-        ///// Comparator that sorts [Node]s by Alteration timestamp, older to newer.
-        //pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
-            //comparator(b, a)
-        //}
-    //}
+///// Comparator that sorts [Node]s by Alteration timestamp, older to newer.
+//pub fn rev_comparator(a: &Node, b: &Node) -> Ordering {
+//comparator(b, a)
+//}
+//}
 //}
 
 mod sizing {

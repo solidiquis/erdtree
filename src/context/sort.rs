@@ -14,7 +14,6 @@ pub enum Type {
 
     /// Sort entries by size largest to smallest, bottom to top
     SizeRev,
-
     // Sort entries by newer to older Accessing Date
     //Access,
 

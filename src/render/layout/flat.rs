@@ -1,7 +1,11 @@
 use crate::{
-    render::{Engine, Flat},
+    render::{
+        grid::{self, Row},
+        Engine, Flat,
+    },
     tree::{count::FileCount, Tree},
 };
+use indextree::NodeEdge;
 use std::fmt::{self, Display};
 
 impl Display for Engine<Flat> {
@@ -13,16 +17,21 @@ impl Display for Engine<Flat> {
         let max_depth = ctx.level();
         let mut file_count_data = vec![];
 
-        let descendants = root_id.descendants(arena);
-
-        for node_id in descendants {
+        for edge in root_id.reverse_traverse(arena) {
+            let node_id = match edge {
+                NodeEdge::Start(id) => id,
+                NodeEdge::End(_) => continue,
+            };
             let node = arena[node_id].get();
 
             if node.depth() > max_depth {
                 continue;
             }
 
-            node.flat_display(f, ctx)?;
+            let row = Row::<grid::Flat>::new(node, ctx, None);
+
+            writeln!(f, "{row}")?;
+
             file_count_data.push(Tree::compute_file_count(node_id, arena));
         }
 

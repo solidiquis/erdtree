@@ -1,8 +1,8 @@
 use crate::{
-    fs::inode::Inode,
-    icons,
     context::Context,
     disk_usage::file_size::{DiskUsage, FileSize},
+    fs::inode::Inode,
+    icons,
     styles::get_ls_colors,
     tree::error::Error,
 };
@@ -13,7 +13,6 @@ use std::{
     borrow::Cow,
     convert::TryFrom,
     ffi::OsStr,
-    fmt::{self, Formatter},
     fs::{FileType, Metadata},
     path::{Path, PathBuf},
     time::SystemTime,
@@ -27,9 +26,6 @@ use crate::fs::{
 
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
-
-/// Concerned with formating [Node]s for display variants.
-pub mod display;
 
 /// Styling utilities for a [Node].
 pub mod style;
@@ -199,24 +195,17 @@ impl Node {
 
     /// Whether or not [Node] has extended attributes.
     #[cfg(unix)]
-    const fn has_xattrs(&self) -> bool {
+    pub const fn has_xattrs(&self) -> bool {
         self.has_xattrs
     }
 
-    /// Formats the [Node] for the tree presentation.
-    pub fn tree_display(&self, f: &mut Formatter, prefix: &str, ctx: &Context) -> fmt::Result {
-        self.tree(f, Some(prefix), ctx)
-    }
-
-    /// Formats the [Node] for the [`Flat`] presentation.
-    ///
-    /// [`Flat`]: crate::tree::display::Flat
-    pub fn flat_display(&self, f: &mut Formatter, ctx: &Context) -> fmt::Result {
-        self.flat(f, ctx)
+    /// Getter for [Node]'s style field.
+    pub const fn style(&self) -> Option<Style> {
+        self.style
     }
 
     /// See [`icons::compute`].
-    fn compute_icon(&self, no_color: bool) -> Cow<'static, str> {
+    pub fn compute_icon(&self, no_color: bool) -> Cow<'static, str> {
         if no_color {
             icons::compute(self.dir_entry(), self.symlink_target_path())
         } else {

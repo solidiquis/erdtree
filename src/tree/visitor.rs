@@ -1,9 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use crate::{
-    Context,
-    tree::node::Node,
-};
+use crate::{tree::node::Node, Context};
 use ignore::{DirEntry, Error as IgnoreError, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 
 pub enum TraversalState {
