@@ -27,9 +27,6 @@ use crate::fs::{
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
-/// Styling utilities for a [Node].
-pub mod style;
-
 /// A node of [`Tree`] that can be created from a [`DirEntry`]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
 /// uses ANSI colors determined by the file-type and `LS_COLORS`.

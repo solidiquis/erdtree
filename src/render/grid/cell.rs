@@ -1,6 +1,7 @@
 use crate::{
     context::Context,
     disk_usage::file_size::FileSize,
+    render::theme,
     styles::{self, PLACEHOLDER},
     tree::node::Node,
 };
@@ -54,14 +55,7 @@ impl<'a> Cell<'a> {
         match self.kind {
             Kind::FileName { prefix } => {
                 let pre = prefix.unwrap_or("");
-
-                let name = node.symlink_target_file_name().map_or_else(
-                    || Node::stylize(node.file_name(), node.style()),
-                    |target_name| {
-                        let link_name = node.file_name();
-                        Node::stylize_link_name(link_name, target_name, node.style())
-                    },
-                );
+                let name = theme::stylize_file_name(node);
 
                 if !ctx.icons {
                     return write!(f, "{pre}{name}");
@@ -221,14 +215,10 @@ impl<'a> Cell<'a> {
         let node = self.node;
         let ctx = self.ctx;
 
-        let file_mode = node.mode().unwrap();
-
         let formatted_perms = if ctx.octal {
-            Node::style_octal_permissions(&file_mode)
-        } else if node.has_xattrs() {
-            Node::style_sym_permissions(&file_mode, true)
+            theme::style_oct_permissions(node)
         } else {
-            Node::style_sym_permissions(&file_mode, false)
+            theme::style_sym_permissions(node)
         };
 
         write!(f, "{formatted_perms}")
