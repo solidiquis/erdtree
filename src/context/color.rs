@@ -11,5 +11,5 @@ pub enum Coloring {
     Auto,
 
     /// Turn on colorization always
-    Forced,
+    Force,
 }
