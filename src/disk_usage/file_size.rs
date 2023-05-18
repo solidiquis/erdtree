@@ -11,7 +11,7 @@ use std::{borrow::Cow, fs::Metadata, ops::AddAssign, path::Path};
 /// Represents either logical or physical size and handles presentation.
 #[derive(Clone, Debug)]
 pub struct FileSize {
-    pub bytes: u64,
+    pub value: u64,
     #[allow(dead_code)]
     disk_usage: DiskUsage,
     prefix_kind: PrefixKind,
@@ -34,7 +34,7 @@ pub enum DiskUsage {
     /// How many bytes does a file contain
     Logical,
 
-    /// How much actual space on disk, taking into account sparse files and compression.
+    /// How much actual space on disk in bytes, taking into account sparse files and compression.
     #[default]
     Physical,
 }
@@ -42,13 +42,13 @@ pub enum DiskUsage {
 impl FileSize {
     /// Initializes a [`FileSize`].
     pub const fn new(
-        bytes: u64,
+        value: u64,
         disk_usage: DiskUsage,
         human_readable: bool,
         prefix_kind: PrefixKind,
     ) -> Self {
         Self {
-            bytes,
+            value,
             disk_usage,
             human_readable,
             prefix_kind,
@@ -84,22 +84,22 @@ impl FileSize {
     /// Precompute the raw (unpadded) display and sets the number of columns the size (without
     /// the prefix) will occupy. Also sets the [Style] to use in advance to style the size output.
     pub fn precompute_unpadded_display(&mut self) {
-        let fbytes = self.bytes as f64;
+        let value = self.value as f64;
 
         match self.prefix_kind {
             PrefixKind::Si => {
-                let unit = SiPrefix::from(fbytes);
+                let unit = SiPrefix::from(value);
                 let base_value = unit.base_value();
 
                 if !self.human_readable {
-                    self.unpadded_display = Some(format!("{} B", self.bytes));
-                    self.size_columns = utils::num_integral(self.bytes);
+                    self.unpadded_display = Some(format!("{} B", self.value));
+                    self.size_columns = utils::num_integral(self.value);
                 } else if matches!(unit, SiPrefix::Base) {
-                    self.unpadded_display = Some(format!("{} {unit}", self.bytes));
-                    self.size_columns = utils::num_integral(self.bytes);
+                    self.unpadded_display = Some(format!("{} {unit}", self.value));
+                    self.size_columns = utils::num_integral(self.value);
                     self.uses_base_unit = Some(());
                 } else {
-                    let size = fbytes / (base_value as f64);
+                    let size = value / (base_value as f64);
                     self.unpadded_display = Some(format!("{size:.2} {unit}"));
                     self.size_columns = utils::num_integral((size * 100.0).floor() as u64) + 1;
                 }
@@ -110,18 +110,18 @@ impl FileSize {
                 }
             }
             PrefixKind::Bin => {
-                let unit = BinPrefix::from(fbytes);
+                let unit = BinPrefix::from(value);
                 let base_value = unit.base_value();
 
                 if !self.human_readable {
-                    self.unpadded_display = Some(format!("{} B", self.bytes));
-                    self.size_columns = utils::num_integral(self.bytes);
+                    self.unpadded_display = Some(format!("{} B", self.value));
+                    self.size_columns = utils::num_integral(self.value);
                 } else if matches!(unit, BinPrefix::Base) {
-                    self.unpadded_display = Some(format!("{} {unit}", self.bytes));
-                    self.size_columns = utils::num_integral(self.bytes);
+                    self.unpadded_display = Some(format!("{} {unit}", self.value));
+                    self.size_columns = utils::num_integral(self.value);
                     self.uses_base_unit = Some(());
                 } else {
-                    let size = fbytes / (base_value as f64);
+                    let size = value / (base_value as f64);
                     self.unpadded_display = Some(format!("{size:.2} {unit}"));
                     self.size_columns = utils::num_integral((size * 100.0).floor() as u64) + 1;
                 }
@@ -144,13 +144,13 @@ impl FileSize {
             if self.uses_base_unit.is_some() {
                 format!(
                     "{:>max_size_width$} {unit:>max_size_unit_width$}",
-                    self.bytes
+                    self.value
                 )
             } else {
                 format!("{size:>max_size_width$} {unit:>max_size_unit_width$}")
             }
         } else {
-            format!("{:<max_size_width$} B", self.bytes)
+            format!("{:<max_size_width$} B", self.value)
         };
 
         if let Some(style) = self.style {
@@ -186,6 +186,6 @@ impl FileSize {
 
 impl AddAssign<&Self> for FileSize {
     fn add_assign(&mut self, rhs: &Self) {
-        self.bytes += rhs.bytes;
+        self.value += rhs.value;
     }
 }

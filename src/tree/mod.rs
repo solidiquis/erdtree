@@ -228,7 +228,7 @@ impl Tree {
             }
         }
 
-        if dir_size.bytes > 0 {
+        if dir_size.value > 0 {
             let dir = tree[current_node_id].get_mut();
 
             dir_size.precompute_unpadded_display();
