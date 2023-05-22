@@ -1,8 +1,6 @@
 use super::super::units::{BinPrefix, PrefixKind, SiPrefix, UnitPrefix};
-use crate::context::Context;
 use filesize::PathExt;
 use std::{
-    convert::From,
     fmt::{self, Display},
     fs::Metadata,
     path::Path,
@@ -38,6 +36,24 @@ impl Metric {
         }
     }
 
+    pub const fn init_empty_logical(human_readable: bool, prefix_kind: PrefixKind) -> Self {
+        Self {
+            value: 0,
+            human_readable,
+            kind: MetricKind::Logical,
+            prefix_kind,
+        }
+    }
+
+    pub const fn init_empty_physical(human_readable: bool, prefix_kind: PrefixKind) -> Self {
+        Self {
+            value: 0,
+            human_readable,
+            kind: MetricKind::Physical,
+            prefix_kind,
+        }
+    }
+
     pub fn init_physical(
         path: &Path,
         metadata: &Metadata,
@@ -52,22 +68,6 @@ impl Metric {
             human_readable,
             kind,
             prefix_kind,
-        }
-    }
-}
-
-impl From<&Context> for Metric {
-    fn from(ctx: &Context) -> Self {
-        let metric_kind = match ctx.disk_usage {
-            super::DiskUsage::Logical => MetricKind::Logical,
-            super::DiskUsage::Physical => MetricKind::Physical,
-        };
-
-        Self {
-            value: 0,
-            prefix_kind: ctx.unit,
-            human_readable: ctx.human,
-            kind: metric_kind,
         }
     }
 }

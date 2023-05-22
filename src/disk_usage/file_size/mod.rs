@@ -5,12 +5,12 @@ use std::{convert::From, ops::AddAssign};
 pub mod byte;
 //pub mod block;
 //pub mod word_count;
-//pub mod line_count;
+pub mod line_count;
 
 pub enum FileSize {
     //Block(block::Metric),
     //WordCount(word_count::Metric),
-    //LineCount(line_count::Metric),
+    Line(line_count::Metric),
     Byte(byte::Metric),
 }
 
@@ -23,6 +23,9 @@ pub enum DiskUsage {
     /// How much actual space on disk in bytes, taking into account sparse files and compression.
     #[default]
     Physical,
+
+    /// How many total lines a file contains
+    Line,
 }
 
 impl FileSize {
@@ -30,6 +33,7 @@ impl FileSize {
     pub const fn value(&self) -> u64 {
         match self {
             Self::Byte(metric) => metric.value,
+            Self::Line(metric) => metric.value,
         }
     }
 }
@@ -38,6 +42,7 @@ impl AddAssign<&Self> for FileSize {
     fn add_assign(&mut self, rhs: &Self) {
         match self {
             Self::Byte(metric) => metric.value += rhs.value(),
+            Self::Line(metric) => metric.value += rhs.value(),
         }
     }
 }
@@ -45,7 +50,11 @@ impl AddAssign<&Self> for FileSize {
 impl From<&Context> for FileSize {
     fn from(ctx: &Context) -> Self {
         match ctx.disk_usage {
-            DiskUsage::Logical | DiskUsage::Physical => Self::Byte(byte::Metric::from(ctx)),
+            DiskUsage::Logical => Self::Byte(byte::Metric::init_empty_logical(ctx.human, ctx.unit)),
+            DiskUsage::Physical => {
+                Self::Byte(byte::Metric::init_empty_physical(ctx.human, ctx.unit))
+            }
+            DiskUsage::Line => Self::Line(line_count::Metric::default()),
         }
     }
 }

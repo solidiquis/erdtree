@@ -1,6 +1,6 @@
 use crate::{
     context::Context,
-    disk_usage::file_size::{byte, DiskUsage, FileSize},
+    disk_usage::file_size::{byte, line_count, DiskUsage, FileSize},
     fs::inode::Inode,
     icons,
     styles::get_ls_colors,
@@ -244,6 +244,10 @@ impl TryFrom<(DirEntry, &Context)> for Node {
                             let metric =
                                 byte::Metric::init_physical(path, &metadata, ctx.unit, ctx.human);
                             Some(FileSize::Byte(metric))
+                        }
+                        DiskUsage::Line => {
+                            let metric = line_count::Metric::init_lc(path);
+                            metric.map(FileSize::Line)
                         }
                     }
                 } else {

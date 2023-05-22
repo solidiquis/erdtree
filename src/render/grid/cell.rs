@@ -1,6 +1,9 @@
 use crate::{
     context::Context,
-    disk_usage::{file_size::FileSize, units::PrefixKind},
+    disk_usage::{
+        file_size::{byte, line_count, FileSize},
+        units::PrefixKind,
+    },
     render::theme,
     styles::{self, PLACEHOLDER},
     tree::node::Node,
@@ -107,24 +110,8 @@ impl<'a> Cell<'a> {
         };
 
         match file_size {
-            FileSize::Byte(metric) => {
-                let max_size_width = ctx.max_size_width;
-                let max_unit_width = ctx.max_size_unit_width;
-                let out = format!("{metric}");
-                let [size, unit]: [&str; 2] =
-                    out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
-
-                if ctx.no_color() {
-                    write!(f, "{size:>max_size_width$} {unit:>max_unit_width$}")
-                } else {
-                    let color = styles::get_du_theme().unwrap().get(unit).unwrap();
-
-                    let out =
-                        color.paint(format!("{size:>max_size_width$} {unit:>max_unit_width$}"));
-
-                    write!(f, "{out}")
-                }
-            }
+            FileSize::Byte(metric) => Self::fmt_bytes(f, metric, ctx),
+            FileSize::Line(metric) => Self::fmt_line_count(f, metric, ctx),
         }
     }
 
@@ -244,7 +231,7 @@ impl<'a> Cell<'a> {
     }
 
     #[inline]
-    pub fn fmt_size_placeholder(f: &mut fmt::Formatter<'_>, ctx: &Context) -> fmt::Result {
+    fn fmt_size_placeholder(f: &mut fmt::Formatter<'_>, ctx: &Context) -> fmt::Result {
         if ctx.suppress_size || ctx.max_size_width == 0 {
             return write!(f, "");
         }
@@ -264,6 +251,40 @@ impl<'a> Cell<'a> {
             };
 
         write!(f, "{placeholder:>placeholder_padding$}")
+    }
+
+    #[inline]
+    fn fmt_bytes(f: &mut fmt::Formatter<'_>, metric: &byte::Metric, ctx: &Context) -> fmt::Result {
+        let max_size_width = ctx.max_size_width;
+        let max_unit_width = ctx.max_size_unit_width;
+        let out = format!("{metric}");
+        let [size, unit]: [&str; 2] = out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
+
+        if ctx.no_color() {
+            return write!(f, "{size:>max_size_width$} {unit:>max_unit_width$}");
+        }
+
+        let color = styles::get_du_theme().unwrap().get(unit).unwrap();
+
+        let out = color.paint(format!("{size:>max_size_width$} {unit:>max_unit_width$}"));
+
+        write!(f, "{out}")
+    }
+
+    #[inline]
+    fn fmt_line_count(
+        f: &mut fmt::Formatter<'_>,
+        metric: &line_count::Metric,
+        ctx: &Context,
+    ) -> fmt::Result {
+        let max_size_width = ctx.max_size_width;
+
+        if ctx.no_color() {
+            return write!(f, "{metric:>max_size_width$}");
+        }
+        let color = styles::get_du_theme().unwrap().get("B").unwrap();
+
+        write!(f, "{}", color.paint(format!("{metric:>max_size_width$}")))
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::{
     context::{file, output::ColumnProperties, Context},
     disk_usage::{
-        file_size::FileSize,
+        file_size::{DiskUsage, FileSize},
         units::{BinPrefix, PrefixKind, SiPrefix},
     },
     fs::inode::Inode,
@@ -315,20 +315,25 @@ impl Tree {
                 col_props.max_size_width = file_size_cols;
             }
 
-            let unit_len = match ctx.unit {
-                PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
-                    BinPrefix::Base => 1,
-                    _ => 3,
-                },
-                PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
-                    SiPrefix::Base => 1,
-                    _ => 2,
-                },
-                _ => 1,
-            };
+            match ctx.disk_usage {
+                DiskUsage::Logical | DiskUsage::Physical => {
+                    let unit_len = match ctx.unit {
+                        PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
+                            BinPrefix::Base => 1,
+                            _ => 3,
+                        },
+                        PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
+                            SiPrefix::Base => 1,
+                            _ => 2,
+                        },
+                        _ => 1,
+                    };
 
-            if unit_len > col_props.max_size_unit_width {
-                col_props.max_size_unit_width = unit_len;
+                    if unit_len > col_props.max_size_unit_width {
+                        col_props.max_size_unit_width = unit_len;
+                    }
+                }
+                DiskUsage::Line => (),
             }
         }
 
@@ -369,20 +374,25 @@ impl Tree {
                 col_props.max_size_width = file_size_cols;
             }
 
-            let unit_len = match ctx.unit {
-                PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
-                    BinPrefix::Base => 1,
-                    _ => 3,
-                },
-                PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
-                    SiPrefix::Base => 1,
-                    _ => 2,
-                },
-                _ => 1,
-            };
+            match ctx.disk_usage {
+                DiskUsage::Logical | DiskUsage::Physical => {
+                    let unit_len = match ctx.unit {
+                        PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
+                            BinPrefix::Base => 1,
+                            _ => 3,
+                        },
+                        PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
+                            SiPrefix::Base => 1,
+                            _ => 2,
+                        },
+                        _ => 1,
+                    };
 
-            if unit_len > col_props.max_size_unit_width {
-                col_props.max_size_unit_width = unit_len;
+                    if unit_len > col_props.max_size_unit_width {
+                        col_props.max_size_unit_width = unit_len;
+                    }
+                }
+                _ => (),
             }
         }
     }
