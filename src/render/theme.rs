@@ -1,5 +1,4 @@
 use crate::{
-    fs::permissions::FileModeXAttrs,
     styles::{self, ThemesMap},
     tree::node::Node,
 };
@@ -71,6 +70,8 @@ pub fn stylize_file_name(node: &Node) -> Cow<'_, str> {
 /// Styles the symbolic notation of file permissions.
 #[cfg(unix)]
 pub fn style_sym_permissions(node: &Node) -> String {
+    use crate::fs::permissions::FileModeXAttrs;
+
     let perms = node.mode().expect("Expected permissions to be initialized");
 
     let symb = if node.has_xattrs() {

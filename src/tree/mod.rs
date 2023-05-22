@@ -1,6 +1,9 @@
 use crate::{
     context::{file, output::ColumnProperties, Context},
-    disk_usage::file_size::FileSize,
+    disk_usage::{
+        file_size::FileSize,
+        units::{BinPrefix, PrefixKind, SiPrefix},
+    },
     fs::inode::Inode,
     utils,
 };
@@ -186,7 +189,7 @@ impl Tree {
 
         let mut children = branches.remove(current_node.path()).unwrap();
 
-        let mut dir_size = FileSize::new(0, ctx.disk_usage, ctx.human, ctx.unit);
+        let mut dir_size = FileSize::from(ctx);
 
         for child_id in &children {
             let index = *child_id;
@@ -211,10 +214,10 @@ impl Tree {
             let node = tree[index].get();
 
             #[cfg(unix)]
-            Self::update_column_properties(column_properties, node, ctx.long);
+            Self::update_column_properties(column_properties, node, ctx);
 
             #[cfg(not(unix))]
-            Self::update_column_properties(column_properties, node);
+            Self::update_column_properties(column_properties, node, ctx);
 
             // If a hard-link is already accounted for then don't increment parent dir size.
             if let Some(inode) = node.inode() {
@@ -228,10 +231,8 @@ impl Tree {
             }
         }
 
-        if dir_size.value > 0 {
+        if dir_size.value() > 0 {
             let dir = tree[current_node_id].get_mut();
-
-            dir_size.precompute_unpadded_display();
 
             dir.set_file_size(dir_size);
         }
@@ -239,10 +240,10 @@ impl Tree {
         let dir = tree[current_node_id].get();
 
         #[cfg(unix)]
-        Self::update_column_properties(column_properties, dir, ctx.long);
+        Self::update_column_properties(column_properties, dir, ctx);
 
         #[cfg(not(unix))]
-        Self::update_column_properties(column_properties, dir);
+        Self::update_column_properties(column_properties, dir, ctx);
 
         children.sort_by(|id_a, id_b| {
             let node_a = tree[*id_a].get();
@@ -306,16 +307,32 @@ impl Tree {
 
     /// Updates [`ColumnProperties`] with provided [Node].
     #[cfg(unix)]
-    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, long: bool) {
+    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            let file_size_cols = file_size.size_columns;
+            let file_size_cols = utils::num_integral(file_size.value());
 
             if file_size_cols > col_props.max_size_width {
                 col_props.max_size_width = file_size_cols;
             }
+
+            let unit_len = match ctx.unit {
+                PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
+                    BinPrefix::Base => 1,
+                    _ => 3,
+                },
+                PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
+                    SiPrefix::Base => 1,
+                    _ => 2,
+                },
+                _ => 1,
+            };
+
+            if unit_len > col_props.max_size_unit_width {
+                col_props.max_size_unit_width = unit_len;
+            }
         }
 
-        if long {
+        if ctx.long {
             if let Some(ino) = node.ino() {
                 let ino_num_integral = utils::num_integral(ino);
 
@@ -344,12 +361,28 @@ impl Tree {
 
     /// Updates [ColumnProperties] with provided [Node].
     #[cfg(not(unix))]
-    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node) {
+    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            let file_size_cols = file_size.size_columns;
+            let file_size_cols = utils::num_integral(file_size.value());
 
             if file_size_cols > col_props.max_size_width {
                 col_props.max_size_width = file_size_cols;
+            }
+
+            let unit_len = match ctx.unit {
+                PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
+                    BinPrefix::Base => 1,
+                    _ => 3,
+                },
+                PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
+                    SiPrefix::Base => 1,
+                    _ => 2,
+                },
+                _ => 1,
+            };
+
+            if unit_len > col_props.max_size_unit_width {
+                col_props.max_size_unit_width = unit_len;
             }
         }
     }

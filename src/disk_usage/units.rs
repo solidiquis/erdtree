@@ -64,9 +64,9 @@ impl UnitPrefix for BinPrefix {
 }
 
 /// Get the closest human-readable unit prefix for value.
-impl From<f64> for BinPrefix {
-    fn from(value: f64) -> Self {
-        let log = value.log2();
+impl From<u64> for BinPrefix {
+    fn from(value: u64) -> Self {
+        let log = (value as f64).log2();
 
         if log < 10. {
             Self::Base
@@ -83,9 +83,9 @@ impl From<f64> for BinPrefix {
 }
 
 /// Get the closest human-readable unit prefix for value.
-impl From<f64> for SiPrefix {
-    fn from(value: f64) -> Self {
-        let log = value.log10();
+impl From<u64> for SiPrefix {
+    fn from(value: u64) -> Self {
+        let log = (value as f64).log10();
 
         if log < 3. {
             Self::Base

@@ -1,11 +1,12 @@
 use crate::{
     context::Context,
-    disk_usage::file_size::FileSize,
+    disk_usage::{file_size::FileSize, units::PrefixKind},
     render::theme,
     styles::{self, PLACEHOLDER},
     tree::node::Node,
 };
 use std::{
+    borrow::Cow,
     ffi::OsStr,
     fmt::{self, Display},
     path::Path,
@@ -101,12 +102,30 @@ impl<'a> Cell<'a> {
         let node = self.node;
         let ctx = self.ctx;
 
-        let formatted_size = node.file_size().map_or_else(
-            || FileSize::placeholder(ctx),
-            |size| size.format(ctx.max_size_width, ctx.max_size_unit_width),
-        );
+        let Some(file_size) = node.file_size() else {
+            return Self::fmt_size_placeholder(f, ctx)
+        };
 
-        write!(f, "{formatted_size}")
+        match file_size {
+            FileSize::Byte(metric) => {
+                let max_size_width = ctx.max_size_width;
+                let max_unit_width = ctx.max_size_unit_width;
+                let out = format!("{metric}");
+                let [size, unit]: [&str; 2] =
+                    out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
+
+                if ctx.no_color() {
+                    write!(f, "{size:>max_size_width$} {unit:>max_unit_width$}")
+                } else {
+                    let color = styles::get_du_theme().unwrap().get(unit).unwrap();
+
+                    let out =
+                        color.paint(format!("{size:>max_size_width$} {unit:>max_unit_width$}"));
+
+                    write!(f, "{out}")
+                }
+            }
+        }
     }
 
     /// Rules on how to format block for rendering
@@ -222,6 +241,29 @@ impl<'a> Cell<'a> {
         };
 
         write!(f, "{formatted_perms}")
+    }
+
+    #[inline]
+    pub fn fmt_size_placeholder(f: &mut fmt::Formatter<'_>, ctx: &Context) -> fmt::Result {
+        if ctx.suppress_size || ctx.max_size_width == 0 {
+            return write!(f, "");
+        }
+
+        let placeholder = styles::get_placeholder_style().map_or_else(
+            |_| Cow::from(styles::PLACEHOLDER),
+            |style| Cow::from(style.paint(styles::PLACEHOLDER).to_string()),
+        );
+
+        let placeholder_padding = placeholder.len()
+            + ctx.max_size_width
+            + match ctx.unit {
+                PrefixKind::Si if ctx.human => 2,
+                PrefixKind::Bin if ctx.human => 3,
+                PrefixKind::Si => 0,
+                PrefixKind::Bin => 1,
+            };
+
+        write!(f, "{placeholder:>placeholder_padding$}")
     }
 }
 

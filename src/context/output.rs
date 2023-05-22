@@ -20,8 +20,9 @@ pub struct ColumnProperties {
 impl From<&Context> for ColumnProperties {
     fn from(ctx: &Context) -> Self {
         let unit_width = match ctx.unit {
-            PrefixKind::Si => 2,
-            PrefixKind::Bin => 3,
+            PrefixKind::Bin if ctx.human => 3,
+            PrefixKind::Si if ctx.human => 2,
+            _ => 1,
         };
 
         Self {
