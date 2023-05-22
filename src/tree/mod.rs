@@ -333,7 +333,7 @@ impl Tree {
                         col_props.max_size_unit_width = unit_len;
                     }
                 }
-                DiskUsage::Line => (),
+                DiskUsage::Line | DiskUsage::Block => (),
             }
         }
 

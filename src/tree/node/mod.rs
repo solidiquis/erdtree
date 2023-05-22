@@ -19,9 +19,12 @@ use std::{
 };
 
 #[cfg(unix)]
-use crate::fs::{
-    permissions::{FileMode, SymbolicNotation},
-    xattr::ExtendedAttr,
+use crate::{
+    disk_usage::file_size::block,
+    fs::{
+        permissions::{FileMode, SymbolicNotation},
+        xattr::ExtendedAttr,
+    },
 };
 
 /// Ordering and sorting rules for [Node].
@@ -248,6 +251,12 @@ impl TryFrom<(DirEntry, &Context)> for Node {
                         DiskUsage::Line => {
                             let metric = line_count::Metric::init_lc(path);
                             metric.map(FileSize::Line)
+                        }
+
+                        #[cfg(unix)]
+                        DiskUsage::Block => {
+                            let metric = block::Metric::init(&metadata);
+                            Some(FileSize::Block(metric))
                         }
                     }
                 } else {

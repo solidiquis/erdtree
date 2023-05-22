@@ -1,7 +1,7 @@
 use crate::{
     context::Context,
     disk_usage::{
-        file_size::{byte, line_count, FileSize},
+        file_size::{byte, FileSize},
         units::PrefixKind,
     },
     render::theme,
@@ -111,7 +111,10 @@ impl<'a> Cell<'a> {
 
         match file_size {
             FileSize::Byte(metric) => Self::fmt_bytes(f, metric, ctx),
-            FileSize::Line(metric) => Self::fmt_line_count(f, metric, ctx),
+            FileSize::Line(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
+
+            #[cfg(unix)]
+            FileSize::Block(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
         }
     }
 
@@ -272,9 +275,9 @@ impl<'a> Cell<'a> {
     }
 
     #[inline]
-    fn fmt_line_count(
+    fn fmt_unitless_disk_usage<M: Display>(
         f: &mut fmt::Formatter<'_>,
-        metric: &line_count::Metric,
+        metric: &M,
         ctx: &Context,
     ) -> fmt::Result {
         let max_size_width = ctx.max_size_width;
