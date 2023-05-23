@@ -1,7 +1,7 @@
 use crate::{
     context::Context,
     disk_usage::{
-        file_size::{byte, FileSize},
+        file_size::{byte, DiskUsage, FileSize},
         units::PrefixKind,
     },
     render::theme,
@@ -112,6 +112,7 @@ impl<'a> Cell<'a> {
         match file_size {
             FileSize::Byte(metric) => Self::fmt_bytes(f, metric, ctx),
             FileSize::Line(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
+            FileSize::Word(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
 
             #[cfg(unix)]
             FileSize::Block(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
@@ -244,14 +245,19 @@ impl<'a> Cell<'a> {
             |style| Cow::from(style.paint(styles::PLACEHOLDER).to_string()),
         );
 
-        let placeholder_padding = placeholder.len()
-            + ctx.max_size_width
-            + match ctx.unit {
-                PrefixKind::Si if ctx.human => 2,
-                PrefixKind::Bin if ctx.human => 3,
-                PrefixKind::Si => 0,
-                PrefixKind::Bin => 1,
-            };
+        let mut placeholder_padding = placeholder.len() + ctx.max_size_width - 1;
+
+        placeholder_padding += match ctx.disk_usage {
+            DiskUsage::Logical | DiskUsage::Physical => {
+                match ctx.unit {
+                    PrefixKind::Si if ctx.human => 2,
+                    PrefixKind::Bin if ctx.human => 3,
+                    PrefixKind::Si => 0,
+                    PrefixKind::Bin => 1,
+                }
+            },
+            _ => 0
+        };
 
         write!(f, "{placeholder:>placeholder_padding$}")
     }

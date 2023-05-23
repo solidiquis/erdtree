@@ -6,12 +6,12 @@ use std::{convert::From, ops::AddAssign};
 pub mod block;
 
 pub mod byte;
-//pub mod word_count;
+pub mod word_count;
 pub mod line_count;
 
 /// Represents all the different ways in which a filesize could be reported using various metrics.
 pub enum FileSize {
-    //WordCount(word_count::Metric),
+    Word(word_count::Metric),
     Line(line_count::Metric),
     Byte(byte::Metric),
     Block(block::Metric),
@@ -30,6 +30,9 @@ pub enum DiskUsage {
     /// How many total lines a file contains
     Line,
 
+    /// How many total words a file contains
+    Word,
+
     /// How many blocks are allocated to store the file
     #[cfg(unix)]
     Block,
@@ -41,6 +44,7 @@ impl FileSize {
         match self {
             Self::Byte(metric) => metric.value,
             Self::Line(metric) => metric.value,
+            Self::Word(metric) => metric.value,
 
             #[cfg(unix)]
             Self::Block(metric) => metric.value,
@@ -53,6 +57,7 @@ impl AddAssign<&Self> for FileSize {
         match self {
             Self::Byte(metric) => metric.value += rhs.value(),
             Self::Line(metric) => metric.value += rhs.value(),
+            Self::Word(metric) => metric.value += rhs.value(),
 
             #[cfg(unix)]
             Self::Block(metric) => metric.value += rhs.value(),
@@ -68,6 +73,7 @@ impl From<&Context> for FileSize {
             Logical => Self::Byte(byte::Metric::init_empty_logical(ctx.human, ctx.unit)),
             Physical => Self::Byte(byte::Metric::init_empty_physical(ctx.human, ctx.unit)),
             Line => Self::Line(line_count::Metric::default()),
+            Word => Self::Word(word_count::Metric::default()),
 
             #[cfg(unix)]
             Block => Self::Block(block::Metric::default()),
