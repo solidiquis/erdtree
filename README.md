@@ -72,6 +72,7 @@ Options:
   -l, --long                       Show extended metadata and attributes
       --octal                      Show permissions in numeric octal format instead of symbolic
       --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
+      --time-format                Which format to use for the timestamp; default by default [possible values: iso, iso-strict, short, default]
   -L, --level <NUM>                Maximum depth to display
   -p, --pattern <PATTERN>          Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
       --glob                       Enables glob based searching
@@ -100,6 +101,7 @@ Of all the above arguments, the following are not yet available on Windows but w
   -l, --long                       Show extended metadata and attributes
       --octal                      Show permissions in numeric octal format instead of symbolic
       --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
+      --time-format                Which format to use for the timestamp; default by default [possible values: iso, iso-strict, short, default]
 ```
 
 ## Installation
@@ -377,6 +379,7 @@ Unix file permissions as well as metadata associated with directory entries can 
 -l, --long                       Show extended metadata and attributes
     --octal                      Show permissions in numeric octal format instead of symbolic
     --time <TIME>                Which kind of timestamp to use; modified by default [possible values: created, accessed, modified]
+    --time-format                Which format to use for the timestamp; default by default [possible values: iso, iso-strict, short, default]
 ```
 
 <p align="center">

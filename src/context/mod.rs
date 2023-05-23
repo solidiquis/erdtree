@@ -97,6 +97,11 @@ pub struct Context {
     #[arg(long, value_enum, requires = "long")]
     pub time: Option<time::Stamp>,
 
+    /// Which format to use for the timestamp; default by default
+    #[cfg(unix)]
+    #[arg(long = "time-format", value_enum, requires = "long")]
+    pub time_format: Option<time::Format>,
+
     /// Maximum depth to display
     #[arg(short = 'L', long, value_name = "NUM")]
     level: Option<usize>,
@@ -317,6 +322,12 @@ impl Context {
     #[cfg(unix)]
     pub fn time(&self) -> time::Stamp {
         self.time.unwrap_or_default()
+    }
+
+    /// Which format to use for the timestamp; default by default
+    #[cfg(unix)]
+    pub fn time_format(&self) -> time::Format {
+        self.time_format.unwrap_or_default()
     }
 
     /// Which `FileType` to filter on; defaults to regular file.
