@@ -13,6 +13,7 @@ pub mod permissions;
 pub mod xattr;
 
 /// Concerned with determining group and owner of file.
+#[cfg(unix)]
 pub mod ug;
 
 /// Returns the path to the target of the soft link. Returns `None` if provided `dir_entry` isn't a

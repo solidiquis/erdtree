@@ -21,17 +21,14 @@ use std::{
 #[cfg(unix)]
 use crate::{
     disk_usage::file_size::block,
-    fs::{
-        permissions::{FileMode, SymbolicNotation},
-        ug::UserGroupInfo,
-        xattr::ExtendedAttr,
-    },
+    fs::permissions::{FileMode, SymbolicNotation},
 };
 
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
 /// File attributes specific to Unix systems.
+#[cfg(unix)]
 pub mod unix;
 
 /// A node of [`Tree`] that can be created from a [`DirEntry`]. Any filesystem I/O and
@@ -200,6 +197,18 @@ impl Node {
     #[cfg(unix)]
     pub const fn has_xattrs(&self) -> bool {
         self.unix_attrs.has_xattrs
+    }
+
+    /// Returns the owner of the [`Node`].
+    #[cfg(unix)]
+    pub fn owner(&self) -> Option<&str> {
+        self.unix_attrs.owner()
+    }
+
+    /// Returns the group of the [`Node`].
+    #[cfg(unix)]
+    pub fn group(&self) -> Option<&str> {
+        self.unix_attrs.group()
     }
 
     /// Getter for [Node]'s style field.

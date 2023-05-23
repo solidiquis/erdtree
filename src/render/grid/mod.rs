@@ -52,10 +52,12 @@ impl Display for Row<'_, Tree> {
             let perms = Cell::new(node, ctx, cell::Kind::Permissions);
             //let nlink = Cell::new(node, ctx, cell::Kind::Nlink);
             //let blocks = Cell::new(node, ctx, cell::Kind::Blocks);
+            let owner = Cell::new(node, ctx, cell::Kind::Owner);
+            let group = Cell::new(node, ctx, cell::Kind::Group);
             let time = Cell::new(node, ctx, cell::Kind::Datetime);
 
             //format!("{ino} {perms} {nlink} {blocks} {time} {size} {name}")
-            format!("{perms} {time} {size} {name}")
+            format!("{perms} {owner} {group} {time} {size} {name}")
         } else {
             format!("{size} {name}")
         };

@@ -12,12 +12,22 @@ pub struct Attrs {
 
 impl Attrs {
     /// Constructor for [`Attrs`].
-    pub fn new(has_xattrs: bool, owner: Option<String>, group: Option<String>) -> Self {
+    pub const fn new(has_xattrs: bool, owner: Option<String>, group: Option<String>) -> Self {
         Self {
             has_xattrs,
             owner,
             group,
         }
+    }
+
+    /// Returns the file owner.
+    pub fn owner(&self) -> Option<&str> {
+        self.owner.as_ref().map(|s| s.as_str())
+    }
+
+    /// Returns the file's group.
+    pub fn group(&self) -> Option<&str> {
+        self.group.as_ref().map(|s| s.as_str())
     }
 }
 

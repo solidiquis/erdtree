@@ -20,6 +20,7 @@ pub enum FileSize {
     Word(word_count::Metric),
     Line(line_count::Metric),
     Byte(byte::Metric),
+    #[cfg(unix)]
     Block(block::Metric),
 }
 

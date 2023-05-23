@@ -1,5 +1,5 @@
 use crate::{
-    context::{time, Context},
+    context::Context,
     disk_usage::{
         file_size::{byte, DiskUsage, FileSize},
         units::PrefixKind,
@@ -15,6 +15,9 @@ use std::{
     fmt::{self, Display},
     path::Path,
 };
+
+#[cfg(unix)]
+use crate::context::time;
 
 /// Constitutes a single cell in a given row of the output. The `kind` field denotes what type of
 /// data actually goes into the cell once rendered. Each `kind` which is of type [Kind] has its own
@@ -42,6 +45,10 @@ pub enum Kind<'a> {
     Blocks,
     #[cfg(unix)]
     Permissions,
+    #[cfg(unix)]
+    Owner,
+    #[cfg(unix)]
+    Group,
 }
 
 impl<'a> Cell<'a> {
@@ -189,6 +196,44 @@ impl<'a> Cell<'a> {
         write!(f, "{formatted_ino}")
     }
 
+    /// Rules on how to format owner.
+    #[cfg(unix)]
+    #[inline]
+    fn fmt_owner(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let max_owner_width = self.ctx.max_owner_width;
+
+        let owner = match self.node.owner() {
+            Some(o) => o,
+            None => styles::PLACEHOLDER,
+        };
+
+        if let Ok(style) = styles::get_owner_style() {
+            let formatted_owner = format!("{owner:>max_owner_width$}");
+            return write!(f, "{}", style.paint(formatted_owner));
+        }
+
+        write!(f, "{owner:>max_owner_width$}")
+    }
+
+    /// Rules on how to format group.
+    #[cfg(unix)]
+    #[inline]
+    fn fmt_group(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let max_group_width = self.ctx.max_group_width;
+
+        let group = match self.node.group() {
+            Some(o) => o,
+            None => styles::PLACEHOLDER,
+        };
+
+        if let Ok(style) = styles::get_group_style() {
+            let formatted_group = format!("{group:>max_group_width$}");
+            return write!(f, "{}", style.paint(formatted_group));
+        }
+
+        write!(f, "{group:>max_group_width$}")
+    }
+
     /// Rules on how to format datetime for rendering.
     #[cfg(unix)]
     #[inline]
@@ -247,6 +292,7 @@ impl<'a> Cell<'a> {
         write!(f, "{formatted_perms}")
     }
 
+    /// Formatter for the placeholder for file sizes.
     #[inline]
     fn fmt_size_placeholder(f: &mut fmt::Formatter<'_>, ctx: &Context) -> fmt::Result {
         if ctx.suppress_size || ctx.max_size_width == 0 {
@@ -329,6 +375,12 @@ impl Display for Cell<'_> {
 
             #[cfg(unix)]
             Kind::Permissions => self.fmt_permissions(f),
+
+            #[cfg(unix)]
+            Kind::Owner => self.fmt_owner(f),
+
+            #[cfg(unix)]
+            Kind::Group => self.fmt_group(f),
         }
     }
 }

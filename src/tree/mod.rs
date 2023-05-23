@@ -1,5 +1,5 @@
 use crate::{
-    context::{file, output::ColumnProperties, Context},
+    context::{column, file, Context},
     disk_usage::{
         file_size::{DiskUsage, FileSize},
         units::{BinPrefix, PrefixKind, SiPrefix},
@@ -55,7 +55,7 @@ impl Tree {
     /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
     /// various properties necessary to render output.
     pub fn try_init_and_update_context(mut ctx: Context) -> Result<(Self, Context)> {
-        let mut column_properties = ColumnProperties::from(&ctx);
+        let mut column_properties = column::Properties::from(&ctx);
 
         let (arena, root_id) = Self::traverse(&ctx, &mut column_properties)?;
 
@@ -100,7 +100,7 @@ impl Tree {
     /// be completely CPU-bound.
     fn traverse(
         ctx: &Context,
-        column_properties: &mut ColumnProperties,
+        column_properties: &mut column::Properties,
     ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
@@ -182,7 +182,7 @@ impl Tree {
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
         node_comparator: &NodeComparator,
         inode_set: &mut HashSet<Inode>,
-        column_properties: &mut ColumnProperties,
+        column_properties: &mut column::Properties,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
@@ -307,7 +307,7 @@ impl Tree {
 
     /// Updates [`ColumnProperties`] with provided [Node].
     #[cfg(unix)]
-    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, ctx: &Context) {
+    fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
             let file_size_cols = utils::num_integral(file_size.value());
 
@@ -338,6 +338,22 @@ impl Tree {
         }
 
         if ctx.long {
+            if let Some(owner) = node.owner() {
+                let owner_len = owner.len();
+
+                if owner_len > col_props.max_owner_width {
+                    col_props.max_owner_width = owner_len;
+                }
+            }
+
+            if let Some(group) = node.group() {
+                let group_len = group.len();
+
+                if group_len > col_props.max_group_width {
+                    col_props.max_group_width = group_len;
+                }
+            }
+
             if let Some(ino) = node.ino() {
                 let ino_num_integral = utils::num_integral(ino);
 
@@ -364,9 +380,9 @@ impl Tree {
         }
     }
 
-    /// Updates [ColumnProperties] with provided [Node].
+    /// Updates [column::Properties] with provided [Node].
     #[cfg(not(unix))]
-    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, ctx: &Context) {
+    fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
             let file_size_cols = utils::num_integral(file_size.value());
 

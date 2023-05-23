@@ -61,6 +61,14 @@ static PLACEHOLDER_STYLE: OnceCell<Style> = OnceCell::new();
 #[cfg(unix)]
 static INO_STYLE: OnceCell<Style> = OnceCell::new();
 
+/// Runtime evaluated static that contains style for the file owner string.
+#[cfg(unix)]
+static OWNER_STYLE: OnceCell<Style> = OnceCell::new();
+
+/// Runtime evaluated static that contains style for the file owner string.
+#[cfg(unix)]
+static GROUP_STYLE: OnceCell<Style> = OnceCell::new();
+
 /// Runtime evaluated static that contains style for number of hardlinks i.e. `nlink`.
 #[cfg(unix)]
 static NLINK_STYLE: OnceCell<Style> = OnceCell::new();
@@ -148,6 +156,20 @@ pub fn get_ino_style() -> Result<&'static Style, Error<'static>> {
     INO_STYLE.get().ok_or(Error::Uninitialized("INO_STYLE"))
 }
 
+/// Getter for [`OWNER_STYLE`]. Returns an error if not initialized.
+#[cfg(unix)]
+#[inline]
+pub fn get_owner_style() -> Result<&'static Style, Error<'static>> {
+    OWNER_STYLE.get().ok_or(Error::Uninitialized("OWNER_STYLE"))
+}
+
+/// Getter for [`GROUP_STYLE`]. Returns an error if not initialized.
+#[cfg(unix)]
+#[inline]
+pub fn get_group_style() -> Result<&'static Style, Error<'static>> {
+    GROUP_STYLE.get().ok_or(Error::Uninitialized("GROUP_STYLE"))
+}
+
 /// Getter for [`NLINK_STYLE`]. Returns an error if not initialized.
 #[cfg(unix)]
 #[inline]
@@ -230,6 +252,12 @@ fn init_themes_for_long_view() {
 
     let datetime_style = Color::Purple.bold();
     DATETIME_STYLE.set(datetime_style).unwrap();
+
+    let owner_style = Color::Cyan.bold();
+    OWNER_STYLE.set(owner_style).unwrap();
+
+    let group_style = Color::Green.bold();
+    GROUP_STYLE.set(group_style).unwrap();
 }
 
 /// Initializes all color themes.
