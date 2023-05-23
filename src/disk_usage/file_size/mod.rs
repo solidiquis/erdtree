@@ -2,11 +2,17 @@ use crate::context::Context;
 use clap::ValueEnum;
 use std::{convert::From, ops::AddAssign};
 
+/// Concerned with measuring file size in blocks.
 #[cfg(unix)]
 pub mod block;
 
+/// Concerned with measuring file size in bytes, logical or physical.
 pub mod byte;
+
+/// Concerned with measuring file size by line count.
 pub mod line_count;
+
+/// Concerned with measuring file size by word count.
 pub mod word_count;
 
 /// Represents all the different ways in which a filesize could be reported using various metrics.
@@ -39,6 +45,7 @@ pub enum DiskUsage {
 }
 
 impl FileSize {
+    /// Extracts the inner value of [`FileSize`] which represents the file size for various metrics.
     #[inline]
     pub const fn value(&self) -> u64 {
         match self {

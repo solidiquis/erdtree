@@ -204,7 +204,7 @@ impl Node {
         self.style
     }
 
-    /// See [`icons::compute`].
+    /// See [`crate::icons::fs::compute`].
     pub fn compute_icon(&self, no_color: bool) -> Cow<'static, str> {
         if no_color {
             icons::fs::compute(self.dir_entry(), self.symlink_target_path())

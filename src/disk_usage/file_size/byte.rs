@@ -6,6 +6,8 @@ use std::{
     path::Path,
 };
 
+/// Concerned with measuring file size in bytes, whether logical or physical determined by `kind`.
+/// Binary or SI units used for reporting determined by `prefix_kind`.
 pub struct Metric {
     pub value: u64,
     pub human_readable: bool,
@@ -14,12 +16,16 @@ pub struct Metric {
     prefix_kind: PrefixKind,
 }
 
+/// Represents the appropriate method in which to compute bytes. `Logical` represent the total amount
+/// of bytes in a file; `Physical` represents how many bytes are actually used to store the file on
+/// disk.
 pub enum MetricKind {
     Logical,
     Physical,
 }
 
 impl Metric {
+    /// Initializes a [Metric] that stores the total amount of bytes in a file.
     pub fn init_logical(
         metadata: &Metadata,
         prefix_kind: PrefixKind,
@@ -36,6 +42,7 @@ impl Metric {
         }
     }
 
+    /// Initializes an empty [Metric] used to represent the total amount of bytes of a file.
     pub const fn init_empty_logical(human_readable: bool, prefix_kind: PrefixKind) -> Self {
         Self {
             value: 0,
@@ -45,6 +52,7 @@ impl Metric {
         }
     }
 
+    /// Initializes an empty [Metric] used to represent the total disk space of a file in bytes.
     pub const fn init_empty_physical(human_readable: bool, prefix_kind: PrefixKind) -> Self {
         Self {
             value: 0,
@@ -54,6 +62,7 @@ impl Metric {
         }
     }
 
+    /// Initializes a [Metric] that stores the total amount of bytes used to store a file on disk.
     pub fn init_physical(
         path: &Path,
         metadata: &Metadata,
