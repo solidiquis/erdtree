@@ -34,8 +34,8 @@ impl Display for Metric {
 
 #[test]
 fn test_line_count() {
-    let metric = Metric::init("tests/data/nemesis.txt")
-        .expect("Expected 'tests/data/nemesis.txt' to exist");
+    let metric =
+        Metric::init("tests/data/nemesis.txt").expect("Expected 'tests/data/nemesis.txt' to exist");
 
     assert_eq!(metric.value, 27);
 }

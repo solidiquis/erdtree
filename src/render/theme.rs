@@ -55,8 +55,8 @@ pub fn stylize_file_name(node: &Node) -> Cow<'_, str> {
         return name.to_string_lossy();
     };
 
-    if style.is_some() {
-        let styled_name = stylize_file_name(node);
+    if let Some(color) = style {
+        let styled_name = color.paint(name.to_string_lossy());
         let target_name = Color::Red.paint(format!("\u{2192} {}", target_name.to_string_lossy()));
 
         return Cow::from(format!("{styled_name} {target_name}"));

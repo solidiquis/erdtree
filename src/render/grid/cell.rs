@@ -248,15 +248,13 @@ impl<'a> Cell<'a> {
         let mut placeholder_padding = placeholder.len() + ctx.max_size_width - 1;
 
         placeholder_padding += match ctx.disk_usage {
-            DiskUsage::Logical | DiskUsage::Physical => {
-                match ctx.unit {
-                    PrefixKind::Si if ctx.human => 2,
-                    PrefixKind::Bin if ctx.human => 3,
-                    PrefixKind::Si => 0,
-                    PrefixKind::Bin => 1,
-                }
+            DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
+                PrefixKind::Si if ctx.human => 2,
+                PrefixKind::Bin if ctx.human => 3,
+                PrefixKind::Si => 0,
+                PrefixKind::Bin => 1,
             },
-            _ => 0
+            _ => 0,
         };
 
         write!(f, "{placeholder:>placeholder_padding$}")

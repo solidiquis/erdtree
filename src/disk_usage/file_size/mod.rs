@@ -6,8 +6,8 @@ use std::{convert::From, ops::AddAssign};
 pub mod block;
 
 pub mod byte;
-pub mod word_count;
 pub mod line_count;
+pub mod word_count;
 
 /// Represents all the different ways in which a filesize could be reported using various metrics.
 pub enum FileSize {
@@ -67,7 +67,7 @@ impl AddAssign<&Self> for FileSize {
 
 impl From<&Context> for FileSize {
     fn from(ctx: &Context) -> Self {
-        use DiskUsage::*;
+        use DiskUsage::{Line, Logical, Physical, Word};
 
         match ctx.disk_usage {
             Logical => Self::Byte(byte::Metric::init_empty_logical(ctx.human, ctx.unit)),
@@ -76,7 +76,7 @@ impl From<&Context> for FileSize {
             Word => Self::Word(word_count::Metric::default()),
 
             #[cfg(unix)]
-            Block => Self::Block(block::Metric::default()),
+            DiskUsage::Block => Self::Block(block::Metric::default()),
         }
     }
 }

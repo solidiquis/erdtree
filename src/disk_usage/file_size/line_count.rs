@@ -12,15 +12,9 @@ pub struct Metric {
 
 impl Metric {
     pub fn init<P: AsRef<Path>>(path: P) -> Option<Self> {
-        let data = fs::read(path.as_ref()).ok()?;
+        let data = fs::read_to_string(path.as_ref()).ok()?;
 
-        let lines = data.into_iter().fold(0, |acc, item| {
-            if u32::from(item) == u32::from('\n') {
-                acc + 1
-            } else {
-                acc
-            }
-        });
+        let lines = data.lines().count();
 
         u64::try_from(lines).map(|value| Self { value }).ok()
     }
@@ -40,8 +34,8 @@ impl Display for Metric {
 
 #[test]
 fn test_line_count() {
-    let metric = Metric::init("tests/data/nemesis.txt")
-        .expect("Expected 'tests/data/nemesis.txt' to exist");
+    let metric =
+        Metric::init("tests/data/nemesis.txt").expect("Expected 'tests/data/nemesis.txt' to exist");
 
     assert_eq!(metric.value, 4);
 }
