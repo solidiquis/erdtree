@@ -31,6 +31,9 @@ use crate::{
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
 
+/// File attributes specific to Unix systems.
+pub mod unix;
+
 /// A node of [`Tree`] that can be created from a [`DirEntry`]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
 /// uses ANSI colors determined by the file-type and `LS_COLORS`.
@@ -45,11 +48,7 @@ pub struct Node {
     inode: Option<Inode>,
 
     #[cfg(unix)]
-    has_xattrs: bool,
-    #[cfg(unix)]
-    owner: Option<String>,
-    #[cfg(unix)]
-    group: Option<String>,
+    unix_attrs: unix::Attrs,
 }
 
 impl Node {
@@ -61,10 +60,7 @@ impl Node {
         style: Option<Style>,
         symlink_target: Option<PathBuf>,
         inode: Option<Inode>,
-
-        #[cfg(unix)] has_xattrs: bool,
-        #[cfg(unix)] owner: Option<String>,
-        #[cfg(unix)] group: Option<String>,
+        #[cfg(unix)] unix_attrs: unix::Attrs,
     ) -> Self {
         Self {
             dir_entry,
@@ -74,11 +70,7 @@ impl Node {
             symlink_target,
             inode,
             #[cfg(unix)]
-            has_xattrs,
-            #[cfg(unix)]
-            owner,
-            #[cfg(unix)]
-            group,
+            unix_attrs,
         }
     }
 
@@ -207,7 +199,7 @@ impl Node {
     /// Whether or not [Node] has extended attributes.
     #[cfg(unix)]
     pub const fn has_xattrs(&self) -> bool {
-        self.has_xattrs
+        self.unix_attrs.has_xattrs
     }
 
     /// Getter for [Node]'s style field.
@@ -284,16 +276,10 @@ impl TryFrom<(DirEntry, &Context)> for Node {
         let inode = Inode::try_from(&metadata).ok();
 
         #[cfg(unix)]
-        let (has_xattrs, owner, group) = if ctx.long {
-            let has_xattrs = dir_entry.has_xattrs();
-
-            if let Ok((o, g)) = dir_entry.try_get_owner_and_group() {
-                (has_xattrs, Some(o), Some(g))
-            } else {
-                (has_xattrs, None, None)
-            }
+        let unix_attrs = if ctx.long {
+            unix::Attrs::from(&dir_entry)
         } else {
-            (false, None, None)
+            unix::Attrs::default()
         };
 
         Ok(Self::new(
@@ -304,11 +290,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             link_target,
             inode,
             #[cfg(unix)]
-            has_xattrs,
-            #[cfg(unix)]
-            owner,
-            #[cfg(unix)]
-            group,
+            unix_attrs,
         ))
     }
 }
