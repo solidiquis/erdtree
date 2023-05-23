@@ -1,12 +1,16 @@
 use crate::{
-    context::{time, Context},
-    disk_usage::file_size::FileSize,
+    context::Context,
+    disk_usage::{
+        file_size::{byte, DiskUsage, FileSize},
+        units::PrefixKind,
+    },
     render::theme,
     styles::{self, PLACEHOLDER},
     tree::node::Node,
 };
 use chrono::{DateTime, Local};
 use std::{
+    borrow::Cow,
     ffi::OsStr,
     fmt::{self, Display},
     path::Path,
@@ -102,12 +106,18 @@ impl<'a> Cell<'a> {
         let node = self.node;
         let ctx = self.ctx;
 
-        let formatted_size = node.file_size().map_or_else(
-            || FileSize::placeholder(ctx),
-            |size| size.format(ctx.max_size_width, ctx.max_size_unit_width),
-        );
+        let Some(file_size) = node.file_size() else {
+            return Self::fmt_size_placeholder(f, ctx)
+        };
 
-        write!(f, "{formatted_size}")
+        match file_size {
+            FileSize::Byte(metric) => Self::fmt_bytes(f, metric, ctx),
+            FileSize::Line(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
+            FileSize::Word(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
+
+            #[cfg(unix)]
+            FileSize::Block(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
+        }
     }
 
     /// Rules on how to format block for rendering
@@ -235,6 +245,66 @@ impl<'a> Cell<'a> {
         };
 
         write!(f, "{formatted_perms}")
+    }
+
+    #[inline]
+    fn fmt_size_placeholder(f: &mut fmt::Formatter<'_>, ctx: &Context) -> fmt::Result {
+        if ctx.suppress_size || ctx.max_size_width == 0 {
+            return write!(f, "");
+        }
+
+        let placeholder = styles::get_placeholder_style().map_or_else(
+            |_| Cow::from(styles::PLACEHOLDER),
+            |style| Cow::from(style.paint(styles::PLACEHOLDER).to_string()),
+        );
+
+        let mut placeholder_padding = placeholder.len() + ctx.max_size_width - 1;
+
+        placeholder_padding += match ctx.disk_usage {
+            DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
+                PrefixKind::Si if ctx.human => 2,
+                PrefixKind::Bin if ctx.human => 3,
+                PrefixKind::Si => 0,
+                PrefixKind::Bin => 1,
+            },
+            _ => 0,
+        };
+
+        write!(f, "{placeholder:>placeholder_padding$}")
+    }
+
+    #[inline]
+    fn fmt_bytes(f: &mut fmt::Formatter<'_>, metric: &byte::Metric, ctx: &Context) -> fmt::Result {
+        let max_size_width = ctx.max_size_width;
+        let max_unit_width = ctx.max_size_unit_width;
+        let out = format!("{metric}");
+        let [size, unit]: [&str; 2] = out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
+
+        if ctx.no_color() {
+            return write!(f, "{size:>max_size_width$} {unit:>max_unit_width$}");
+        }
+
+        let color = styles::get_du_theme().unwrap().get(unit).unwrap();
+
+        let out = color.paint(format!("{size:>max_size_width$} {unit:>max_unit_width$}"));
+
+        write!(f, "{out}")
+    }
+
+    #[inline]
+    fn fmt_unitless_disk_usage<M: Display>(
+        f: &mut fmt::Formatter<'_>,
+        metric: &M,
+        ctx: &Context,
+    ) -> fmt::Result {
+        let max_size_width = ctx.max_size_width;
+
+        if ctx.no_color() {
+            return write!(f, "{metric:>max_size_width$}");
+        }
+        let color = styles::get_du_theme().unwrap().get("B").unwrap();
+
+        write!(f, "{}", color.paint(format!("{metric:>max_size_width$}")))
     }
 }
 

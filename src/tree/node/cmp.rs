@@ -127,13 +127,14 @@ fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
 //}
 
 mod sizing {
+    use crate::disk_usage::file_size::FileSize;
     use crate::tree::node::Node;
     use core::cmp::Ordering;
 
     /// Comparator that sorts [Node]s by size, largest to smallest.
     pub fn comparator(a: &Node, b: &Node) -> Ordering {
-        let a_size = a.file_size().map_or(0, |fs| fs.bytes);
-        let b_size = b.file_size().map_or(0, |fs| fs.bytes);
+        let a_size = a.file_size().map_or(0, FileSize::value);
+        let b_size = b.file_size().map_or(0, FileSize::value);
         b_size.cmp(&a_size)
     }
     /// Comparator that sorts [Node]s by size, smallest to largest.

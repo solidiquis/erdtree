@@ -1,6 +1,6 @@
 use crate::{
     context::Context,
-    disk_usage::file_size::{DiskUsage, FileSize},
+    disk_usage::file_size::{byte, line_count, word_count, DiskUsage, FileSize},
     fs::inode::Inode,
     icons,
     styles::get_ls_colors,
@@ -19,9 +19,12 @@ use std::{
 };
 
 #[cfg(unix)]
-use crate::fs::{
-    permissions::{FileMode, SymbolicNotation},
-    xattr::ExtendedAttr,
+use crate::{
+    disk_usage::file_size::block,
+    fs::{
+        permissions::{FileMode, SymbolicNotation},
+        xattr::ExtendedAttr,
+    },
 };
 
 /// Ordering and sorting rules for [Node].
@@ -201,12 +204,12 @@ impl Node {
         self.style
     }
 
-    /// See [`icons::compute`].
+    /// See [`crate::icons::fs::compute`].
     pub fn compute_icon(&self, no_color: bool) -> Cow<'static, str> {
         if no_color {
-            icons::compute(self.dir_entry(), self.symlink_target_path())
+            icons::fs::compute(self.dir_entry(), self.symlink_target_path())
         } else {
-            icons::compute_with_color(self.dir_entry(), self.symlink_target_path(), self.style)
+            icons::fs::compute_with_color(self.dir_entry(), self.symlink_target_path(), self.style)
         }
     }
 }
@@ -232,15 +235,32 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let file_type = dir_entry.file_type();
 
-        let mut file_size = match file_type {
+        let file_size = match file_type {
             Some(ref ft) if !ctx.suppress_size => {
                 if ft.is_file() || (ft.is_symlink() && !ctx.follow) {
                     match ctx.disk_usage {
                         DiskUsage::Logical => {
-                            Some(FileSize::logical(&metadata, ctx.unit, ctx.human))
+                            let metric = byte::Metric::init_logical(&metadata, ctx.unit, ctx.human);
+                            Some(FileSize::Byte(metric))
                         }
                         DiskUsage::Physical => {
-                            FileSize::physical(path, &metadata, ctx.unit, ctx.human)
+                            let metric =
+                                byte::Metric::init_physical(path, &metadata, ctx.unit, ctx.human);
+                            Some(FileSize::Byte(metric))
+                        }
+                        DiskUsage::Line => {
+                            let metric = line_count::Metric::init(path);
+                            metric.map(FileSize::Line)
+                        }
+                        DiskUsage::Word => {
+                            let metric = word_count::Metric::init(path);
+                            metric.map(FileSize::Word)
+                        }
+
+                        #[cfg(unix)]
+                        DiskUsage::Block => {
+                            let metric = block::Metric::init(&metadata);
+                            Some(FileSize::Block(metric))
                         }
                     }
                 } else {
@@ -249,10 +269,6 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             }
             _ => None,
         };
-
-        if let Some(ref mut fs) = file_size {
-            fs.precompute_unpadded_display();
-        }
 
         let inode = Inode::try_from(&metadata).ok();
 

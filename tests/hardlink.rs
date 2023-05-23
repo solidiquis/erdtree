@@ -27,10 +27,10 @@ fn hardlink() -> Result<(), Box<dyn Error>> {
         out,
         indoc!(
             "157 B ┌─ kadath.txt
-            157 B ├─ curwin.hpl
-            157 B hardlinks
+ 157 B ├─ curwin.hpl
+ 157 B hardlinks
 
-            2 files"
+ 2 files"
         )
     );
 

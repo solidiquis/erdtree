@@ -1,5 +1,6 @@
 /// Binary and SI prefixes
 pub mod units;
 
-/// Rules to display disk usage for individual files
+/// Concerned with all of the different ways to measure file size: bytes, word-count, line-count,
+/// blocks (unix), etc..
 pub mod file_size;
