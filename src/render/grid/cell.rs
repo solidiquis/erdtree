@@ -1,5 +1,5 @@
 use crate::{
-    context::{Context, time},
+    context::{time, Context},
     disk_usage::{
         file_size::{byte, DiskUsage, FileSize},
         units::PrefixKind,
@@ -216,7 +216,7 @@ impl<'a> Cell<'a> {
         write!(f, "{formatted_datetime}")
     }
 
-	/// Rules on how to format timestamp
+    /// Rules on how to format timestamp
     #[cfg(unix)]
     #[inline]
     fn fmt_timestamp(&self, dt: DateTime<Local>) -> String {
@@ -228,7 +228,7 @@ impl<'a> Cell<'a> {
             time::Format::Short => dt.format("%Y-%m-%d"),
         };
 
-        format!("{:>12}", delayed_format)
+        format!("{delayed_format:>12}")
     }
 
     /// Rules on how to format permissions for rendering

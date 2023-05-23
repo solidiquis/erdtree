@@ -98,7 +98,7 @@ impl Display for Metric {
                 } else {
                     let base_value = unit.base_value();
                     let size = value / (base_value as f64);
-                    write!(f, "{size:.2} {unit}")
+                    write!(f, "{size:.1} {unit}")
                 }
             }
             PrefixKind::Bin => {
@@ -113,7 +113,7 @@ impl Display for Metric {
                 } else {
                     let base_value = unit.base_value();
                     let size = value / (base_value as f64);
-                    write!(f, "{size:.2} {unit}")
+                    write!(f, "{size:.1} {unit}")
                 }
             }
         }
@@ -136,7 +136,7 @@ fn test_metric() {
         human_readable: true,
         prefix_kind: PrefixKind::Si,
     };
-    assert_eq!(format!("{}", metric), "1.00 KB");
+    assert_eq!(format!("{}", metric), "1.0 KB");
 
     let metric = Metric {
         value: 1000,
@@ -152,7 +152,7 @@ fn test_metric() {
         human_readable: true,
         prefix_kind: PrefixKind::Bin,
     };
-    assert_eq!(format!("{}", metric), "1.00 KiB");
+    assert_eq!(format!("{}", metric), "1.0 KiB");
 
     let metric = Metric {
         value: 2_u64.pow(20),
@@ -160,7 +160,7 @@ fn test_metric() {
         human_readable: true,
         prefix_kind: PrefixKind::Bin,
     };
-    assert_eq!(format!("{}", metric), "1.00 MiB");
+    assert_eq!(format!("{}", metric), "1.0 MiB");
 
     let metric = Metric {
         value: 123454,

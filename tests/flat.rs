@@ -37,7 +37,7 @@ fn flat_human() {
  446   B   lipsum
  308   B   dream_cycle/polaris.txt
  308   B   dream_cycle
-1.21 KiB   data
+ 1.2 KiB   data
 
 3 directories, 6 files"
         )

@@ -48,13 +48,14 @@ impl Display for Row<'_, Tree> {
         );
 
         let row = if ctx.long {
-            let ino = Cell::new(node, ctx, cell::Kind::Ino);
+            //let ino = Cell::new(node, ctx, cell::Kind::Ino);
             let perms = Cell::new(node, ctx, cell::Kind::Permissions);
-            let nlink = Cell::new(node, ctx, cell::Kind::Nlink);
-            let blocks = Cell::new(node, ctx, cell::Kind::Blocks);
+            //let nlink = Cell::new(node, ctx, cell::Kind::Nlink);
+            //let blocks = Cell::new(node, ctx, cell::Kind::Blocks);
             let time = Cell::new(node, ctx, cell::Kind::Datetime);
 
-            format!("{ino} {perms} {nlink} {blocks} {time} {size} {name}")
+            //format!("{ino} {perms} {nlink} {blocks} {time} {size} {name}")
+            format!("{perms} {time} {size} {name}")
         } else {
             format!("{size} {name}")
         };
@@ -106,13 +107,14 @@ impl Display for Row<'_, Flat> {
         let path = Cell::new(node, ctx, cell::Kind::FilePath);
 
         let row = if ctx.long {
-            let ino = Cell::new(node, ctx, cell::Kind::Ino);
+            //let ino = Cell::new(node, ctx, cell::Kind::Ino);
             let perms = Cell::new(node, ctx, cell::Kind::Permissions);
-            let nlink = Cell::new(node, ctx, cell::Kind::Nlink);
-            let blocks = Cell::new(node, ctx, cell::Kind::Blocks);
+            //let nlink = Cell::new(node, ctx, cell::Kind::Nlink);
+            //let blocks = Cell::new(node, ctx, cell::Kind::Blocks);
             let time = Cell::new(node, ctx, cell::Kind::Datetime);
 
-            format!("{ino} {perms} {nlink} {blocks} {time} {size}   {path}")
+            //format!("{ino} {perms} {nlink} {blocks} {time} {size}   {path}")
+            format!("{perms} {time} {size}   {path}")
         } else {
             format!("{size}   {path}")
         };
