@@ -29,6 +29,7 @@ chrono = "0.4.24"
 clap = { version = "4.1.1", features = ["derive"] }
 clap_complete = "4.1.1"
 dirs = "5.0"
+errno = "0.3.1"
 filesize = "0.2.0"
 ignore = "0.4.2"
 indextree = "4.6.0"

@@ -1,6 +1,10 @@
 use crate::context::Context;
 use clap::ValueEnum;
-use std::{convert::From, ops::AddAssign};
+use std::{
+    convert::From,
+    fmt::{self, Display},
+    ops::AddAssign,
+};
 
 /// Concerned with measuring file size in blocks.
 #[cfg(unix)]
@@ -15,11 +19,15 @@ pub mod line_count;
 /// Concerned with measuring file size by word count.
 pub mod word_count;
 
+#[cfg(unix)]
+pub const BLOCK_SIZE_BYTES: u16 = 512;
+
 /// Represents all the different ways in which a filesize could be reported using various metrics.
 pub enum FileSize {
     Word(word_count::Metric),
     Line(line_count::Metric),
     Byte(byte::Metric),
+    #[cfg(unix)]
     Block(block::Metric),
 }
 
@@ -84,6 +92,19 @@ impl From<&Context> for FileSize {
 
             #[cfg(unix)]
             DiskUsage::Block => Self::Block(block::Metric::default()),
+        }
+    }
+}
+
+impl Display for FileSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Word(metric) => write!(f, "{metric}"),
+            Self::Line(metric) => write!(f, "{metric}"),
+            Self::Byte(metric) => write!(f, "{metric}"),
+
+            #[cfg(unix)]
+            Self::Block(metric) => write!(f, "{metric}"),
         }
     }
 }

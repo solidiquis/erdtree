@@ -1,8 +1,8 @@
 use crate::{
-    context::{Context, time},
+    context::Context,
     disk_usage::{
         file_size::{byte, DiskUsage, FileSize},
-        units::PrefixKind,
+        units::{BinPrefix, PrefixKind, SiPrefix},
     },
     render::theme,
     styles::{self, PLACEHOLDER},
@@ -14,6 +14,12 @@ use std::{
     ffi::OsStr,
     fmt::{self, Display},
     path::Path,
+};
+
+#[cfg(unix)]
+use crate::{
+    context::time,
+    disk_usage::file_size::{block, BLOCK_SIZE_BYTES},
 };
 
 /// Constitutes a single cell in a given row of the output. The `kind` field denotes what type of
@@ -39,9 +45,11 @@ pub enum Kind<'a> {
     #[cfg(unix)]
     Nlink,
     #[cfg(unix)]
-    Blocks,
-    #[cfg(unix)]
     Permissions,
+    #[cfg(unix)]
+    Owner,
+    #[cfg(unix)]
+    Group,
 }
 
 impl<'a> Cell<'a> {
@@ -116,31 +124,8 @@ impl<'a> Cell<'a> {
             FileSize::Word(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
 
             #[cfg(unix)]
-            FileSize::Block(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
+            FileSize::Block(metric) => Self::fmt_block_usage(f, metric, ctx),
         }
-    }
-
-    /// Rules on how to format block for rendering
-    #[cfg(unix)]
-    #[inline]
-    fn fmt_blocks(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let node = self.node;
-        let ctx = self.ctx;
-
-        let max_width = ctx.max_block_width;
-
-        let out = node
-            .blocks()
-            .map(|num| format!("{num:>max_width$}"))
-            .unwrap_or(format!("{PLACEHOLDER:>max_width$}"));
-
-        let formatted_blocks = if let Ok(style) = styles::get_block_style() {
-            style.paint(out).to_string()
-        } else {
-            out
-        };
-
-        write!(f, "{formatted_blocks}")
     }
 
     /// Rules on how to format nlink for rendering.
@@ -189,6 +174,38 @@ impl<'a> Cell<'a> {
         write!(f, "{formatted_ino}")
     }
 
+    /// Rules on how to format owner.
+    #[cfg(unix)]
+    #[inline]
+    fn fmt_owner(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let max_owner_width = self.ctx.max_owner_width;
+
+        let owner = self.node.owner().map_or(styles::PLACEHOLDER, |o| o);
+
+        if let Ok(style) = styles::get_owner_style() {
+            let formatted_owner = format!("{owner:>max_owner_width$}");
+            return write!(f, "{}", style.paint(formatted_owner));
+        }
+
+        write!(f, "{owner:>max_owner_width$}")
+    }
+
+    /// Rules on how to format group.
+    #[cfg(unix)]
+    #[inline]
+    fn fmt_group(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let max_group_width = self.ctx.max_group_width;
+
+        let group = self.node.group().map_or(styles::PLACEHOLDER, |o| o);
+
+        if let Ok(style) = styles::get_group_style() {
+            let formatted_group = format!("{group:>max_group_width$}");
+            return write!(f, "{}", style.paint(formatted_group));
+        }
+
+        write!(f, "{group:>max_group_width$}")
+    }
+
     /// Rules on how to format datetime for rendering.
     #[cfg(unix)]
     #[inline]
@@ -216,7 +233,7 @@ impl<'a> Cell<'a> {
         write!(f, "{formatted_datetime}")
     }
 
-	/// Rules on how to format timestamp
+    /// Rules on how to format timestamp
     #[cfg(unix)]
     #[inline]
     fn fmt_timestamp(&self, dt: DateTime<Local>) -> String {
@@ -228,7 +245,7 @@ impl<'a> Cell<'a> {
             time::Format::Short => dt.format("%Y-%m-%d"),
         };
 
-        format!("{:>12}", delayed_format)
+        format!("{delayed_format:>12}")
     }
 
     /// Rules on how to format permissions for rendering
@@ -247,6 +264,7 @@ impl<'a> Cell<'a> {
         write!(f, "{formatted_perms}")
     }
 
+    /// Formatter for the placeholder for file sizes.
     #[inline]
     fn fmt_size_placeholder(f: &mut fmt::Formatter<'_>, ctx: &Context) -> fmt::Result {
         if ctx.suppress_size || ctx.max_size_width == 0 {
@@ -273,24 +291,71 @@ impl<'a> Cell<'a> {
         write!(f, "{placeholder:>placeholder_padding$}")
     }
 
+    /// Rules to format disk usage as bytes
     #[inline]
     fn fmt_bytes(f: &mut fmt::Formatter<'_>, metric: &byte::Metric, ctx: &Context) -> fmt::Result {
         let max_size_width = ctx.max_size_width;
         let max_unit_width = ctx.max_size_unit_width;
         let out = format!("{metric}");
+
         let [size, unit]: [&str; 2] = out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
 
         if ctx.no_color() {
             return write!(f, "{size:>max_size_width$} {unit:>max_unit_width$}");
         }
 
-        let color = styles::get_du_theme().unwrap().get(unit).unwrap();
+        let color = if metric.human_readable {
+            styles::get_du_theme().unwrap().get(unit).unwrap()
+        } else {
+            match ctx.unit {
+                PrefixKind::Si => {
+                    let pre = SiPrefix::from(metric.value);
+                    styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+                }
+                PrefixKind::Bin => {
+                    let pre = BinPrefix::from(metric.value);
+                    styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+                }
+            }
+        };
 
         let out = color.paint(format!("{size:>max_size_width$} {unit:>max_unit_width$}"));
 
         write!(f, "{out}")
     }
 
+    #[inline]
+    #[cfg(unix)]
+    fn fmt_block_usage(
+        f: &mut fmt::Formatter<'_>,
+        metric: &block::Metric,
+        ctx: &Context,
+    ) -> fmt::Result {
+        let max_size_width = ctx.max_size_width;
+
+        if ctx.no_color() {
+            return write!(f, "{metric:>max_size_width$}");
+        }
+
+        let bytes = metric.value * u64::from(BLOCK_SIZE_BYTES);
+
+        let color = match ctx.unit {
+            PrefixKind::Si => {
+                let pre = SiPrefix::from(bytes);
+                styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+            }
+            PrefixKind::Bin => {
+                let pre = BinPrefix::from(bytes);
+                styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+            }
+        };
+
+        let out = color.paint(format!("{metric:>max_size_width$}"));
+
+        write!(f, "{out}")
+    }
+
+    /// Rules to format disk usage as unit-less values such as word count, lines, and blocks (unix).
     #[inline]
     fn fmt_unitless_disk_usage<M: Display>(
         f: &mut fmt::Formatter<'_>,
@@ -322,13 +387,16 @@ impl Display for Cell<'_> {
             Kind::Nlink => self.fmt_nlink(f),
 
             #[cfg(unix)]
-            Kind::Blocks => self.fmt_blocks(f),
-
-            #[cfg(unix)]
             Kind::Datetime => self.fmt_datetime(f),
 
             #[cfg(unix)]
             Kind::Permissions => self.fmt_permissions(f),
+
+            #[cfg(unix)]
+            Kind::Owner => self.fmt_owner(f),
+
+            #[cfg(unix)]
+            Kind::Group => self.fmt_group(f),
         }
     }
 }

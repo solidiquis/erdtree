@@ -1,9 +1,6 @@
 use crate::{
-    context::{file, output::ColumnProperties, Context},
-    disk_usage::{
-        file_size::{DiskUsage, FileSize},
-        units::{BinPrefix, PrefixKind, SiPrefix},
-    },
+    context::{column, file, Context},
+    disk_usage::file_size::FileSize,
     fs::inode::Inode,
     utils,
 };
@@ -55,7 +52,7 @@ impl Tree {
     /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
     /// various properties necessary to render output.
     pub fn try_init_and_update_context(mut ctx: Context) -> Result<(Self, Context)> {
-        let mut column_properties = ColumnProperties::from(&ctx);
+        let mut column_properties = column::Properties::from(&ctx);
 
         let (arena, root_id) = Self::traverse(&ctx, &mut column_properties)?;
 
@@ -100,7 +97,7 @@ impl Tree {
     /// be completely CPU-bound.
     fn traverse(
         ctx: &Context,
-        column_properties: &mut ColumnProperties,
+        column_properties: &mut column::Properties,
     ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
@@ -182,7 +179,7 @@ impl Tree {
         branches: &mut HashMap<PathBuf, Vec<NodeId>>,
         node_comparator: &NodeComparator,
         inode_set: &mut HashSet<Inode>,
-        column_properties: &mut ColumnProperties,
+        column_properties: &mut column::Properties,
         ctx: &Context,
     ) {
         let current_node = tree[current_node_id].get_mut();
@@ -305,39 +302,51 @@ impl Tree {
         count
     }
 
-    /// Updates [`ColumnProperties`] with provided [Node].
+    /// Updates [`column::Properties`] with provided [`Node`].
     #[cfg(unix)]
-    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, ctx: &Context) {
+    fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            let file_size_cols = utils::num_integral(file_size.value());
+            if ctx.human {
+                let out = format!("{file_size}");
+                let [size, unit]: [&str; 2] =
+                    out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
 
-            if file_size_cols > col_props.max_size_width {
-                col_props.max_size_width = file_size_cols;
-            }
+                let file_size_cols = size.len();
+                let file_size_unit_cols = unit.len();
 
-            match ctx.disk_usage {
-                DiskUsage::Logical | DiskUsage::Physical => {
-                    let unit_len = match ctx.unit {
-                        PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
-                            BinPrefix::Base => 1,
-                            _ => 3,
-                        },
-                        PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
-                            SiPrefix::Base => 1,
-                            _ => 2,
-                        },
-                        _ => 1,
-                    };
-
-                    if unit_len > col_props.max_size_unit_width {
-                        col_props.max_size_unit_width = unit_len;
-                    }
+                if file_size_cols > col_props.max_size_width {
+                    col_props.max_size_width = file_size_cols;
                 }
-                DiskUsage::Line | DiskUsage::Word | DiskUsage::Block => (),
-            }
+
+                if file_size_unit_cols > col_props.max_size_unit_width {
+                    col_props.max_size_unit_width = file_size_unit_cols;
+                }
+            } else {
+                let file_size_cols = utils::num_integral(file_size.value());
+
+                if file_size_cols > col_props.max_size_width {
+                    col_props.max_size_width = file_size_cols;
+                }
+            };
         }
 
         if ctx.long {
+            if let Some(owner) = node.owner() {
+                let owner_len = owner.len();
+
+                if owner_len > col_props.max_owner_width {
+                    col_props.max_owner_width = owner_len;
+                }
+            }
+
+            if let Some(group) = node.group() {
+                let group_len = group.len();
+
+                if group_len > col_props.max_group_width {
+                    col_props.max_group_width = group_len;
+                }
+            }
+
             if let Some(ino) = node.ino() {
                 let ino_num_integral = utils::num_integral(ino);
 
@@ -364,36 +373,32 @@ impl Tree {
         }
     }
 
-    /// Updates [ColumnProperties] with provided [Node].
+    /// Updates [column::Properties] with provided [Node].
     #[cfg(not(unix))]
-    fn update_column_properties(col_props: &mut ColumnProperties, node: &Node, ctx: &Context) {
+    fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            let file_size_cols = utils::num_integral(file_size.value());
+            if ctx.human {
+                let out = format!("{file_size}");
+                let [size, unit]: [&str; 2] =
+                    out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
 
-            if file_size_cols > col_props.max_size_width {
-                col_props.max_size_width = file_size_cols;
-            }
+                let file_size_cols = size.len();
+                let file_size_unit_cols = unit.len();
 
-            match ctx.disk_usage {
-                DiskUsage::Logical | DiskUsage::Physical => {
-                    let unit_len = match ctx.unit {
-                        PrefixKind::Bin if ctx.human => match BinPrefix::from(file_size.value()) {
-                            BinPrefix::Base => 1,
-                            _ => 3,
-                        },
-                        PrefixKind::Si if ctx.human => match SiPrefix::from(file_size.value()) {
-                            SiPrefix::Base => 1,
-                            _ => 2,
-                        },
-                        _ => 1,
-                    };
-
-                    if unit_len > col_props.max_size_unit_width {
-                        col_props.max_size_unit_width = unit_len;
-                    }
+                if file_size_cols > col_props.max_size_width {
+                    col_props.max_size_width = file_size_cols;
                 }
-                _ => (),
-            }
+
+                if file_size_unit_cols > col_props.max_size_unit_width {
+                    col_props.max_size_unit_width = file_size_unit_cols;
+                }
+            } else {
+                let file_size_cols = utils::num_integral(file_size.value());
+
+                if file_size_cols > col_props.max_size_width {
+                    col_props.max_size_width = file_size_cols;
+                }
+            };
         }
     }
 }

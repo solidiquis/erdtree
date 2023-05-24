@@ -21,14 +21,15 @@ use std::{
 #[cfg(unix)]
 use crate::{
     disk_usage::file_size::block,
-    fs::{
-        permissions::{FileMode, SymbolicNotation},
-        xattr::ExtendedAttr,
-    },
+    fs::permissions::{FileMode, SymbolicNotation},
 };
 
 /// Ordering and sorting rules for [Node].
 pub mod cmp;
+
+/// File attributes specific to Unix systems.
+#[cfg(unix)]
+pub mod unix;
 
 /// A node of [`Tree`] that can be created from a [`DirEntry`]. Any filesystem I/O and
 /// relevant system calls are expected to complete after initialization. A `Node` when `Display`ed
@@ -44,7 +45,7 @@ pub struct Node {
     inode: Option<Inode>,
 
     #[cfg(unix)]
-    has_xattrs: bool,
+    unix_attrs: unix::Attrs,
 }
 
 impl Node {
@@ -56,8 +57,7 @@ impl Node {
         style: Option<Style>,
         symlink_target: Option<PathBuf>,
         inode: Option<Inode>,
-
-        #[cfg(unix)] has_xattrs: bool,
+        #[cfg(unix)] unix_attrs: unix::Attrs,
     ) -> Self {
         Self {
             dir_entry,
@@ -67,7 +67,7 @@ impl Node {
             symlink_target,
             inode,
             #[cfg(unix)]
-            has_xattrs,
+            unix_attrs,
         }
     }
 
@@ -196,7 +196,19 @@ impl Node {
     /// Whether or not [Node] has extended attributes.
     #[cfg(unix)]
     pub const fn has_xattrs(&self) -> bool {
-        self.has_xattrs
+        self.unix_attrs.has_xattrs
+    }
+
+    /// Returns the owner of the [`Node`].
+    #[cfg(unix)]
+    pub fn owner(&self) -> Option<&str> {
+        self.unix_attrs.owner()
+    }
+
+    /// Returns the group of the [`Node`].
+    #[cfg(unix)]
+    pub fn group(&self) -> Option<&str> {
+        self.unix_attrs.group()
     }
 
     /// Getter for [Node]'s style field.
@@ -273,10 +285,10 @@ impl TryFrom<(DirEntry, &Context)> for Node {
         let inode = Inode::try_from(&metadata).ok();
 
         #[cfg(unix)]
-        let has_xattrs = if ctx.long {
-            dir_entry.has_xattrs()
+        let unix_attrs = if ctx.long {
+            unix::Attrs::from((&metadata, &dir_entry))
         } else {
-            false
+            unix::Attrs::default()
         };
 
         Ok(Self::new(
@@ -287,7 +299,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
             link_target,
             inode,
             #[cfg(unix)]
-            has_xattrs,
+            unix_attrs,
         ))
     }
 }

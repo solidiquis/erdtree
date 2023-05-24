@@ -5,6 +5,9 @@ use std::{
     marker::PhantomData,
 };
 
+#[cfg(unix)]
+use super::long;
+
 /// Concerned with rules to construct and a single cell in a given row.
 pub mod cell;
 
@@ -48,15 +51,40 @@ impl Display for Row<'_, Tree> {
         );
 
         let row = if ctx.long {
-            let ino = Cell::new(node, ctx, cell::Kind::Ino);
-            let perms = Cell::new(node, ctx, cell::Kind::Permissions);
-            let nlink = Cell::new(node, ctx, cell::Kind::Nlink);
-            let blocks = Cell::new(node, ctx, cell::Kind::Blocks);
-            let time = Cell::new(node, ctx, cell::Kind::Datetime);
+            let optionals = long::Optionals::from(ctx);
+            let long_display = long::Display::new(optionals, node, ctx);
 
-            format!("{ino} {perms} {nlink} {blocks} {time} {size} {name}")
+            format!("{long_display} {size} {name}")
         } else {
             format!("{size} {name}")
+        };
+
+        if ctx.truncate && ctx.window_width.is_some() {
+            let window_width = ctx.window_width.unwrap();
+            let out = <str as Escaped>::truncate(&row, window_width);
+            write!(f, "{out}")
+        } else {
+            write!(f, "{row}")
+        }
+    }
+}
+
+#[cfg(unix)]
+impl Display for Row<'_, Flat> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let node = self.node;
+        let ctx = self.ctx;
+
+        let size = Cell::new(node, ctx, cell::Kind::FileSize);
+        let path = Cell::new(node, ctx, cell::Kind::FilePath);
+
+        let row = if ctx.long {
+            let optionals = long::Optionals::from(ctx);
+            let long_display = long::Display::new(optionals, node, ctx);
+
+            format!("{long_display} {size} {path}")
+        } else {
+            format!("{size} {path}")
         };
 
         if ctx.truncate && ctx.window_width.is_some() {
@@ -85,37 +113,6 @@ impl Display for Row<'_, Tree> {
         );
 
         let row = format!("{size} {name}");
-
-        if ctx.truncate && ctx.window_width.is_some() {
-            let window_width = ctx.window_width.unwrap();
-            let out = <str as Escaped>::truncate(&row, window_width);
-            write!(f, "{out}")
-        } else {
-            write!(f, "{row}")
-        }
-    }
-}
-
-#[cfg(unix)]
-impl Display for Row<'_, Flat> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let node = self.node;
-        let ctx = self.ctx;
-
-        let size = Cell::new(node, ctx, cell::Kind::FileSize);
-        let path = Cell::new(node, ctx, cell::Kind::FilePath);
-
-        let row = if ctx.long {
-            let ino = Cell::new(node, ctx, cell::Kind::Ino);
-            let perms = Cell::new(node, ctx, cell::Kind::Permissions);
-            let nlink = Cell::new(node, ctx, cell::Kind::Nlink);
-            let blocks = Cell::new(node, ctx, cell::Kind::Blocks);
-            let time = Cell::new(node, ctx, cell::Kind::Datetime);
-
-            format!("{ino} {perms} {nlink} {blocks} {time} {size}   {path}")
-        } else {
-            format!("{size}   {path}")
-        };
 
         if ctx.truncate && ctx.window_width.is_some() {
             let window_width = ctx.window_width.unwrap();

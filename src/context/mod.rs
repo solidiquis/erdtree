@@ -7,7 +7,6 @@ use ignore::{
     overrides::{Override, OverrideBuilder},
     DirEntry,
 };
-use output::ColumnProperties;
 use regex::Regex;
 use std::{
     borrow::Borrow,
@@ -35,7 +34,7 @@ pub mod file;
 pub mod layout;
 
 /// Utilities to print output.
-pub mod output;
+pub mod column;
 
 /// Printing order kinds.
 pub mod sort;
@@ -86,6 +85,21 @@ pub struct Context {
     #[cfg(unix)]
     #[arg(short, long)]
     pub long: bool,
+
+    /// Show file's groups
+    #[cfg(unix)]
+    #[arg(long)]
+    pub group: bool,
+
+    /// Show each file's ino
+    #[cfg(unix)]
+    #[arg(long)]
+    pub ino: bool,
+
+    /// Show the total number of hardlinks to the underlying inode
+    #[cfg(unix)]
+    #[arg(long)]
+    pub nlink: bool,
 
     /// Show permissions in numeric octal format instead of symbolic
     #[cfg(unix)]
@@ -142,6 +156,10 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
     pub unit: PrefixKind,
 
+    /// Which kind of layout to use when rendering the output
+    #[arg(short = 'y', long, value_enum, default_value_t = layout::Type::default())]
+    pub layout: layout::Type,
+
     /// Show hidden files
     #[arg(short = '.', long)]
     pub hidden: bool,
@@ -157,10 +175,6 @@ pub struct Context {
     /// Only print directories
     #[arg(long)]
     pub dirs_only: bool,
-
-    /// Which kind of layout to use when rendering the output
-    #[arg(long, value_enum, default_value_t = layout::Type::default())]
-    pub layout: layout::Type,
 
     /// Don't read configuration file
     #[arg(long)]
@@ -207,6 +221,16 @@ pub struct Context {
     #[clap(skip = usize::default())]
     #[cfg(unix)]
     pub max_block_width: usize,
+
+    /// Restricts column width of file owner for long view
+    #[clap(skip = usize::default())]
+    #[cfg(unix)]
+    pub max_owner_width: usize,
+
+    /// Restricts column width of file group for long view
+    #[clap(skip = usize::default())]
+    #[cfg(unix)]
+    pub max_group_width: usize,
 
     /// Width of the terminal emulator's window
     #[clap(skip)]
@@ -486,12 +510,14 @@ impl Context {
     }
 
     /// Update column width properties.
-    pub fn update_column_properties(&mut self, col_props: &ColumnProperties) {
+    pub fn update_column_properties(&mut self, col_props: &column::Properties) {
         self.max_size_width = col_props.max_size_width;
         self.max_size_unit_width = col_props.max_size_unit_width;
 
         #[cfg(unix)]
         {
+            self.max_owner_width = col_props.max_owner_width;
+            self.max_group_width = col_props.max_group_width;
             self.max_nlink_width = col_props.max_nlink_width;
             self.max_block_width = col_props.max_block_width;
             self.max_ino_width = col_props.max_ino_width;
