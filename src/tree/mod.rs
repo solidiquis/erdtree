@@ -1,9 +1,6 @@
 use crate::{
     context::{column, file, Context},
-    disk_usage::{
-        file_size::{DiskUsage, FileSize},
-        units::{BinPrefix, PrefixKind, SiPrefix},
-    },
+    disk_usage::file_size::FileSize,
     fs::inode::Inode,
     utils,
 };

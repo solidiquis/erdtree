@@ -19,6 +19,9 @@ pub mod line_count;
 /// Concerned with measuring file size by word count.
 pub mod word_count;
 
+#[cfg(unix)]
+pub const BLOCK_SIZE_BYTES: u16 = 512;
+
 /// Represents all the different ways in which a filesize could be reported using various metrics.
 pub enum FileSize {
     Word(word_count::Metric),

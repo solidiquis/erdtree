@@ -1,7 +1,7 @@
 use crate::{
     context::Context,
     disk_usage::{
-        file_size::{byte, DiskUsage, FileSize},
+        file_size::{BLOCK_SIZE_BYTES, byte, block, DiskUsage, FileSize},
         units::{BinPrefix, PrefixKind, SiPrefix},
     },
     render::theme,
@@ -123,7 +123,7 @@ impl<'a> Cell<'a> {
             FileSize::Word(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
 
             #[cfg(unix)]
-            FileSize::Block(metric) => Self::fmt_unitless_disk_usage(f, metric, ctx),
+            FileSize::Block(metric) => Self::fmt_block_usage(f, metric, ctx),
         }
     }
 
@@ -348,6 +348,33 @@ impl<'a> Cell<'a> {
         };
 
         let out = color.paint(format!("{size:>max_size_width$} {unit:>max_unit_width$}"));
+
+        write!(f, "{out}")
+    }
+
+    #[inline]
+    #[cfg(unix)]
+    fn fmt_block_usage(f: &mut fmt::Formatter<'_>, metric: &block::Metric, ctx: &Context) -> fmt::Result {
+        let max_size_width = ctx.max_size_width;
+
+        if ctx.no_color() {
+            return write!(f, "{metric:>max_size_width$}");
+        }
+
+        let bytes = metric.value * u64::from(BLOCK_SIZE_BYTES);
+
+        let color = match ctx.unit {
+            PrefixKind::Si => {
+                let pre = SiPrefix::from(bytes);
+                styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+            }
+            PrefixKind::Bin => {
+                let pre = BinPrefix::from(bytes);
+                styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+            }
+        };
+
+        let out = color.paint(format!("{metric:>max_size_width$}"));
 
         write!(f, "{out}")
     }
