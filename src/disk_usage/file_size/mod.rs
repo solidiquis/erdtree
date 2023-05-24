@@ -1,6 +1,10 @@
 use crate::context::Context;
 use clap::ValueEnum;
-use std::{convert::From, ops::AddAssign};
+use std::{
+    convert::From,
+    fmt::{self, Display},
+    ops::AddAssign,
+};
 
 /// Concerned with measuring file size in blocks.
 #[cfg(unix)]
@@ -85,6 +89,19 @@ impl From<&Context> for FileSize {
 
             #[cfg(unix)]
             DiskUsage::Block => Self::Block(block::Metric::default()),
+        }
+    }
+}
+
+impl Display for FileSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Word(metric) => write!(f, "{metric}"),
+            Self::Line(metric) => write!(f, "{metric}"),
+            Self::Byte(metric) => write!(f, "{metric}"),
+
+            #[cfg(unix)]
+            Self::Block(metric) => write!(f, "{metric}"),
         }
     }
 }

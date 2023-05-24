@@ -324,6 +324,7 @@ impl<'a> Cell<'a> {
         let max_size_width = ctx.max_size_width;
         let max_unit_width = ctx.max_size_unit_width;
         let out = format!("{metric}");
+
         let [size, unit]: [&str; 2] = out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
 
         if ctx.no_color() {
