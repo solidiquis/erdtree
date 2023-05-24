@@ -140,7 +140,7 @@ pub struct Context {
     #[arg(short = 'P', long)]
     pub prune: bool,
 
-    /// Sort-order to display directory content
+    /// How to sort entries
     #[arg(short, long, value_enum, default_value_t)]
     pub sort: sort::Type,
 
