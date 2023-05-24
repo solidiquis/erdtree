@@ -28,7 +28,7 @@ fn flat_human() {
     assert_eq!(
         utils::run_cmd(&["--layout", "flat", "--human", "tests/data"]),
         indoc!(
-            "143   B   the_yellow_king/cassildas_song.md
+"143   B   the_yellow_king/cassildas_song.md
  143   B   the_yellow_king
  100   B   nylarlathotep.txt
  161   B   nemesis.txt
@@ -38,8 +38,8 @@ fn flat_human() {
  308   B   dream_cycle/polaris.txt
  308   B   dream_cycle
  1.2 KiB   data
-
-3 directories, 6 files"
+ 
+ 3 directories, 6 files"
         )
     )
 }

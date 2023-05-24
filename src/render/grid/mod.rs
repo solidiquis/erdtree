@@ -82,9 +82,9 @@ impl Display for Row<'_, Flat> {
             let optionals = long::Optionals::from(ctx);
             let long_display = long::Display::new(optionals, node, ctx);
 
-            format!("{long_display} {size} {path}")
+            format!("{long_display}   {size} {path}")
         } else {
-            format!("{size} {path}")
+            format!("{size}   {path}")
         };
 
         if ctx.truncate && ctx.window_width.is_some() {
