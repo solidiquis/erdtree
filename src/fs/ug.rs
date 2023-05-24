@@ -1,57 +1,37 @@
 use errno::{errno, set_errno, Errno};
-use ignore::DirEntry;
-use std::{convert::AsRef, ffi::CStr, mem, os::unix::ffi::OsStrExt, path::Path, ptr};
-
-impl UserGroupInfo for DirEntry {
-    fn path(&self) -> &Path {
-        self.path()
-    }
-}
+use std::{
+    ffi::CStr,
+    fs::Metadata,
+    os::unix::fs::MetadataExt,
+};
 
 type Owner = String;
 type Group = String;
 
-/// Trait that allows for files to query their owner and group.
-pub trait UserGroupInfo {
-    fn path(&self) -> &Path;
 
+impl UserGroupInfo for Metadata {}
+
+/// Trait that allows for files to query their owner and group.
+pub trait UserGroupInfo: MetadataExt {
     /// Attemps to query the owner of the implementor.
     fn try_get_owner(&self) -> Result<String, Errno> {
         unsafe {
-            let libc::stat { st_uid, .. } = try_init_stat(self.path())?;
-            try_get_user(st_uid)
+            let uid = self.uid();
+            try_get_user(uid)
         }
     }
 
     /// Attempts to query both the owner and group of the implementor.
     fn try_get_owner_and_group(&self) -> Result<(Owner, Group), Errno> {
         unsafe {
-            let libc::stat { st_uid, st_gid, .. } = try_init_stat(self.path())?;
-            let user = try_get_user(st_uid)?;
-            let group = try_get_group(st_gid)?;
+            let uid = self.uid();
+            let gid = self.gid();
+            let user = try_get_user(uid)?;
+            let group = try_get_group(gid)?;
 
             Ok((user, group))
         }
     }
-}
-
-/// A wrapper around [`libc::stat`].
-unsafe fn try_init_stat<P: AsRef<Path>>(path: P) -> Result<libc::stat, Errno> {
-    let mut stat = mem::zeroed::<libc::stat>();
-
-    let stat_ptr = ptr::addr_of_mut!(stat);
-    let path_ptr = path
-        .as_ref()
-        .as_os_str()
-        .as_bytes()
-        .as_ptr()
-        .cast::<libc::c_char>();
-
-    if libc::stat(path_ptr, stat_ptr) == -1 {
-        return Err(errno());
-    }
-
-    Ok(stat)
 }
 
 /// Attempts to return the name of the group associated with `gid`.

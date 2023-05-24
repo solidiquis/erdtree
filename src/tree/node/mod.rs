@@ -286,7 +286,7 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         #[cfg(unix)]
         let unix_attrs = if ctx.long {
-            unix::Attrs::from(&dir_entry)
+            unix::Attrs::from((&metadata, &dir_entry))
         } else {
             unix::Attrs::default()
         };

@@ -1,6 +1,6 @@
 use crate::fs::{ug::UserGroupInfo, xattr::ExtendedAttr};
 use ignore::DirEntry;
-use std::convert::From;
+use std::{fs::Metadata, convert::From};
 
 /// File attributes that are optionally computed and specific to Unix-like systems.
 #[derive(Default)]
@@ -32,11 +32,11 @@ impl Attrs {
 }
 
 /// Initializes a [`Attrs`] from a [`DirEntry`].
-impl From<&DirEntry> for Attrs {
-    fn from(entry: &DirEntry) -> Self {
+impl From<(&Metadata, &DirEntry)> for Attrs {
+    fn from((md, entry): (&Metadata, &DirEntry)) -> Self {
         let has_xattrs = entry.has_xattrs();
 
-        if let Ok((o, g)) = entry.try_get_owner_and_group() {
+        if let Ok((o, g)) = md.try_get_owner_and_group() {
             return Self::new(has_xattrs, Some(o), Some(g));
         }
 
