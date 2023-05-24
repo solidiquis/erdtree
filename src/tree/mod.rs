@@ -311,7 +311,8 @@ impl Tree {
         if let Some(file_size) = node.file_size() {
             if ctx.human {
                 let out = format!("{file_size}");
-                let [size, unit]: [&str; 2] = out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
+                let [size, unit]: [&str; 2] =
+                    out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
 
                 let file_size_cols = size.len();
                 let file_size_unit_cols = unit.len();
@@ -381,7 +382,8 @@ impl Tree {
         if let Some(file_size) = node.file_size() {
             if ctx.human {
                 let out = format!("{file_size}");
-                let [size, unit]: [&str; 2] = out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
+                let [size, unit]: [&str; 2] =
+                    out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
 
                 let file_size_cols = size.len();
                 let file_size_unit_cols = unit.len();

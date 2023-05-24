@@ -45,7 +45,7 @@ impl Metric {
             human_readable,
             kind,
             prefix_kind,
-            cached_display: RefCell::default()
+            cached_display: RefCell::default(),
         }
     }
 
@@ -56,7 +56,7 @@ impl Metric {
             human_readable,
             kind: MetricKind::Logical,
             prefix_kind,
-            cached_display: RefCell::default()
+            cached_display: RefCell::default(),
         }
     }
 
@@ -67,7 +67,7 @@ impl Metric {
             human_readable,
             kind: MetricKind::Physical,
             prefix_kind,
-            cached_display: RefCell::default()
+            cached_display: RefCell::default(),
         }
     }
 
@@ -86,7 +86,7 @@ impl Metric {
             human_readable,
             kind,
             prefix_kind,
-            cached_display: RefCell::default()
+            cached_display: RefCell::default(),
         }
     }
 

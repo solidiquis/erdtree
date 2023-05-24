@@ -35,6 +35,32 @@ pub enum SiPrefix {
     Tera,
 }
 
+impl SiPrefix {
+    /// Returns the human readable representation of the SI prefix.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Base => "B",
+            Self::Kilo => "KB",
+            Self::Mega => "MB",
+            Self::Giga => "GB",
+            Self::Tera => "TB",
+        }
+    }
+}
+
+impl BinPrefix {
+    /// Returns the human readable representation of the binary prefix.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Base => "B",
+            Self::Kibi => "KiB",
+            Self::Mebi => "MiB",
+            Self::Gibi => "GiB",
+            Self::Tebi => "TiB",
+        }
+    }
+}
+
 pub trait UnitPrefix {
     fn base_value(&self) -> u64;
 }
@@ -103,24 +129,12 @@ impl From<u64> for SiPrefix {
 
 impl Display for BinPrefix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Base => f.pad("B"),
-            Self::Kibi => f.pad("KiB"),
-            Self::Mebi => f.pad("MiB"),
-            Self::Gibi => f.pad("GiB"),
-            Self::Tebi => f.pad("TiB"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
 impl Display for SiPrefix {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Base => f.pad("B"),
-            Self::Kilo => f.pad("KB"),
-            Self::Mega => f.pad("MB"),
-            Self::Giga => f.pad("GB"),
-            Self::Tera => f.pad("TB"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }

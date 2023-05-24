@@ -2,7 +2,7 @@ use crate::{
     context::Context,
     disk_usage::{
         file_size::{byte, DiskUsage, FileSize},
-        units::PrefixKind,
+        units::{BinPrefix, PrefixKind, SiPrefix},
     },
     render::theme,
     styles::{self, PLACEHOLDER},
@@ -319,6 +319,7 @@ impl<'a> Cell<'a> {
         write!(f, "{placeholder:>placeholder_padding$}")
     }
 
+    /// Rules to format disk usage as bytes
     #[inline]
     fn fmt_bytes(f: &mut fmt::Formatter<'_>, metric: &byte::Metric, ctx: &Context) -> fmt::Result {
         let max_size_width = ctx.max_size_width;
@@ -331,13 +332,27 @@ impl<'a> Cell<'a> {
             return write!(f, "{size:>max_size_width$} {unit:>max_unit_width$}");
         }
 
-        let color = styles::get_du_theme().unwrap().get(unit).unwrap();
+        let color = if metric.human_readable {
+            styles::get_du_theme().unwrap().get(unit).unwrap()
+        } else {
+            match ctx.unit {
+                PrefixKind::Si => {
+                    let pre = SiPrefix::from(metric.value);
+                    styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+                }
+                PrefixKind::Bin => {
+                    let pre = BinPrefix::from(metric.value);
+                    styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
+                }
+            }
+        };
 
         let out = color.paint(format!("{size:>max_size_width$} {unit:>max_unit_width$}"));
 
         write!(f, "{out}")
     }
 
+    /// Rules to format disk usage as unit-less values such as word count, lines, and blocks (unix).
     #[inline]
     fn fmt_unitless_disk_usage<M: Display>(
         f: &mut fmt::Formatter<'_>,
