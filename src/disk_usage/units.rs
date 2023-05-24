@@ -37,7 +37,7 @@ pub enum SiPrefix {
 
 impl SiPrefix {
     /// Returns the human readable representation of the SI prefix.
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         match self {
             Self::Base => "B",
             Self::Kilo => "KB",
@@ -50,7 +50,7 @@ impl SiPrefix {
 
 impl BinPrefix {
     /// Returns the human readable representation of the binary prefix.
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         match self {
             Self::Base => "B",
             Self::Kibi => "KiB",

@@ -1,13 +1,8 @@
 use errno::{errno, set_errno, Errno};
-use std::{
-    ffi::CStr,
-    fs::Metadata,
-    os::unix::fs::MetadataExt,
-};
+use std::{ffi::CStr, fs::Metadata, os::unix::fs::MetadataExt};
 
 type Owner = String;
 type Group = String;
-
 
 impl UserGroupInfo for Metadata {}
 

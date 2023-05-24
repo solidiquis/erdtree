@@ -91,7 +91,7 @@ impl Metric {
     }
 
     /// Returns an immutable borrow of the `cached_display`.
-    pub fn cached_display<'a>(&self) -> Ref<'_, String> {
+    pub fn cached_display(&self) -> Ref<'_, String> {
         self.cached_display.borrow()
     }
 }
@@ -110,9 +110,7 @@ impl Display for Metric {
 
         let display = match self.prefix_kind {
             PrefixKind::Si => {
-                if !self.human_readable {
-                    format!("{} {}", self.value, SiPrefix::Base)
-                } else {
+                if self.human_readable {
                     let unit = SiPrefix::from(self.value);
 
                     if matches!(unit, SiPrefix::Base) {
@@ -122,12 +120,12 @@ impl Display for Metric {
                         let size = value / (base_value as f64);
                         format!("{size:.1} {unit}")
                     }
+                } else {
+                    format!("{} {}", self.value, SiPrefix::Base)
                 }
             }
             PrefixKind::Bin => {
-                if !self.human_readable {
-                    format!("{} {}", self.value, BinPrefix::Base)
-                } else {
+                if self.human_readable {
                     let unit = BinPrefix::from(self.value);
 
                     if matches!(unit, BinPrefix::Base) {
@@ -137,13 +135,15 @@ impl Display for Metric {
                         let size = value / (base_value as f64);
                         format!("{size:.1} {unit}")
                     }
+                } else {
+                    format!("{} {}", self.value, BinPrefix::Base)
                 }
             }
         };
 
         write!(f, "{display}")?;
 
-        let _ = self.cached_display.replace(display);
+        self.cached_display.replace(display);
 
         Ok(())
     }

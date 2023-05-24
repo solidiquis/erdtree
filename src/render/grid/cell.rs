@@ -1,7 +1,7 @@
 use crate::{
     context::Context,
     disk_usage::{
-        file_size::{BLOCK_SIZE_BYTES, byte, block, DiskUsage, FileSize},
+        file_size::{byte, DiskUsage, FileSize},
         units::{BinPrefix, PrefixKind, SiPrefix},
     },
     render::theme,
@@ -17,7 +17,10 @@ use std::{
 };
 
 #[cfg(unix)]
-use crate::context::time;
+use crate::{
+    context::time,
+    disk_usage::file_size::{block, BLOCK_SIZE_BYTES},
+};
 
 /// Constitutes a single cell in a given row of the output. The `kind` field denotes what type of
 /// data actually goes into the cell once rendered. Each `kind` which is of type [Kind] has its own
@@ -41,8 +44,6 @@ pub enum Kind<'a> {
     Ino,
     #[cfg(unix)]
     Nlink,
-    #[cfg(unix)]
-    Blocks,
     #[cfg(unix)]
     Permissions,
     #[cfg(unix)]
@@ -127,29 +128,6 @@ impl<'a> Cell<'a> {
         }
     }
 
-    /// Rules on how to format block for rendering
-    #[cfg(unix)]
-    #[inline]
-    fn fmt_blocks(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let node = self.node;
-        let ctx = self.ctx;
-
-        let max_width = ctx.max_block_width;
-
-        let out = node
-            .blocks()
-            .map(|num| format!("{num:>max_width$}"))
-            .unwrap_or(format!("{PLACEHOLDER:>max_width$}"));
-
-        let formatted_blocks = if let Ok(style) = styles::get_block_style() {
-            style.paint(out).to_string()
-        } else {
-            out
-        };
-
-        write!(f, "{formatted_blocks}")
-    }
-
     /// Rules on how to format nlink for rendering.
     #[cfg(unix)]
     #[inline]
@@ -202,10 +180,7 @@ impl<'a> Cell<'a> {
     fn fmt_owner(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let max_owner_width = self.ctx.max_owner_width;
 
-        let owner = match self.node.owner() {
-            Some(o) => o,
-            None => styles::PLACEHOLDER,
-        };
+        let owner = self.node.owner().map_or(styles::PLACEHOLDER, |o| o);
 
         if let Ok(style) = styles::get_owner_style() {
             let formatted_owner = format!("{owner:>max_owner_width$}");
@@ -221,10 +196,7 @@ impl<'a> Cell<'a> {
     fn fmt_group(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let max_group_width = self.ctx.max_group_width;
 
-        let group = match self.node.group() {
-            Some(o) => o,
-            None => styles::PLACEHOLDER,
-        };
+        let group = self.node.group().map_or(styles::PLACEHOLDER, |o| o);
 
         if let Ok(style) = styles::get_group_style() {
             let formatted_group = format!("{group:>max_group_width$}");
@@ -354,7 +326,11 @@ impl<'a> Cell<'a> {
 
     #[inline]
     #[cfg(unix)]
-    fn fmt_block_usage(f: &mut fmt::Formatter<'_>, metric: &block::Metric, ctx: &Context) -> fmt::Result {
+    fn fmt_block_usage(
+        f: &mut fmt::Formatter<'_>,
+        metric: &block::Metric,
+        ctx: &Context,
+    ) -> fmt::Result {
         let max_size_width = ctx.max_size_width;
 
         if ctx.no_color() {
@@ -409,9 +385,6 @@ impl Display for Cell<'_> {
 
             #[cfg(unix)]
             Kind::Nlink => self.fmt_nlink(f),
-
-            #[cfg(unix)]
-            Kind::Blocks => self.fmt_blocks(f),
 
             #[cfg(unix)]
             Kind::Datetime => self.fmt_datetime(f),

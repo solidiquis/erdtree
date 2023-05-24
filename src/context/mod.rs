@@ -86,6 +86,21 @@ pub struct Context {
     #[arg(short, long)]
     pub long: bool,
 
+    /// Show file's groups
+    #[cfg(unix)]
+    #[arg(long)]
+    pub group: bool,
+
+    /// Show each file's ino
+    #[cfg(unix)]
+    #[arg(long)]
+    pub ino: bool,
+
+    /// Show the total number of hardlinks to the underlying inode
+    #[cfg(unix)]
+    #[arg(long)]
+    pub nlink: bool,
+
     /// Show permissions in numeric octal format instead of symbolic
     #[cfg(unix)]
     #[arg(long, requires = "long")]
@@ -141,6 +156,10 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
     pub unit: PrefixKind,
 
+    /// Which kind of layout to use when rendering the output
+    #[arg(short = 'y', long, value_enum, default_value_t = layout::Type::default())]
+    pub layout: layout::Type,
+
     /// Show hidden files
     #[arg(short = '.', long)]
     pub hidden: bool,
@@ -156,10 +175,6 @@ pub struct Context {
     /// Only print directories
     #[arg(long)]
     pub dirs_only: bool,
-
-    /// Which kind of layout to use when rendering the output
-    #[arg(long, value_enum, default_value_t = layout::Type::default())]
-    pub layout: layout::Type,
 
     /// Don't read configuration file
     #[arg(long)]

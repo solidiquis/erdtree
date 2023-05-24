@@ -1,6 +1,6 @@
 use crate::fs::{ug::UserGroupInfo, xattr::ExtendedAttr};
 use ignore::DirEntry;
-use std::{fs::Metadata, convert::From};
+use std::{convert::From, fs::Metadata};
 
 /// File attributes that are optionally computed and specific to Unix-like systems.
 #[derive(Default)]
@@ -22,12 +22,12 @@ impl Attrs {
 
     /// Returns the file owner.
     pub fn owner(&self) -> Option<&str> {
-        self.owner.as_ref().map(|s| s.as_str())
+        self.owner.as_deref()
     }
 
     /// Returns the file's group.
     pub fn group(&self) -> Option<&str> {
-        self.group.as_ref().map(|s| s.as_str())
+        self.group.as_deref()
     }
 }
 

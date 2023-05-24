@@ -11,6 +11,10 @@ pub mod grid;
 /// output tree.
 pub mod theme;
 
+/// Concerned with how to construct the long output.
+#[cfg(unix)]
+pub mod long;
+
 /// The struct that is generic over T, which is generally expected to be a unit-struct that
 /// ultimately determines which variant to use for the output.
 pub struct Engine<T> {
