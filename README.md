@@ -31,7 +31,8 @@ You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls
   - [Hardlinks](#hardlinks)
   - [Symlinks](#symlinks)
   - [Disk usage](#disk-usage)
-  - [Matching `du`'s output](#matching-du's-output)
+      - [Matching `du`'s output](#matching-du's-output)
+      - [Word and line count](#word-and-line-count)
   - [Layouts](#layouts)
   - [gitignore](#gitignore)
   - [Hidden files](#hidden-files)
@@ -407,12 +408,12 @@ Lastly, if you'd like to omit disk usage from the output:
 --suppress-size              Omit disk usage from output
 ```
 
-#### What's the difference between logical and physical bytes?
+#### Physical vs. logicl
 
 Physical size takes into account compression, sparse files, and actual blocks allocated to a particular file.
 Logical size just reports the total number of bytes in a file.
 
-### Matching `du`'s output
+#### Matching `du`'s output
 
 If you want the same exact disk usage reporting as `du`, you can do the following:
 
@@ -425,6 +426,13 @@ or in short-hand
 ```
 $ erd -y flat -d block -i -.
 ```
+
+#### Word and line count
+
+When opting to report disk usage in either word and line count, unlike `wc`, `erdtree` will make no attempt to count the amount of words or lines for files that cannot
+be encoded as a UTF-8 string such as a JPEG file. For cases such as these the line or total word-count will just appear as empty.
+
+Additionally, the word and line-count of directories are the summation of all of the line/word-counts of its descendents.
 
 #### Example:
 
