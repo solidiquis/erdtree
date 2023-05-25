@@ -321,7 +321,7 @@ impl Tree {
     #[cfg(unix)]
     fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            if ctx.human {
+            if ctx.byte_metric() && ctx.human {
                 let out = format!("{file_size}");
                 let [size, unit]: [&str; 2] =
                     out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
@@ -392,7 +392,7 @@ impl Tree {
     #[cfg(not(unix))]
     fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            if ctx.human {
+            if ctx.byte_metric() && ctx.human {
                 let out = format!("{file_size}");
                 let [size, unit]: [&str; 2] =
                     out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
