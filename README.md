@@ -251,6 +251,8 @@ Options:
           Print version
 ```
 
+`-l, --long` and all of its arguments are currently not available on Windows, but support for a Windows variant is planned.
+
 ## Installation
 
 ### crates.io (non-Windows)
