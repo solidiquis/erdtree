@@ -1,21 +1,22 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
 #![warn(
     clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
+    clippy::cargo,
     clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
+    clippy::correctness,
     clippy::nursery,
-    clippy::cargo
+    clippy::pedantic,
+    clippy::perf,
+    clippy::style,
+    clippy::suspicious
 )]
 #![allow(
-    clippy::struct_excessive_bools,
-    clippy::too_many_arguments,
+    clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
-    clippy::cast_possible_truncation
+    clippy::let_underscore_untyped,
+    clippy::struct_excessive_bools,
+    clippy::too_many_arguments
 )]
 
 use clap::CommandFactory;
@@ -72,11 +73,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     styles::init(ctx.no_color());
 
-    let indicator = ctx.stdout_is_tty.then(progress::Indicator::measure);
+    let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
 
-    let (mut tree, ctx) = Tree::try_init_and_update_context(ctx, indicator)?;
-
-    let indicator = tree.indicator.take();
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator.as_ref())?;
 
     let output = match ctx.layout {
         layout::Type::Flat => {
@@ -94,8 +93,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     if let Some(progress) = indicator {
-        let _ = progress.mailbox().send(Message::RenderReady);
-        let _ = progress.join_handle.join();
+        progress.mailbox().send(Message::RenderReady)?;
+        progress.join_handle.join().unwrap()?;
     }
 
     println!("{output}");

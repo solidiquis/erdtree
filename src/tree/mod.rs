@@ -40,34 +40,25 @@ mod visitor;
 pub struct Tree {
     arena: Arena<Node>,
     root_id: NodeId,
-    pub indicator: Option<IndicatorHandle>,
 }
 
 pub type Result<T> = StdResult<T, Error>;
 
 impl Tree {
     /// Constructor for [Tree].
-    pub const fn new(
-        arena: Arena<Node>,
-        root_id: NodeId,
-        indicator: Option<IndicatorHandle>,
-    ) -> Self {
-        Self {
-            arena,
-            root_id,
-            indicator,
-        }
+    pub const fn new(arena: Arena<Node>, root_id: NodeId) -> Self {
+        Self { arena, root_id }
     }
 
     /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
     /// various properties necessary to render output.
     pub fn try_init_and_update_context(
         mut ctx: Context,
-        indicator: Option<IndicatorHandle>,
+        indicator: Option<&IndicatorHandle>,
     ) -> Result<(Self, Context)> {
         let mut column_properties = column::Properties::from(&ctx);
 
-        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties, indicator.as_ref())?;
+        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties, indicator)?;
 
         ctx.update_column_properties(&column_properties);
 
@@ -75,7 +66,7 @@ impl Tree {
             ctx.set_window_width();
         }
 
-        let tree = Self::new(arena, root_id, indicator);
+        let tree = Self::new(arena, root_id);
 
         if tree.is_stump() {
             return Err(Error::NoMatches);

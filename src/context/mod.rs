@@ -180,6 +180,10 @@ pub struct Context {
     #[arg(long)]
     pub no_config: bool,
 
+    /// Hides the progress indicator
+    #[arg(long)]
+    pub no_progress: bool,
+
     /// Omit disk usage from output
     #[arg(long)]
     pub suppress_size: bool,
