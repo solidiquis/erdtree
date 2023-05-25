@@ -122,6 +122,7 @@ impl Node {
     }
 
     /// Returns the underlying `ino` of the [`DirEntry`].
+    #[cfg(unix)]
     pub const fn ino(&self) -> Option<u64> {
         if let Some(inode) = self.inode {
             Some(inode.ino)
@@ -131,6 +132,7 @@ impl Node {
     }
 
     /// Returns the underlying `nlink` of the [`DirEntry`].
+    #[cfg(unix)]
     pub const fn nlink(&self) -> Option<u64> {
         if let Some(inode) = self.inode {
             Some(inode.nlink)

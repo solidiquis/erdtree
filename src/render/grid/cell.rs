@@ -5,10 +5,9 @@ use crate::{
         units::{BinPrefix, PrefixKind, SiPrefix},
     },
     render::theme,
-    styles::{self, PLACEHOLDER},
+    styles,
     tree::node::Node,
 };
-use chrono::{DateTime, Local};
 use std::{
     borrow::Cow,
     ffi::OsStr,
@@ -16,10 +15,15 @@ use std::{
     path::Path,
 };
 
+
+#[cfg(unix)]
+use chrono::{DateTime, Local};
+
 #[cfg(unix)]
 use crate::{
     context::time,
     disk_usage::file_size::{block, BLOCK_SIZE_BYTES},
+    styles::PLACEHOLDER,
 };
 
 /// Constitutes a single cell in a given row of the output. The `kind` field denotes what type of

@@ -6,8 +6,14 @@ use std::{
 const ERDTREE_CONFIG_NAME: &str = ".erdtreerc";
 const ERDTREE_CONFIG_PATH: &str = "ERDTREE_CONFIG_PATH";
 const ERDTREE_DIR: &str = "erdtree";
+
+#[cfg(unix)]
 const CONFIG_DIR: &str = ".config";
+
+#[cfg(unix)]
 const HOME: &str = "HOME";
+
+#[cfg(unix)]
 const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 
 /// Reads the config file into a `String` if there is one. When `None` is provided then the config
@@ -18,7 +24,7 @@ const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 /// - `$XDG_CONFIG_HOME/.erdtreerc`
 /// - `$HOME/.config/erdtree/.erdtreerc`
 /// - `$HOME/.erdtreerc`
-#[cfg(not(windows))]
+#[cfg(unix)]
 pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
     path.map(fs::read_to_string)
         .and_then(Result::ok)
@@ -99,6 +105,7 @@ fn config_from_appdata() -> Option<String> {
 /// Try to read in config from either one of the following locations:
 /// - `$XDG_CONFIG_HOME/erdtree/.erdtreerc`
 /// - `$XDG_CONFIG_HOME/.erdtreerc`
+#[cfg(unix)]
 fn config_from_xdg_path() -> Option<String> {
     let xdg_config = env::var_os(XDG_CONFIG_HOME).map(PathBuf::from)?;
 
