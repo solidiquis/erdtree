@@ -214,9 +214,9 @@ impl<'a> Cell<'a> {
         let ctx = self.ctx;
 
         let datetime = match ctx.time() {
-            time::Stamp::Created => node.created(),
-            time::Stamp::Accessed => node.accessed(),
-            time::Stamp::Modified => node.modified(),
+            time::Stamp::Create => node.created(),
+            time::Stamp::Access => node.accessed(),
+            time::Stamp::Mod => node.modified(),
         };
 
         let out = datetime.map(DateTime::<Local>::from).map_or_else(
