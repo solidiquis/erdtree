@@ -2,6 +2,7 @@ use crate::{
     context::{column, file, Context},
     disk_usage::file_size::FileSize,
     fs::inode::Inode,
+    progress::{self, IndicatorHandle, Message},
     utils,
 };
 use count::FileCount;
@@ -39,22 +40,34 @@ mod visitor;
 pub struct Tree {
     arena: Arena<Node>,
     root_id: NodeId,
+    indicator: Option<IndicatorHandle>,
 }
 
 pub type Result<T> = StdResult<T, Error>;
 
 impl Tree {
     /// Constructor for [Tree].
-    pub const fn new(arena: Arena<Node>, root_id: NodeId) -> Self {
-        Self { arena, root_id }
+    pub const fn new(
+        arena: Arena<Node>,
+        root_id: NodeId,
+        indicator: Option<IndicatorHandle>,
+    ) -> Self {
+        Self {
+            arena,
+            root_id,
+            indicator,
+        }
     }
 
     /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
     /// various properties necessary to render output.
-    pub fn try_init_and_update_context(mut ctx: Context) -> Result<(Self, Context)> {
+    pub fn try_init_and_update_context(
+        mut ctx: Context,
+        indicator: Option<IndicatorHandle>,
+    ) -> Result<(Self, Context)> {
         let mut column_properties = column::Properties::from(&ctx);
 
-        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties)?;
+        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties, indicator.as_ref())?;
 
         ctx.update_column_properties(&column_properties);
 
@@ -62,7 +75,7 @@ impl Tree {
             ctx.set_window_width();
         }
 
-        let tree = Self::new(arena, root_id);
+        let tree = Self::new(arena, root_id, indicator);
 
         if tree.is_stump() {
             return Err(Error::NoMatches);
@@ -91,6 +104,11 @@ impl Tree {
         &self.arena
     }
 
+    /// Grabs a reference to `indicator`.
+    pub const fn indicator(&self) -> Option<&IndicatorHandle> {
+        self.indicator.as_ref()
+    }
+
     /// Parallel traversal of the `root_id` directory and its contents. Parallel traversal relies on
     /// `WalkParallel`. Any filesystem I/O or related system calls are expected to occur during
     /// parallel traversal; post-processing post-processing of all directory entries should
@@ -98,9 +116,12 @@ impl Tree {
     fn traverse(
         ctx: &Context,
         column_properties: &mut column::Properties,
+        indicator: Option<&IndicatorHandle>,
     ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
+
+        let progress_indicator_mailbox = indicator.map(progress::IndicatorHandle::mailbox);
 
         thread::scope(|s| {
             let res = s.spawn(move || {
@@ -109,6 +130,10 @@ impl Tree {
                 let mut root_id_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
+                    if let Some(ref mailbox) = progress_indicator_mailbox {
+                        let _ = mailbox.send(Message::Index);
+                    }
+
                     if node.is_dir() {
                         let node_path = node.path();
 
@@ -133,6 +158,10 @@ impl Tree {
                     {
                         branches.insert(parent, vec![]);
                     }
+                }
+
+                if let Some(ref mailbox) = progress_indicator_mailbox {
+                    let _ = mailbox.send(Message::DoneIndexing);
                 }
 
                 let root_id = root_id_id.ok_or(Error::MissingRoot)?;

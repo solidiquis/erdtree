@@ -39,6 +39,9 @@ mod fs;
 /// All things related to icons on how to map certain files to the appropriate icons.
 mod icons;
 
+/// Concerned with displaying a progress indicator when stdout is a tty.
+mod progress;
+
 /// Concerned with taking an initialized [`Tree`] and its [`Node`]s and rendering the output.
 ///
 /// [`Tree`]: tree::Tree
@@ -68,7 +71,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     styles::init(ctx.no_color());
 
-    let (tree, ctx) = Tree::try_init_and_update_context(ctx)?;
+    let indicator = ctx.stdout_is_tty.then(progress::Indicator::measure);
+
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator)?;
 
     match ctx.layout {
         layout::Type::Flat => {
