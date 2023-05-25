@@ -103,13 +103,19 @@ impl<'a> Cell<'a> {
                 .display()
         };
 
+        let formatted_path = if let Some(style) = node.style() {
+            format!("{}", style.paint(path.to_string()))
+        } else {
+            path.to_string()
+        };
+
         if !ctx.icons {
-            return write!(f, "{path}");
+            return write!(f, "{formatted_path}");
         }
 
         let icon = node.compute_icon(ctx.no_color());
 
-        write!(f, "{icon} {path}")
+        write!(f, "{icon} {formatted_path}")
     }
 
     /// Rules on how to render the file size.
