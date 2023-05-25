@@ -31,8 +31,8 @@ You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls
   - [Hardlinks](#hardlinks)
   - [Symlinks](#symlinks)
   - [Disk usage](#disk-usage)
-      - [Physical vs. logical](#physical-vs.-logical)
-      - [Matching `du`'s output](#matching-du's-output)
+      - [Physical vs logical](#physical-vs-logical)
+      - [Matching `du` output](#matching-du-output)
       - [Word and line count](#word-and-line-count)
   - [Layouts](#layouts)
   - [gitignore](#gitignore)
@@ -421,12 +421,12 @@ Lastly, if you'd like to omit disk usage from the output:
   Omit disk usage from output
 ```
 
-#### Physical vs. logical
+#### Physical vs logical
 
 Physical size takes into account compression, sparse files, and actual blocks allocated to a particular file.
 Logical size just reports the total number of bytes in a file.
 
-#### Matching `du`'s output
+#### Matching `du` output
 
 If you want the same exact disk usage reporting as `du`, you can do the following:
 
