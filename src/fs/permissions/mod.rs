@@ -42,6 +42,10 @@ pub struct FileMode {
     other_permissions: class::Permissions,
 }
 
+/// Implements [Display] which presents symbolic notation of file permissions with the extended
+/// attributes.
+pub struct FileModeXAttrs<'a>(pub &'a FileMode);
+
 impl FileMode {
     /// Constructor for [`FileMode`].
     pub const fn new(
@@ -93,6 +97,14 @@ impl Display for FileMode {
             f,
             "{file_iden}{user_permissions}{group_permissions}{other_permissions}"
         )
+    }
+}
+
+/// For representing file permissions with extended attributes in symbolic notation.
+impl Display for FileModeXAttrs<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mode = self.0;
+        write!(f, "{mode}@")
     }
 }
 

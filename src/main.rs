@@ -1,43 +1,61 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
 #![warn(
     clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
+    clippy::cargo,
     clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
+    clippy::correctness,
     clippy::nursery,
-    clippy::cargo
+    clippy::pedantic,
+    clippy::perf,
+    clippy::style,
+    clippy::suspicious
 )]
 #![allow(
-    clippy::struct_excessive_bools,
+    clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
-    clippy::cast_possible_truncation
+    clippy::let_underscore_untyped,
+    clippy::struct_excessive_bools,
+    clippy::too_many_arguments
 )]
 
 use clap::CommandFactory;
-use render::{
-    context::Context,
-    tree::{
-        display::{Flat, Inverted, Regular},
-        Tree,
-    },
-};
+use context::{layout, Context};
+use progress::Message;
+use render::{Engine, Flat, Inverted, Regular};
 use std::{error::Error, io::stdout};
+use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
 mod ansi;
 
+/// CLI rules and definitions as well as context to be injected throughout the entire program.
+mod context;
+
+/// Operations relevant to the computation and presentation of disk usage.
+mod disk_usage;
+
 /// Filesystem operations.
 mod fs;
 
-/// Dev icons.
+/// All things related to icons on how to map certain files to the appropriate icons.
 mod icons;
 
-/// Tools and operations to display root-directory.
+/// Concerned with displaying a progress indicator when stdout is a tty.
+mod progress;
+
+/// Concerned with taking an initialized [`Tree`] and its [`Node`]s and rendering the output.
+///
+/// [`Tree`]: tree::Tree
+/// [`Node`]: tree::node::Node
 mod render;
+
+/// Global used throughout the program to paint the output.
+mod styles;
+
+/// Houses the primary data structures that are used to virtualize the filesystem, containing also
+/// information on how the tree output should be ultimately rendered.
+mod tree;
 
 /// Utilities relating to interacting with tty properties.
 mod tty;
@@ -49,22 +67,37 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ctx = Context::init()?;
 
     if let Some(shell) = ctx.completions {
-        clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout().lock());
+        clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout());
         return Ok(());
     }
 
-    render::styles::init(ctx.no_color());
+    styles::init(ctx.no_color());
 
-    if ctx.flat {
-        let tree = Tree::<Flat>::try_init(ctx)?;
-        println!("{tree}");
-    } else if ctx.inverted {
-        let tree = Tree::<Inverted>::try_init(ctx)?;
-        println!("{tree}");
-    } else {
-        let tree = Tree::<Regular>::try_init(ctx)?;
-        println!("{tree}");
+    let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
+
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator.as_ref())?;
+
+    let output = match ctx.layout {
+        layout::Type::Flat => {
+            let render = Engine::<Flat>::new(tree, ctx);
+            format!("{render}")
+        }
+        layout::Type::Inverted => {
+            let render = Engine::<Inverted>::new(tree, ctx);
+            format!("{render}")
+        }
+        layout::Type::Regular => {
+            let render = Engine::<Regular>::new(tree, ctx);
+            format!("{render}")
+        }
+    };
+
+    if let Some(progress) = indicator {
+        progress.mailbox().send(Message::RenderReady)?;
+        progress.join_handle.join().unwrap()?;
     }
+
+    println!("{output}");
 
     Ok(())
 }

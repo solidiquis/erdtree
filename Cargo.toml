@@ -1,11 +1,11 @@
 [package]
 name = "erdtree"
-version = "2.0.0"
+version = "3.0.0"
 edition = "2021"
 authors = ["Benjamin Nguyen <benjamin.van.nguyen@gmail.com>"]
 description = """
-erdtree (erd) is a cross-platform multi-threaded filesystem and disk usage
-analysis tool that respects gitignore and hidden file rules.
+erdtree (erd) is a cross-platform, multi-threaded, and general purpose
+filesystem and disk usage utility that is aware of .gitignore and hidden file rules.
 """
 categories = ["command-line-utilities"]
 documentation = "https://github.com/solidiquis/erdtree"
@@ -28,7 +28,9 @@ ansi_term = "0.12.1"
 chrono = "0.4.24"
 clap = { version = "4.1.1", features = ["derive"] }
 clap_complete = "4.1.1"
+crossterm = "0.26.1"
 dirs = "5.0"
+errno = "0.3.1"
 filesize = "0.2.0"
 ignore = "0.4.2"
 indextree = "4.6.0"

@@ -7,16 +7,16 @@ fn regex() {
     assert_eq!(
         utils::run_cmd(&["--pattern", r"\.txt$", "tests/data"]),
         indoc!(
-            "100  B ┌─ nylarlathotep.txt
-            161  B ├─ nemesis.txt
-            83   B ├─ necronomicon.txt
-            446  B │  ┌─ lipsum.txt
-            446  B ├─ lipsum
-            308  B │  ┌─ polaris.txt
-            308  B ├─ dream_cycle
-            1098 B data
+            "100 B ┌─ nylarlathotep.txt
+ 161 B ├─ nemesis.txt
+  83 B ├─ necronomicon.txt
+ 446 B │  ┌─ lipsum.txt
+ 446 B ├─ lipsum
+ 308 B │  ┌─ polaris.txt
+ 308 B ├─ dream_cycle
+1098 B data
 
-            2 directories, 5 files"
+2 directories, 5 files"
         )
     );
 
@@ -24,10 +24,10 @@ fn regex() {
         utils::run_cmd(&["--pattern", r"^cassildas.", "--prune", "tests/data"]),
         indoc!(
             "143 B    ┌─ cassildas_song.md
-            143 B ┌─ the_yellow_king
-            143 B data
-
-            1 directory, 1 file"
+ 143 B ┌─ the_yellow_king
+ 143 B data
+ 
+ 1 directory, 1 file"
         )
     );
 }
@@ -38,10 +38,10 @@ fn regex_file_type() {
         utils::run_cmd(&["--pattern", r"^dream.", "--file-type", "dir", "tests/data"]),
         indoc!(
             "308 B    ┌─ polaris.txt
-            308 B ┌─ dream_cycle
-            308 B data
-
-            1 directory, 1 file"
+ 308 B ┌─ dream_cycle
+ 308 B data
+ 
+ 1 directory, 1 file"
         )
     );
 }

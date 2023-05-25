@@ -7,16 +7,16 @@ fn glob() {
     assert_eq!(
         utils::run_cmd(&["--glob", "--pattern", "*.txt", "tests/data"]),
         indoc!(
-            "100  B ┌─ nylarlathotep.txt
-            161  B ├─ nemesis.txt
-            83   B ├─ necronomicon.txt
-            446  B │  ┌─ lipsum.txt
-            446  B ├─ lipsum
-            308  B │  ┌─ polaris.txt
-            308  B ├─ dream_cycle
-            1098 B data
+            "100 B ┌─ nylarlathotep.txt
+ 161 B ├─ nemesis.txt
+  83 B ├─ necronomicon.txt
+ 446 B │  ┌─ lipsum.txt
+ 446 B ├─ lipsum
+ 308 B │  ┌─ polaris.txt
+ 308 B ├─ dream_cycle
+1098 B data
 
-            2 directories, 5 files"
+2 directories, 5 files"
         )
     );
 }
@@ -27,10 +27,10 @@ fn glob_negative() {
         utils::run_cmd(&["--glob", "--pattern", "!*.txt", "tests/data"]),
         indoc!(
             "143 B    ┌─ cassildas_song.md
-            143 B ┌─ the_yellow_king
-            143 B data
-
-            1 directory, 1 file"
+ 143 B ┌─ the_yellow_king
+ 143 B data
+ 
+ 1 directory, 1 file"
         )
     )
 }
@@ -40,16 +40,16 @@ fn glob_case_insensitive() {
     assert_eq!(
         utils::run_cmd(&["--iglob", "--pattern", "*.TXT", "tests/data"]),
         indoc!(
-            "100  B ┌─ nylarlathotep.txt
-            161  B ├─ nemesis.txt
-            83   B ├─ necronomicon.txt
-            446  B │  ┌─ lipsum.txt
-            446  B ├─ lipsum
-            308  B │  ┌─ polaris.txt
-            308  B ├─ dream_cycle
-            1098 B data
+            "100 B ┌─ nylarlathotep.txt
+ 161 B ├─ nemesis.txt
+  83 B ├─ necronomicon.txt
+ 446 B │  ┌─ lipsum.txt
+ 446 B ├─ lipsum
+ 308 B │  ┌─ polaris.txt
+ 308 B ├─ dream_cycle
+1098 B data
 
-            2 directories, 5 files"
+2 directories, 5 files"
         )
     )
 }
@@ -67,10 +67,10 @@ fn glob_with_filetype() {
         ]),
         indoc!(
             "308 B    ┌─ polaris.txt
-            308 B ┌─ dream_cycle
-            308 B data
-
-            1 directory, 1 file"
+ 308 B ┌─ dream_cycle
+ 308 B data
+ 
+ 1 directory, 1 file"
         )
     )
 }
@@ -88,15 +88,15 @@ fn negated_glob_with_filetype() {
         ]),
         indoc!(
             "143 B    ┌─ cassildas_song.md
-            143 B ┌─ the_yellow_king
-            100 B ├─ nylarlathotep.txt
-            161 B ├─ nemesis.txt
-            83  B ├─ necronomicon.txt
-            446 B │  ┌─ lipsum.txt
-            446 B ├─ lipsum
-            933 B data
-
-            2 directories, 5 files"
+ 143 B ┌─ the_yellow_king
+ 100 B ├─ nylarlathotep.txt
+ 161 B ├─ nemesis.txt
+  83 B ├─ necronomicon.txt
+ 446 B │  ┌─ lipsum.txt
+ 446 B ├─ lipsum
+ 933 B data
+ 
+ 2 directories, 5 files"
         )
     )
 }
