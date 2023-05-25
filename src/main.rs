@@ -1,25 +1,27 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
 #![warn(
     clippy::all,
-    clippy::correctness,
-    clippy::suspicious,
-    clippy::style,
+    clippy::cargo,
     clippy::complexity,
-    clippy::perf,
-    clippy::pedantic,
+    clippy::correctness,
     clippy::nursery,
-    clippy::cargo
+    clippy::pedantic,
+    clippy::perf,
+    clippy::style,
+    clippy::suspicious
 )]
 #![allow(
-    clippy::struct_excessive_bools,
-    clippy::too_many_arguments,
+    clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
-    clippy::cast_possible_truncation
+    clippy::let_underscore_untyped,
+    clippy::struct_excessive_bools,
+    clippy::too_many_arguments
 )]
 
 use clap::CommandFactory;
 use context::{layout, Context};
+use progress::Message;
 use render::{Engine, Flat, Inverted, Regular};
 use std::{error::Error, io::stdout};
 use tree::Tree;
@@ -38,6 +40,9 @@ mod fs;
 
 /// All things related to icons on how to map certain files to the appropriate icons.
 mod icons;
+
+/// Concerned with displaying a progress indicator when stdout is a tty.
+mod progress;
 
 /// Concerned with taking an initialized [`Tree`] and its [`Node`]s and rendering the output.
 ///
@@ -68,22 +73,31 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     styles::init(ctx.no_color());
 
-    let (tree, ctx) = Tree::try_init_and_update_context(ctx)?;
+    let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
 
-    match ctx.layout {
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator.as_ref())?;
+
+    let output = match ctx.layout {
         layout::Type::Flat => {
             let render = Engine::<Flat>::new(tree, ctx);
-            println!("{render}");
+            format!("{render}")
         }
         layout::Type::Inverted => {
             let render = Engine::<Inverted>::new(tree, ctx);
-            println!("{render}");
+            format!("{render}")
         }
         layout::Type::Regular => {
             let render = Engine::<Regular>::new(tree, ctx);
-            println!("{render}");
+            format!("{render}")
         }
+    };
+
+    if let Some(progress) = indicator {
+        progress.mailbox().send(Message::RenderReady)?;
+        progress.join_handle.join().unwrap()?;
     }
+
+    println!("{output}");
 
     Ok(())
 }

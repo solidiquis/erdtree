@@ -180,6 +180,10 @@ pub struct Context {
     #[arg(long)]
     pub no_config: bool,
 
+    /// Hides the progress indicator
+    #[arg(long)]
+    pub no_progress: bool,
+
     /// Omit disk usage from output
     #[arg(long)]
     pub suppress_size: bool,
@@ -525,8 +529,15 @@ impl Context {
     }
 
     /// Setter for `window_width` which is set to the current terminal emulator's window width.
+    #[inline]
     pub fn set_window_width(&mut self) {
         self.window_width = crate::tty::get_window_width(self.stdout_is_tty);
+    }
+
+    /// Answers whether disk usage is asked to be reported in bytes.
+    pub const fn byte_metric(&self) -> bool {
+        matches!(self.disk_usage, DiskUsage::Logical)
+            || matches!(self.disk_usage, DiskUsage::Physical)
     }
 
     /// Do any of the components of a path match the provided glob? This is used for ensuring that

@@ -2,6 +2,7 @@ use crate::{
     context::{column, file, Context},
     disk_usage::file_size::FileSize,
     fs::inode::Inode,
+    progress::{self, IndicatorHandle, Message},
     utils,
 };
 use count::FileCount;
@@ -51,10 +52,13 @@ impl Tree {
 
     /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
     /// various properties necessary to render output.
-    pub fn try_init_and_update_context(mut ctx: Context) -> Result<(Self, Context)> {
+    pub fn try_init_and_update_context(
+        mut ctx: Context,
+        indicator: Option<&IndicatorHandle>,
+    ) -> Result<(Self, Context)> {
         let mut column_properties = column::Properties::from(&ctx);
 
-        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties)?;
+        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties, indicator)?;
 
         ctx.update_column_properties(&column_properties);
 
@@ -98,9 +102,12 @@ impl Tree {
     fn traverse(
         ctx: &Context,
         column_properties: &mut column::Properties,
+        indicator: Option<&IndicatorHandle>,
     ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
+
+        let progress_indicator_mailbox = indicator.map(progress::IndicatorHandle::mailbox);
 
         thread::scope(|s| {
             let res = s.spawn(move || {
@@ -109,6 +116,10 @@ impl Tree {
                 let mut root_id_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
+                    if let Some(ref mailbox) = progress_indicator_mailbox {
+                        let _ = mailbox.send(Message::Index);
+                    }
+
                     if node.is_dir() {
                         let node_path = node.path();
 
@@ -133,6 +144,10 @@ impl Tree {
                     {
                         branches.insert(parent, vec![]);
                     }
+                }
+
+                if let Some(ref mailbox) = progress_indicator_mailbox {
+                    let _ = mailbox.send(Message::DoneIndexing);
                 }
 
                 let root_id = root_id_id.ok_or(Error::MissingRoot)?;
@@ -306,7 +321,7 @@ impl Tree {
     #[cfg(unix)]
     fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            if ctx.human {
+            if ctx.byte_metric() && ctx.human {
                 let out = format!("{file_size}");
                 let [size, unit]: [&str; 2] =
                     out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
@@ -377,7 +392,7 @@ impl Tree {
     #[cfg(not(unix))]
     fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
-            if ctx.human {
+            if ctx.byte_metric() && ctx.human {
                 let out = format!("{file_size}");
                 let [size, unit]: [&str; 2] =
                     out.split(' ').collect::<Vec<&str>>().try_into().unwrap();

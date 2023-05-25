@@ -17,8 +17,8 @@ pub struct Metric {
     prefix_kind: PrefixKind,
 
     /// To prevent allocating the same string twice. We allocate the first time
-    /// in [`crate::tree::update_column_properties`] in order to compute the max column width for
-    /// human-readable size and the second time during the actual render.
+    /// in [`crate::tree::Tree::update_column_properties`] in order to compute the max column width for
+    /// human-readable size and cache it. It will then be used again when preparing the output.
     cached_display: RefCell<String>,
 }
 
