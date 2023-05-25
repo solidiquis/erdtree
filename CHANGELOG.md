@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.0.0] - 2023-05-25
+## [3.0.0] - 2023-05-25
 
 ### Bug fixes
 - [Completions now properly reference the new binary name](https://github.com/solidiquis/erdtree/commit/c4ff0dacb137f1007af27f692f1e5ee66bf47cb6), `erd`
@@ -25,6 +25,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Support for sorting files by modified time, access time, and created time [55783ff](https://github.com/solidiquis/erdtree/pull/155/commits/55783ff7957a1e42c6d06dfd84682188b74b2cec)
 - Support for reporting block usage, line-count, and word-count https://github.com/solidiquis/erdtree/pull/172 
 - Added progress indicator https://github.com/solidiquis/erdtree/pull/176
+
+### New Contributors
+- [iquiw](https://github.com/iquiw)
+- [KP64](https://github.com/KP64)
+- [m4rch3n1ng](https://github.com/m4rch3n1ng)
+- [demilich1](https://github.com/demilich1)
 
 For a more comprehensive overview of `erdtree` v3.0.0, please refer to the [README.md](README.md).
 
