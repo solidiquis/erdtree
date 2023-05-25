@@ -431,7 +431,7 @@ Logical size just reports the total number of bytes in a file.
 If you want the same exact disk usage reporting as `du`, you can do the following:
 
 ```
-$ erd --layout flat --disk-usage block --no-ignore --hidden 
+$ erd --layout flat --disk-usage block --no-ignore --hidden --level
 ```
 
 or in short-hand
@@ -440,18 +440,16 @@ or in short-hand
 $ erd -y flat -d block -i -.
 ```
 
+<p align="center">
+  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/du_match.png?raw=true" alt="failed to load png" />
+</p>
+
 #### Word and line count
 
 When opting to report disk usage in either word and line count, unlike `wc`, `erdtree` will make no attempt to count the amount of words or lines for files that cannot
 be encoded as a UTF-8 string such as a JPEG file. For cases such as these the line or total word-count will just appear as empty.
 
 Additionally, the word and line-count of directories are the summation of all of the line/word-counts of its descendents.
-
-#### Example:
-
-<p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/du_compare.png?raw=true" alt="failed to load png" />
-</p>
 
 ### Layouts
 
