@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - `-C, --color` https://github.com/solidiquis/erdtree/pull/147
 - Support for owner and group, changed default columns for `l, --long`, and added optional long-view arguments https://github.com/solidiquis/erdtree/pull/174
 - Support customizing time output format https://github.com/solidiquis/erdtree/pull/165
-- Support for sorting files by modified time, access time, and created time https://github.com/solidiquis/erdtree/pull/155/commits/55783ff7957a1e42c6d06dfd84682188b74b2cec
+- Support for sorting files by modified time, access time, and created time [55783ff](https://github.com/solidiquis/erdtree/pull/155/commits/55783ff7957a1e42c6d06dfd84682188b74b2cec)
 - Support for reporting block usage, line-count, and word-count https://github.com/solidiquis/erdtree/pull/172 
 - Added progress indicator https://github.com/solidiquis/erdtree/pull/176
 
