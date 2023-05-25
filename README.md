@@ -88,7 +88,7 @@ Options:
           - logical:
             How many bytes does a file contain
           - physical:
-            How much actual space on disk in bytes, taking into account sparse files and compression
+            How many actual bytes on disk, taking into account blocks, sparse files, and compression
           - line:
             How many total lines a file contains
           - word:
@@ -358,7 +358,8 @@ If multiple hardlinks that point to the same inode are in the same file-tree, al
 ### Symlinks
 
 ```
--f, --follow                     Follow symlinks
+-f, --follow
+      Follow symlinks
 ```
 
 Symlinks when followed will have their targets (and descendants) counted towards total disk usage, otherwise the size of the symlink itself will be reported.
@@ -374,13 +375,21 @@ When a symlink to a directory is followed all of the box-drawing characters of i
 By default disk usage is reported as the total amount of physical bytes stored on the disk. To get the human-readable form:
 
 ```
--H, --human                      Print disk usage in human-readable format
+-H, --human
+      Print disk usage in human-readable format
 ```
 
-When using the human-readable form, binary units (e.g. `1 KiB = 1024 B`) is reported by default. If you prefer SI units (`1KB = 1000 B`) you can use the following:
+When using the human-readable form, binary units (e.g. `1 KiB = 1024 B`) are reported by default. If you prefer SI units (`1 KB = 1000 B`) you can use the following:
 
 ```
--u, --unit <UNIT>                Report disk usage in binary or SI units [default: bin] [possible values: bin, si]
+-u, --unit <UNIT>
+      Report disk usage in binary or SI units
+      
+      [default: bin]
+
+      Possible values:
+      - bin: Displays disk usage using binary prefixes
+      - si:  Displays disk usage using SI prefixes
 ```
 
 Additionally, various other disk usage metrics may be used instead of physical bytes. You have the following metrics available:
@@ -395,7 +404,7 @@ Additionally, various other disk usage metrics may be used instead of physical b
       - logical:
         How many bytes does a file contain
       - physical:
-        How much actual space on disk in bytes, taking into account sparse files and compression
+        How many actual bytes on disk, taking into account blocks, sparse files, and compression
       - line:
         How many total lines a file contains
       - word:
@@ -407,7 +416,8 @@ Additionally, various other disk usage metrics may be used instead of physical b
 Lastly, if you'd like to omit disk usage from the output:
 
 ```
---suppress-size              Omit disk usage from output
+--suppress-size
+  Omit disk usage from output
 ```
 
 #### Physical vs. logicl
@@ -465,7 +475,8 @@ Additionally, the word and line-count of directories are the summation of all of
 ### gitignore
 
 ```
--i, --no-ignore                  Do not respect .gitignore files
+-i, --no-ignore
+      Do not respect .gitignore files
 ```
 
 `.gitignore` is respected by default but can be disregarded with the above argument. `.gitignore` rules are also respected on a per directory basis, so
@@ -476,8 +487,11 @@ If `.gitignore` is respected any file that is ignored will not be included in th
 ### Hidden files
 
 ```
--., --hidden                     Show hidden files
-    --no-git                     Disable traversal of .git directory when traversing hidden files
+-., --hidden
+      Show hidden files
+
+  --no-git
+      Disable traversal of .git directory when traversing hidden files
 ```
 
 Hidden files ignored by default but can be included with `-., --hidden`. If opting in to show hidden files `.git` is included; to exclude
@@ -506,17 +520,19 @@ this means that the font you are using doesn't include the relevant glyphs. To r
 Directories are fully traversed by default. To limit the maximum depth:
 
 ```
--L, --level <NUM>                Maximum depth to display
+-L, --level <NUM>
+      Maximum depth to display
 ```
 
-Limiting the maximum depth to display will not affect the total disk usage report.
+Limiting the maximum depth to display will not affect the total disk usage report nor the file count report.
 
 ### Pruning empty directories
 
 Sometimes empty directories may appear in the output. To remove them:
 
 ```
--P, --prune                      Remove empty directories from output
+-P, --prune
+      Remove empty directories from output
 ```
 
 ### Sorting
@@ -559,7 +575,8 @@ Various sorting methods are provided:
 You output only directories with:
 
 ```
---dirs-only                  Only print directories
+--dirs-only
+  Only print directories
 ```
 
 This will not affect total disk usage.
