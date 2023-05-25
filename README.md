@@ -674,7 +674,8 @@ In instances where the output does not fit the terminal emulator's window, the o
 In these situations the following may be used:
 
 ```
---truncate                   Truncate output to fit terminal emulator window
+--truncate
+  Truncate output to fit terminal emulator window
 ```
 
 <p align="center">
