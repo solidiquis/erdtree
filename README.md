@@ -19,7 +19,7 @@ The following are some feature highlights:
 You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/top_demo.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/top_showcase.png?raw=true" alt="failed to load picture" />
 </p>
 
 ## Table of Contents
