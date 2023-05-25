@@ -17,6 +17,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - [Fixed NetBSD build error associated with xattrs](https://github.com/solidiquis/erdtree/commit/33d918f2acc68f2782d1fada8384aeadec57f3fe)
     -  https://github.com/solidiquis/erdtree/issues/157
 - [Fixed issue where `--level` would omit files from the total count](https://github.com/solidiquis/erdtree/pull/169)
+- [Added support for %APPDATA% config folder for Windows](https://github.com/solidiquis/erdtree/pull/154)
+    - https://github.com/solidiquis/erdtree/issues/152
 
 ### Additions
 - `-C, --color` https://github.com/solidiquis/erdtree/pull/147
