@@ -66,7 +66,7 @@ fn sort_name_dir_order() {
 #[test]
 fn sort_size() {
     assert_eq!(
-        utils::run_cmd(&["--sort", "size-rev", "tests/data"]),
+        utils::run_cmd(&["--sort", "rsize", "tests/data"]),
         indoc!(
             "446 B    ┌─ lipsum.txt
  446 B ┌─ lipsum
