@@ -40,7 +40,7 @@ mod visitor;
 pub struct Tree {
     arena: Arena<Node>,
     root_id: NodeId,
-    indicator: Option<IndicatorHandle>,
+    pub indicator: Option<IndicatorHandle>,
 }
 
 pub type Result<T> = StdResult<T, Error>;
@@ -102,11 +102,6 @@ impl Tree {
     /// Grabs a reference to `arena`.
     pub const fn arena(&self) -> &Arena<Node> {
         &self.arena
-    }
-
-    /// Grabs a reference to `indicator`.
-    pub const fn indicator(&self) -> Option<&IndicatorHandle> {
-        self.indicator.as_ref()
     }
 
     /// Parallel traversal of the `root_id` directory and its contents. Parallel traversal relies on

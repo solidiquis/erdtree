@@ -1,5 +1,4 @@
 use crate::{
-    progress::Message,
     render::{
         grid::{self, Row},
         theme, Engine, Regular,
@@ -18,7 +17,6 @@ impl Display for Engine<Regular> {
         let arena = tree.arena();
         let max_depth = ctx.level();
         let mut file_count_data = vec![];
-        let mut progress_indicator = tree.indicator();
 
         let mut get_theme = if ctx.follow {
             theme::link_theme_getter()
@@ -98,11 +96,6 @@ impl Display for Engine<Regular> {
 
         if !file_count_data.is_empty() {
             write!(f, "\n{}", FileCount::from(file_count_data))?;
-        }
-
-        if let Some(indicator) = progress_indicator.take() {
-            let _ = indicator.mailbox().send(Message::RenderReady);
-            drop(indicator);
         }
 
         Ok(())

@@ -20,6 +20,7 @@
 
 use clap::CommandFactory;
 use context::{layout, Context};
+use progress::Message;
 use render::{Engine, Flat, Inverted, Regular};
 use std::{error::Error, io::stdout};
 use tree::Tree;
@@ -73,22 +74,31 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let indicator = ctx.stdout_is_tty.then(progress::Indicator::measure);
 
-    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator)?;
+    let (mut tree, ctx) = Tree::try_init_and_update_context(ctx, indicator)?;
 
-    match ctx.layout {
+    let indicator = tree.indicator.take();
+
+    let output = match ctx.layout {
         layout::Type::Flat => {
             let render = Engine::<Flat>::new(tree, ctx);
-            println!("{render}");
+            format!("{render}")
         }
         layout::Type::Inverted => {
             let render = Engine::<Inverted>::new(tree, ctx);
-            println!("{render}");
+            format!("{render}")
         }
         layout::Type::Regular => {
             let render = Engine::<Regular>::new(tree, ctx);
-            println!("{render}");
+            format!("{render}")
         }
+    };
+
+    if let Some(progress) = indicator {
+        let _ = progress.mailbox().send(Message::RenderReady);
+        let _ = progress.join_handle.join();
     }
+
+    println!("{output}");
 
     Ok(())
 }
