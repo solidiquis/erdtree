@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let ctx = Context::init()?;
 
     if let Some(shell) = ctx.completions {
-        clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout().lock());
+        clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout());
         return Ok(());
     }
 
