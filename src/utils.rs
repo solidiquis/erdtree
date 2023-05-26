@@ -1,4 +1,4 @@
-use std::{borrow::ToOwned, cmp::Eq, collections::HashSet, hash::Hash};
+use std::{cmp::Eq, collections::HashSet, hash::Hash};
 
 #[macro_export]
 /// Ruby-like way to crate a hashmap.
@@ -25,7 +25,7 @@ macro_rules! hash {
 #[inline]
 pub fn uniq<T>(items: Vec<T>) -> Vec<T>
 where
-    T: Eq + Hash + ToOwned,
+    T: Eq + Hash,
 {
     items
         .into_iter()
