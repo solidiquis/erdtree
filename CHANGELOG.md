@@ -3,9 +3,44 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.0] - 2023-05-25
+
+### Bug fixes
+- [Completions now properly reference the new binary name](https://github.com/solidiquis/erdtree/commit/c4ff0dacb137f1007af27f692f1e5ee66bf47cb6), `erd`
+    - https://github.com/solidiquis/erdtree/issues/141
+    - https://github.com/solidiquis/erdtree/issues/143
+    - https://github.com/solidiquis/erdtree/issues/150
+- [Symlink target now shows full path rather than just file name](https://github.com/solidiquis/erdtree/pull/162)
+    - https://github.com/solidiquis/erdtree/issues/148
+- `--dir-order <DIR_ORDER>` [added to address ordering ambiguity with arg names](https://github.com/solidiquis/erdtree/pull/161)
+    - https://github.com/solidiquis/erdtree/issues/149
+- [Fixed NetBSD build error associated with xattrs](https://github.com/solidiquis/erdtree/commit/33d918f2acc68f2782d1fada8384aeadec57f3fe)
+    -  https://github.com/solidiquis/erdtree/issues/157
+- [Fixed issue where `--level` would omit files from the total count](https://github.com/solidiquis/erdtree/pull/169)
+- [Added support for %APPDATA% config folder for Windows](https://github.com/solidiquis/erdtree/pull/154)
+    - https://github.com/solidiquis/erdtree/issues/152
+
+### Additions
+- `-C, --color` https://github.com/solidiquis/erdtree/pull/147
+- Support for owner and group, changed default columns for `l, --long`, and added optional long-view arguments https://github.com/solidiquis/erdtree/pull/174
+- Support customizing time output format https://github.com/solidiquis/erdtree/pull/165
+- Support for sorting files by modified time, access time, and created time [55783ff](https://github.com/solidiquis/erdtree/pull/155/commits/55783ff7957a1e42c6d06dfd84682188b74b2cec)
+- Support for reporting block usage, line-count, and word-count https://github.com/solidiquis/erdtree/pull/172 
+- Added progress indicator https://github.com/solidiquis/erdtree/pull/176
+
+### New Contributors
+- [iquiw](https://github.com/iquiw)
+- [KP64](https://github.com/KP64)
+- [m4rch3n1ng](https://github.com/m4rch3n1ng)
+- [demilich1](https://github.com/demilich1)
+
+For a more comprehensive overview of `erdtree` v3.0.0, please refer to the [README.md](README.md).
+
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/v2.0.0...v3.0.0
+
 ## [2.0.0] - 2023-04-26
 
-## What's Changed
+### What's Changed
 
 `erdtree` v2.0.0 introduces numerous breaking changes as well as a plethora of new features. Most breaking changes are predicated on the fact that
 arguments were either renamed, removed, or fundamentally modified. The following is a list of all the PRs that document these changes and feature additions:
@@ -28,7 +63,7 @@ For a more comprehensive overview of `erdtree` v2.0.0, please refer to the [READ
 
 ## [1.8.1] - 2023-04-11
 
-## What's Changed
+### What's Changed
 * Fix some typos by @goggle in https://github.com/solidiquis/erdtree/pull/110
 * add clap requires to flags that depent on --report by @jhscheer in https://github.com/solidiquis/erdtree/pull/111
 * refactor tests: move --no-config to mod::run_cmd by @jhscheer in https://github.com/solidiquis/erdtree/pull/112
@@ -38,7 +73,7 @@ For a more comprehensive overview of `erdtree` v2.0.0, please refer to the [READ
 * Support colorless output when redirecting/piping stdout; also provide `--no-color` option by @solidiquis in https://github.com/solidiquis/erdtree/pull/120
 * remove ansi escapes for default icon by @solidiquis in https://github.com/solidiquis/erdtree/pull/122
 
-## New Contributors
+### New Contributors
 * @goggle made their first contribution in https://github.com/solidiquis/erdtree/pull/110
 * @jhscheer made their first contribution in https://github.com/solidiquis/erdtree/pull/111
 
@@ -46,14 +81,14 @@ For a more comprehensive overview of `erdtree` v2.0.0, please refer to the [READ
 
 ## [1.7.1] - 2023-03-30
 
-## What's Changed
+### What's Changed
 * fix issue where not-existent directory as cli arg causes infinite loop by @solidiquis in https://github.com/solidiquis/erdtree/pull/107
 
 **Full Changelog**: https://github.com/solidiquis/erdtree/compare/1.7.0...v1.7.1
 
 ## [1.7.0] - 2023-03-30
 
-## What's Changed
+### What's Changed
 * Fix windows can not recognize the tag version when publishing by @Tlntin in https://github.com/solidiquis/erdtree/pull/91
 * Fix the problem that test actions cannot upload windows binary files, add the function of custom form to set tag version. by @Tlntin in https://github.com/solidiquis/erdtree/pull/94
 * Reduce default thread count by @solidiquis in https://github.com/solidiquis/erdtree/pull/99
@@ -62,7 +97,7 @@ For a more comprehensive overview of `erdtree` v2.0.0, please refer to the [READ
 * dirs-only by @solidiquis in https://github.com/solidiquis/erdtree/pull/104
 * Feature/file count by @solidiquis in https://github.com/solidiquis/erdtree/pull/105
 
-## New Contributors
+### New Contributors
 * @CosmicHorrorDev made their first contribution in https://github.com/solidiquis/erdtree/pull/93
 * @KP64 made their first contribution in https://github.com/solidiquis/erdtree/pull/100
 * @Masynchin made their first contribution in https://github.com/solidiquis/erdtree/pull/98

@@ -19,7 +19,7 @@ The following are some feature highlights:
 You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls`.
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/top_demo.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/top_showcase.png?raw=true" alt="failed to load picture" />
 </p>
 
 ## Table of Contents
@@ -302,10 +302,10 @@ Binaries for common architectures can be downloaded from latest releases.
 
 ### Latest non-release
 
-If you'd like the latest features that are on `v3.0` but aren't yet included as part of a release:
+If you'd like the latest features that are on `master` but aren't yet included as part of a release:
 
 ```
-$ cargo install --git https://github.com/solidiquis/erdtree --branch v3.0
+$ cargo install --git https://github.com/solidiquis/erdtree --branch master
 ```
 
 Other means of installation to come.
@@ -368,7 +368,7 @@ If a symlink's target happens to be in the same file-tree as the symlink itself,
 When a symlink to a directory is followed all of the box-drawing characters of its descendants will be painted in a different color for better visual feedback:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/symfollow.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/symfollow.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### Disk usage
@@ -441,7 +441,7 @@ $ erd -y flat -d block -i -.
 ```
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/du_match.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/du_match.png?raw=true" alt="failed to load png" />
 </p>
 
 #### Word and line count
@@ -509,7 +509,7 @@ Icons are an opt-in feature because for icons to render properly it is required 
 If your icons look something like this:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/broken_icons.png?raw=true" alt="failed to load png" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/broken_icons.png?raw=true" alt="failed to load png" />
 </p>
 
 this means that the font you are using doesn't include the relevant glyphs. To resolve this issue download a [NerdFont](https://www.nerdfonts.com/) and hook it up to your terminal emulator.
@@ -668,7 +668,7 @@ References:
 In instances where the output does not fit the terminal emulator's window, the output itself may be rendered incoherently:
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/untrunc.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/untrunc.png?raw=true" alt="failed to load picture" />
 </p>
 
 In these situations the following may be used:
@@ -679,7 +679,7 @@ In these situations the following may be used:
 ```
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/trunc.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/trunc.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### Redirecting output and colorization
@@ -702,7 +702,7 @@ If, however, the default behavior doesn't suit your needs you have control over 
 ```
 
 <p align="center">
-  <img src="https://github.com/solidiquis/erdtree/blob/v3.0/assets/colorization.png?raw=true" alt="failed to load picture" />
+  <img src="https://github.com/solidiquis/erdtree/blob/master/assets/colorization.png?raw=true" alt="failed to load picture" />
 </p>
 
 ### Parallelism
