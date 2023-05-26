@@ -15,7 +15,6 @@ use std::{
     path::Path,
 };
 
-
 #[cfg(unix)]
 use chrono::{DateTime, Local};
 
@@ -71,7 +70,7 @@ impl<'a> Cell<'a> {
 
         match self.kind {
             Kind::FileName { prefix } => {
-                let pre = prefix.unwrap_or("");
+                let pre = prefix.unwrap_or_default();
                 let name = theme::stylize_file_name(node);
 
                 if !ctx.icons {
@@ -103,11 +102,10 @@ impl<'a> Cell<'a> {
                 .display()
         };
 
-        let formatted_path = if let Some(style) = node.style() {
-            format!("{}", style.paint(path.to_string()))
-        } else {
-            path.to_string()
-        };
+        let formatted_path = node.style().map_or_else(
+            || path.to_string(),
+            |style| format!("{}", style.paint(path.to_string())),
+        );
 
         if !ctx.icons {
             return write!(f, "{formatted_path}");
@@ -147,10 +145,10 @@ impl<'a> Cell<'a> {
 
         let max_width = ctx.max_nlink_width;
 
-        let out = node
-            .nlink()
-            .map(|num| format!("{num:>max_width$}"))
-            .unwrap_or(format!("{PLACEHOLDER:>max_width$}"));
+        let out = node.nlink().map_or_else(
+            || format!("{PLACEHOLDER:>max_width$}"),
+            |num| format!("{num:>max_width$}"),
+        );
 
         let formatted_nlink = if let Ok(style) = styles::get_nlink_style() {
             style.paint(out).to_string()
@@ -170,10 +168,10 @@ impl<'a> Cell<'a> {
 
         let max_width = ctx.max_ino_width;
 
-        let out = node
-            .ino()
-            .map(|num| format!("{num:>max_width$}"))
-            .unwrap_or(format!("{PLACEHOLDER:>max_width$}"));
+        let out = node.ino().map_or_else(
+            || format!("{PLACEHOLDER:>max_width$}"),
+            |num| format!("{num:>max_width$}"),
+        );
 
         let formatted_ino = if let Ok(style) = styles::get_ino_style() {
             style.paint(out).to_string()
@@ -190,7 +188,7 @@ impl<'a> Cell<'a> {
     fn fmt_owner(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let max_owner_width = self.ctx.max_owner_width;
 
-        let owner = self.node.owner().map_or(styles::PLACEHOLDER, |o| o);
+        let owner = self.node.owner().unwrap_or(styles::PLACEHOLDER);
 
         if let Ok(style) = styles::get_owner_style() {
             let formatted_owner = format!("{owner:>max_owner_width$}");
@@ -206,7 +204,7 @@ impl<'a> Cell<'a> {
     fn fmt_group(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let max_group_width = self.ctx.max_group_width;
 
-        let group = self.node.group().map_or(styles::PLACEHOLDER, |o| o);
+        let group = self.node.group().unwrap_or(styles::PLACEHOLDER);
 
         if let Ok(style) = styles::get_group_style() {
             let formatted_group = format!("{group:>max_group_width$}");

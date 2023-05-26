@@ -26,14 +26,12 @@ macro_rules! hash {
 pub fn uniq<T>(items: Vec<T>) -> Vec<T>
 where
     T: Eq + Hash + ToOwned,
-    <T as ToOwned>::Owned: Hash + Eq,
 {
-    let mut set = HashSet::new();
-
     items
         .into_iter()
-        .filter(|item| set.insert(item.to_owned()))
-        .collect::<Vec<T>>()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect()
 }
 
 /// How many integral digits are there?

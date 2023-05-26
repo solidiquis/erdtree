@@ -25,21 +25,12 @@ pub trait Escaped: AsRef<str> {
         'outer: while let Some(ch) = chars.next() {
             resultant.push(ch);
 
-            if ch == '\u{1b}' && !open_sequence {
+            if ch == '\u{1b}'{
                 for code in chars.by_ref() {
                     resultant.push(code);
 
                     if code == 'm' {
-                        open_sequence = true;
-                        continue 'outer;
-                    }
-                }
-            } else if ch == '\u{1b}' && open_sequence {
-                for code in chars.by_ref() {
-                    resultant.push(code);
-
-                    if code == 'm' {
-                        open_sequence = false;
+                        open_sequence = !open_sequence;
                         continue 'outer;
                     }
                 }
@@ -66,7 +57,7 @@ fn truncate() {
     use ansi_term::Color::Red;
 
     let control = Red.bold().paint("Hello").to_string();
-    let base = format!("{}{}", Red.bold().paint("Hello World"), "!!!");
+    let base = format!("{}!!!", Red.bold().paint("Hello World"));
     let trunc = <str as Escaped>::truncate(&base, 5);
 
     assert_eq!(control, trunc);

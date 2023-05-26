@@ -16,7 +16,7 @@ pub enum PrefixKind {
 }
 
 /// Binary prefixes.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum BinPrefix {
     Base,
     Kibi,
@@ -26,7 +26,7 @@ pub enum BinPrefix {
 }
 
 /// SI prefixes.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SiPrefix {
     Base,
     Kilo,

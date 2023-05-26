@@ -17,7 +17,7 @@ impl Metric {
     /// then `None` will be returned.
     ///
     /// Words are UTF-8 encoded byte sequences delimited by Unicode Derived Core Property `White_Space`.
-    pub fn init<P: AsRef<Path>>(path: P) -> Option<Self> {
+    pub fn init(path: impl AsRef<Path>) -> Option<Self> {
         let data = fs::read_to_string(path.as_ref()).ok()?;
 
         let words = data.split_whitespace().count();

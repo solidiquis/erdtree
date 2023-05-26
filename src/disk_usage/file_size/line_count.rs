@@ -15,7 +15,7 @@ impl Metric {
     /// Reads in contents of a file given by `path` and attempts to compute the total number of
     /// lines in that file. If a file is not UTF-8 encoded as in the case of a binary jpeg file
     /// then `None` will be returned.
-    pub fn init<P: AsRef<Path>>(path: P) -> Option<Self> {
+    pub fn init(path: impl AsRef<Path>) -> Option<Self> {
         let data = fs::read_to_string(path.as_ref()).ok()?;
 
         let lines = data.lines().count();

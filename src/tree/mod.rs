@@ -172,7 +172,7 @@ impl Tree {
                     Self::filter_directories(root_id, &mut tree);
                 }
 
-                Ok::<(Arena<Node>, NodeId), Error>((tree, root_id))
+                Ok((tree, root_id))
             });
 
             let mut visitor_builder = BranchVisitorBuilder::new(ctx, Sender::clone(&tx));
@@ -257,9 +257,9 @@ impl Tree {
         #[cfg(not(unix))]
         Self::update_column_properties(column_properties, dir, ctx);
 
-        children.sort_by(|id_a, id_b| {
-            let node_a = tree[*id_a].get();
-            let node_b = tree[*id_b].get();
+        children.sort_by(|&id_a, &id_b| {
+            let node_a = tree[id_a].get();
+            let node_b = tree[id_b].get();
             node_comparator(node_a, node_b)
         });
 
@@ -308,13 +308,10 @@ impl Tree {
     /// directories. Files are grouped into three categories: directories, regular files, and
     /// symlinks.
     pub fn compute_file_count(node_id: NodeId, tree: &Arena<Node>) -> FileCount {
-        let mut count = FileCount::default();
-
-        for child_id in node_id.children(tree) {
-            count.update(tree[child_id].get());
-        }
-
-        count
+        node_id
+            .children(tree)
+            .map(|child_id| tree[child_id].get())
+            .fold(FileCount::default(), |acc, node| acc + node)
     }
 
     /// Updates [`column::Properties`] with provided [`Node`].
