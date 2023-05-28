@@ -149,7 +149,7 @@ pub struct Context {
     pub dir_order: dir::Order,
 
     /// Number of threads to use
-    #[arg(short = 'T', long, default_value_t = 3)]
+    #[arg(short = 'T', long, default_value_t = Context::num_threads())]
     pub threads: usize,
 
     /// Report disk usage in binary or SI units
@@ -557,5 +557,10 @@ impl Context {
             .rev()
             .skip(skip)
             .any(|comp| re.is_match(comp.as_os_str().to_string_lossy().borrow()))
+    }
+
+    /// The default number of threads to use for disk-reads and parallel processing.
+    fn num_threads() -> usize {
+        3
     }
 }

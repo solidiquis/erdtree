@@ -12,9 +12,9 @@ use std::{
 /// Responsible for displying the progress indicator. This struct will be owned by a separate
 /// thread that is responsible for displaying the progress text whereas the [`IndicatorHandle`]
 /// is how the outside world will interact with it.
-pub struct Indicator {
+pub struct Indicator<'a> {
     count: u64,
-    stdout: io::Stdout,
+    stdout: io::StdoutLock<'a>,
     state: IndicatorState,
 }
 
@@ -59,12 +59,12 @@ enum IndicatorState {
 #[error(transparent)]
 pub struct Error(#[from] io::Error);
 
-impl Default for Indicator {
+impl Default for Indicator<'_> {
     /// Default constructor for [`Indicator`].
     fn default() -> Self {
         Self {
             count: u64::default(),
-            stdout: io::stdout(),
+            stdout: io::stdout().lock(),
             state: IndicatorState::default(),
         }
     }
@@ -88,7 +88,7 @@ impl IndicatorHandle {
     }
 }
 
-impl Indicator {
+impl<'a> Indicator<'a> {
     /// Initializes a worker thread that owns [`Indicator`] that awaits on [`Message`]s to traverse
     /// through its internal states. An [`IndicatorHandle`] is returned as a mechanism to allow the
     /// outside world to send messages to the worker thread and ultimately to the [`Indicator`].
