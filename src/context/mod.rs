@@ -561,6 +561,6 @@ impl Context {
 
     /// The default number of threads to use for disk-reads and parallel processing.
     fn num_threads() -> usize {
-        std::thread::available_parallelism().map_or(3, usize::from)
+        3
     }
 }
