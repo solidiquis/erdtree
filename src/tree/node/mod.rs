@@ -240,45 +240,42 @@ impl TryFrom<(DirEntry, &Context)> for Node {
 
         let metadata = dir_entry.metadata()?;
 
-        let style = get_ls_colors().ok().and_then(|ls_colors| {
+        let style = get_ls_colors().ok().map(|ls_colors| {
             ls_colors
                 .style_for_path_with_metadata(path, Some(&metadata))
-                .map(LS_Style::to_ansi_term_style)
-                .or_else(|| Some(Style::default()))
+                .map_or_else(Style::default, LS_Style::to_ansi_term_style)
         });
 
         let file_type = dir_entry.file_type();
 
         let file_size = match file_type {
-            Some(ref ft) if !ctx.suppress_size => {
-                if ft.is_file() || (ft.is_symlink() && !ctx.follow) {
-                    match ctx.disk_usage {
-                        DiskUsage::Logical => {
-                            let metric = byte::Metric::init_logical(&metadata, ctx.unit, ctx.human);
-                            Some(FileSize::Byte(metric))
-                        }
-                        DiskUsage::Physical => {
-                            let metric =
-                                byte::Metric::init_physical(path, &metadata, ctx.unit, ctx.human);
-                            Some(FileSize::Byte(metric))
-                        }
-                        DiskUsage::Line => {
-                            let metric = line_count::Metric::init(path);
-                            metric.map(FileSize::Line)
-                        }
-                        DiskUsage::Word => {
-                            let metric = word_count::Metric::init(path);
-                            metric.map(FileSize::Word)
-                        }
-
-                        #[cfg(unix)]
-                        DiskUsage::Block => {
-                            let metric = block::Metric::init(&metadata);
-                            Some(FileSize::Block(metric))
-                        }
+            Some(ref ft)
+                if !ctx.suppress_size && (ft.is_file() || ft.is_symlink() && !ctx.follow) =>
+            {
+                match ctx.disk_usage {
+                    DiskUsage::Logical => {
+                        let metric = byte::Metric::init_logical(&metadata, ctx.unit, ctx.human);
+                        Some(FileSize::Byte(metric))
                     }
-                } else {
-                    None
+                    DiskUsage::Physical => {
+                        let metric =
+                            byte::Metric::init_physical(path, &metadata, ctx.unit, ctx.human);
+                        Some(FileSize::Byte(metric))
+                    }
+                    DiskUsage::Line => {
+                        let metric = line_count::Metric::init(path);
+                        metric.map(FileSize::Line)
+                    }
+                    DiskUsage::Word => {
+                        let metric = word_count::Metric::init(path);
+                        metric.map(FileSize::Word)
+                    }
+
+                    #[cfg(unix)]
+                    DiskUsage::Block => {
+                        let metric = block::Metric::init(&metadata);
+                        Some(FileSize::Block(metric))
+                    }
                 }
             }
             _ => None,

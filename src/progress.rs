@@ -27,7 +27,7 @@ pub struct IndicatorHandle {
 }
 
 /// The different messages that could be sent to the thread that owns the [`Indicator`].
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Message {
     /// Message that indicates that we are currently reading from disk and that a file was indexed.
     Index,
@@ -41,7 +41,7 @@ pub enum Message {
 }
 
 /// All of the different states the [`Indicator`] can be in during its life cycle.
-#[derive(Default)]
+#[derive(Default, PartialEq)]
 enum IndicatorState {
     /// We are currently reading from disk.
     #[default]
@@ -93,28 +93,26 @@ impl<'a> Indicator<'a> {
     /// through its internal states. An [`IndicatorHandle`] is returned as a mechanism to allow the
     /// outside world to send messages to the worker thread and ultimately to the [`Indicator`].
     pub fn measure() -> IndicatorHandle {
-        let (tx, rx) = mpsc::channel::<Message>();
+        let (tx, rx) = mpsc::channel();
 
-        let join_handle = thread::spawn(move || -> Result<(), Error> {
+        let join_handle = thread::spawn(move || {
             let mut indicator = Self::default();
 
             indicator.stdout.execute(cursor::SavePosition)?;
             indicator.stdout.execute(cursor::Hide)?;
 
             while let Ok(msg) = rx.recv() {
-                if matches!(indicator.state, IndicatorState::Indexing) {
+                if indicator.state == IndicatorState::Indexing {
                     match msg {
                         Message::Index => indicator.index()?,
                         Message::DoneIndexing => {
                             indicator.update_state(IndicatorState::Rendering)?;
                         }
-                        Message::RenderReady => (),
+                        Message::RenderReady => {}
                     }
                 }
 
-                if matches!(indicator.state, IndicatorState::Rendering)
-                    && matches!(msg, Message::RenderReady)
-                {
+                if indicator.state == IndicatorState::Rendering && msg == Message::RenderReady {
                     indicator.update_state(IndicatorState::Done)?;
                     break;
                 }

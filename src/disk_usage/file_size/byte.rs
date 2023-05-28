@@ -113,7 +113,7 @@ impl Display for Metric {
                 if self.human_readable {
                     let unit = SiPrefix::from(self.value);
 
-                    if matches!(unit, SiPrefix::Base) {
+                    if unit == SiPrefix::Base {
                         format!("{} {unit}", self.value)
                     } else {
                         let base_value = unit.base_value();
@@ -128,7 +128,7 @@ impl Display for Metric {
                 if self.human_readable {
                     let unit = BinPrefix::from(self.value);
 
-                    if matches!(unit, BinPrefix::Base) {
+                    if unit == BinPrefix::Base {
                         format!("{} {unit}", self.value)
                     } else {
                         let base_value = unit.base_value();
@@ -158,7 +158,7 @@ fn test_metric() {
         prefix_kind: PrefixKind::Bin,
         cached_display: RefCell::<String>::default(),
     };
-    assert_eq!(format!("{}", metric), "100 B");
+    assert_eq!(format!("{metric}"), "100 B");
 
     let metric = Metric {
         value: 1000,
@@ -167,7 +167,7 @@ fn test_metric() {
         prefix_kind: PrefixKind::Si,
         cached_display: RefCell::<String>::default(),
     };
-    assert_eq!(format!("{}", metric), "1.0 KB");
+    assert_eq!(format!("{metric}"), "1.0 KB");
 
     let metric = Metric {
         value: 1000,
@@ -176,7 +176,7 @@ fn test_metric() {
         prefix_kind: PrefixKind::Bin,
         cached_display: RefCell::<String>::default(),
     };
-    assert_eq!(format!("{}", metric), "1000 B");
+    assert_eq!(format!("{metric}"), "1000 B");
 
     let metric = Metric {
         value: 1024,
@@ -185,7 +185,7 @@ fn test_metric() {
         prefix_kind: PrefixKind::Bin,
         cached_display: RefCell::<String>::default(),
     };
-    assert_eq!(format!("{}", metric), "1.0 KiB");
+    assert_eq!(format!("{metric}"), "1.0 KiB");
 
     let metric = Metric {
         value: 2_u64.pow(20),
@@ -194,14 +194,14 @@ fn test_metric() {
         prefix_kind: PrefixKind::Bin,
         cached_display: RefCell::<String>::default(),
     };
-    assert_eq!(format!("{}", metric), "1.0 MiB");
+    assert_eq!(format!("{metric}"), "1.0 MiB");
 
     let metric = Metric {
-        value: 123454,
+        value: 123_454,
         kind: MetricKind::Logical,
         human_readable: false,
         prefix_kind: PrefixKind::Bin,
         cached_display: RefCell::<String>::default(),
     };
-    assert_eq!(format!("{}", metric), "123454 B");
+    assert_eq!(format!("{metric}"), "123454 B");
 }

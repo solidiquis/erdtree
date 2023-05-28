@@ -9,7 +9,7 @@ type Theme = Box<dyn FnMut(&Node) -> &'static ThemesMap>;
 
 /// Returns a closure that retrieves the regular theme.
 pub fn regular_theme_getter() -> Theme {
-    Box::new(|_node: &Node| styles::get_tree_theme().unwrap())
+    Box::new(|_node| styles::get_tree_theme().unwrap())
 }
 
 /// Returns a closure that can smartly determine when a symlink is being followed and when it is
@@ -18,7 +18,7 @@ pub fn regular_theme_getter() -> Theme {
 pub fn link_theme_getter() -> Theme {
     let mut link_depth = None;
 
-    Box::new(move |node: &Node| {
+    Box::new(move |node| {
         let current_depth = node.depth();
 
         if let Some(ldepth) = link_depth {
@@ -90,7 +90,7 @@ pub fn style_sym_permissions(node: &Node) -> String {
                     color.paint(chstr).to_string()
                 })
             })
-            .collect::<String>()
+            .collect()
     } else {
         symb
     }

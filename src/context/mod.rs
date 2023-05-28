@@ -58,7 +58,7 @@ pub struct Context {
     dir: Option<PathBuf>,
 
     /// Mode of coloring output
-    #[arg(short = 'C', long, value_enum, default_value_t = Coloring::default())]
+    #[arg(short = 'C', long, value_enum, default_value_t)]
     pub color: Coloring,
 
     /// Print physical or logical file size
@@ -145,7 +145,7 @@ pub struct Context {
     pub sort: sort::Type,
 
     /// Sort directories before or after all other file types
-    #[arg(long, value_enum, default_value_t = dir::Order::default())]
+    #[arg(long, value_enum, default_value_t)]
     pub dir_order: dir::Order,
 
     /// Number of threads to use
@@ -153,11 +153,11 @@ pub struct Context {
     pub threads: usize,
 
     /// Report disk usage in binary or SI units
-    #[arg(short, long, value_enum, default_value_t = PrefixKind::default())]
+    #[arg(short, long, value_enum, default_value_t)]
     pub unit: PrefixKind,
 
     /// Which kind of layout to use when rendering the output
-    #[arg(short = 'y', long, value_enum, default_value_t = layout::Type::default())]
+    #[arg(short = 'y', long, value_enum, default_value_t)]
     pub layout: layout::Type,
 
     /// Show hidden files
@@ -374,7 +374,7 @@ impl Context {
                 .filter(|pair| pair[1] != "false")
                 .flatten()
                 .filter(|s| s != "true")
-                .collect::<Vec<OsString>>();
+                .collect::<Vec<_>>();
 
             args.extend(raw_args);
         }
@@ -395,7 +395,7 @@ impl Context {
         let file_type = self.file_type();
 
         Ok(match file_type {
-            file::Type::Dir => Box::new(move |dir_entry: &DirEntry| {
+            file::Type::Dir => Box::new(move |dir_entry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
                 if is_dir {
                     return Self::ancestor_regex_match(dir_entry.path(), &re, 0);
@@ -404,7 +404,7 @@ impl Context {
                 Self::ancestor_regex_match(dir_entry.path(), &re, 1)
             }),
 
-            _ => Box::new(move |dir_entry: &DirEntry| {
+            _ => Box::new(move |dir_entry| {
                 let entry_type = dir_entry.file_type();
                 let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
 
@@ -419,7 +419,7 @@ impl Context {
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
-                    _ => (),
+                    _ => {}
                 }
                 let file_name = dir_entry.file_name().to_string_lossy();
                 re.is_match(&file_name)
@@ -455,7 +455,7 @@ impl Context {
         let file_type = self.file_type();
 
         match file_type {
-            file::Type::Dir => Ok(Box::new(move |dir_entry: &DirEntry| {
+            file::Type::Dir => Ok(Box::new(move |dir_entry| {
                 let is_dir = dir_entry.file_type().map_or(false, |ft| ft.is_dir());
 
                 if is_dir {
@@ -473,7 +473,7 @@ impl Context {
                 }
             })),
 
-            _ => Ok(Box::new(move |dir_entry: &DirEntry| {
+            _ => Ok(Box::new(move |dir_entry| {
                 let entry_type = dir_entry.file_type();
                 let is_dir = entry_type.map_or(false, |ft| ft.is_dir());
 
@@ -488,7 +488,7 @@ impl Context {
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
-                    _ => (),
+                    _ => {},
                 }
 
                 let matched = overrides.matched(dir_entry.path(), false);
@@ -536,8 +536,7 @@ impl Context {
 
     /// Answers whether disk usage is asked to be reported in bytes.
     pub const fn byte_metric(&self) -> bool {
-        matches!(self.disk_usage, DiskUsage::Logical)
-            || matches!(self.disk_usage, DiskUsage::Physical)
+        matches!(self.disk_usage, DiskUsage::Logical | DiskUsage::Physical)
     }
 
     /// Do any of the components of a path match the provided glob? This is used for ensuring that
