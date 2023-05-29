@@ -3,6 +3,26 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.1] - 2023-05-28
+
+### Bug fixes
+- Fixed issue where empty directories were automatically being pruned despite not opting into `--prune`.
+    - https://github.com/solidiquis/erdtree/issues/185
+- Fixed issue where searching via globs or regex doesn't work when user has a config file.
+
+### Other changes:
+- Added exit codes to `erdtree`.
+- Progress indicator now acquires a lock to `stdout` reduce likelihood of printing the progress-text being a bottleneck.
+- Some code-cleanup.
+
+### Pull Requests
+- https://github.com/solidiquis/erdtree/pull/183
+- https://github.com/solidiquis/erdtree/pull/186
+- https://github.com/solidiquis/erdtree/pull/187
+
+### Contributors
+- [KP64](https://github.com/KP64)
+
 ## [3.0.0] - 2023-05-25
 
 ### Bug fixes
