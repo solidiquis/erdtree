@@ -286,7 +286,12 @@ impl Context {
 
             ids = crate::utils::uniq(ids);
 
-            for id in ids.into_iter().filter(|&id| id != "Context") {
+            // HACK:
+            // Going to need to figure out how to handle this better.
+            for id in ids
+                .into_iter()
+                .filter(|&id| id != "Context" && id != "group" && id != "searching")
+            {
                 if id == "dir" {
                     if let Ok(Some(raw)) = user_args.try_get_raw(id) {
                         let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
@@ -559,7 +564,7 @@ impl Context {
     }
 
     /// The default number of threads to use for disk-reads and parallel processing.
-    fn num_threads() -> usize {
+    const fn num_threads() -> usize {
         3
     }
 }

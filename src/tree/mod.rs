@@ -1,5 +1,5 @@
 use crate::{
-    context::{column, file, Context},
+    context::{column, Context},
     disk_usage::file_size::FileSize,
     fs::inode::Inode,
     progress::{self, IndicatorHandle, Message},
@@ -164,7 +164,7 @@ impl Tree {
                     ctx,
                 );
 
-                if ctx.prune || ctx.file_type != Some(file::Type::Dir) {
+                if ctx.prune || ctx.pattern.is_some() {
                     Self::prune_directories(root_id, &mut tree);
                 }
 
