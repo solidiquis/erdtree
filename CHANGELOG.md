@@ -23,6 +23,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Contributors
 - [KP64](https://github.com/KP64)
 
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/v3.0.0...v3.0.1
+
 ## [3.0.0] - 2023-05-25
 
 ### Bug fixes
