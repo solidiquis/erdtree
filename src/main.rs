@@ -23,7 +23,7 @@ use clap::CommandFactory;
 use context::{layout, Context};
 use progress::Message;
 use render::{Engine, Flat, Inverted, Regular};
-use std::{error::Error, io::stdout};
+use std::{error::Error, io::stdout, process::ExitCode};
 use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
@@ -63,19 +63,25 @@ mod tty;
 /// Common utilities across all modules.
 mod utils;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let ctx = Context::init()?;
+fn main() -> ExitCode {
+    let ctx = match Context::init() {
+        Ok(ctx) => ctx,
+        Err(e) => return error_and_exit(e),
+    };
 
     if let Some(shell) = ctx.completions {
         clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout());
-        return Ok(());
+        return ExitCode::SUCCESS;
     }
 
     styles::init(ctx.no_color());
 
     let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
 
-    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator.as_ref())?;
+    let (tree, ctx) = match Tree::try_init_and_update_context(ctx, indicator.as_ref()) {
+        Ok(res) => res,
+        Err(e) => return error_and_exit(e),
+    };
 
     let output = match ctx.layout {
         layout::Type::Flat => {
@@ -93,11 +99,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     if let Some(progress) = indicator {
-        progress.mailbox().send(Message::RenderReady)?;
-        progress.join_handle.join().unwrap()?;
+        if let Err(e) = progress.mailbox().send(Message::RenderReady) {
+            return error_and_exit(e);
+        }
+
+        if let Err(e) = progress.join_handle.join().unwrap() {
+            return error_and_exit(e);
+        }
     }
 
     println!("{output}");
 
-    Ok(())
+    ExitCode::SUCCESS
+}
+
+fn error_and_exit(e: impl Error) -> ExitCode {
+    eprintln!("{e}");
+    ExitCode::FAILURE
 }
