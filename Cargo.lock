@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "erdtree"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "ansi_term",
  "chrono",
