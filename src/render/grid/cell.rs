@@ -9,12 +9,10 @@ use crate::{
     tree::node::Node,
 };
 use std::{
-    borrow::Cow,
     ffi::OsStr,
     fmt::{self, Display},
     path::Path,
 };
-
 
 #[cfg(unix)]
 use chrono::{DateTime, Local};
@@ -103,11 +101,10 @@ impl<'a> Cell<'a> {
                 .display()
         };
 
-        let formatted_path = if let Some(style) = node.style() {
-            format!("{}", style.paint(path.to_string()))
-        } else {
-            path.to_string()
-        };
+        let formatted_path = node.style().map_or_else(
+            || path.to_string(),
+            |style| format!("{}", style.paint(path.to_string())),
+        );
 
         if !ctx.icons {
             return write!(f, "{formatted_path}");
@@ -281,24 +278,25 @@ impl<'a> Cell<'a> {
             return write!(f, "");
         }
 
-        let placeholder = styles::get_placeholder_style().map_or_else(
-            |_| Cow::from(styles::PLACEHOLDER),
-            |style| Cow::from(style.paint(styles::PLACEHOLDER).to_string()),
-        );
+        let padding = ctx.max_size_width
+            + 1
+            + match ctx.disk_usage {
+                DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
+                    PrefixKind::Si if ctx.human => 2,
+                    PrefixKind::Bin if ctx.human => 3,
+                    PrefixKind::Si => 0,
+                    PrefixKind::Bin => 1,
+                },
+                _ => 0,
+            };
 
-        let mut placeholder_padding = placeholder.len() + ctx.max_size_width - 1;
+        let formatted_placeholder = format!("{:>padding$}", styles::PLACEHOLDER);
 
-        placeholder_padding += match ctx.disk_usage {
-            DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
-                PrefixKind::Si if ctx.human => 2,
-                PrefixKind::Bin if ctx.human => 3,
-                PrefixKind::Si => 0,
-                PrefixKind::Bin => 1,
-            },
-            _ => 0,
-        };
-
-        write!(f, "{placeholder:>placeholder_padding$}")
+        if let Ok(style) = styles::get_placeholder_style() {
+            write!(f, "{}", style.paint(formatted_placeholder))
+        } else {
+            write!(f, "{formatted_placeholder}")
+        }
     }
 
     /// Rules to format disk usage as bytes
