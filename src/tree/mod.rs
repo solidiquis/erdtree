@@ -113,7 +113,7 @@ impl Tree {
             let res = s.spawn(move || {
                 let mut tree = Arena::new();
                 let mut branches: HashMap<PathBuf, Vec<NodeId>> = HashMap::new();
-                let mut root_id_id = None;
+                let mut root_id = None;
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
                     if let Some(ref mailbox) = progress_indicator_mailbox {
@@ -128,7 +128,7 @@ impl Tree {
                         }
 
                         if node.depth() == 0 {
-                            root_id_id = Some(tree.new_node(node));
+                            root_id = Some(tree.new_node(node));
                             continue;
                         }
                     }
@@ -150,7 +150,7 @@ impl Tree {
                     let _ = mailbox.send(Message::DoneIndexing);
                 }
 
-                let root_id = root_id_id.ok_or(Error::MissingRoot)?;
+                let root_id = root_id.ok_or(Error::MissingRoot)?;
                 let node_comparator = node::cmp::comparator(ctx);
                 let mut inodes = HashSet::new();
 
@@ -270,28 +270,31 @@ impl Tree {
     }
 
     /// Function to remove empty directories.
-    fn prune_directories(root_id_id: NodeId, tree: &mut Arena<Node>) {
-        let to_prune = root_id_id
+    fn prune_directories(root_id: NodeId, tree: &mut Arena<Node>) {
+        let to_prune = root_id
             .descendants(tree)
             .skip(1)
-            .map(|node_id| (node_id, tree[node_id].get()))
-            .filter(|(_, node)| node.is_dir())
-            .map(|(node_id, _)| node_id)
-            .filter(|node_id| node_id.children(tree).count() == 0)
+            .filter(|node_id| {
+                tree[*node_id]
+                    .get()
+                    .is_dir()
+                    .then(|| node_id.children(tree).count() == 0)
+                    .unwrap_or(false)
+            })
             .collect::<Vec<_>>();
 
         if to_prune.is_empty() {
             return;
         }
 
-        for node_id in to_prune {
-            node_id.remove_subtree(tree);
-        }
+        to_prune
+            .iter()
+            .for_each(|node_id| node_id.remove_subtree(tree));
 
-        Self::prune_directories(root_id_id, tree);
+        Self::prune_directories(root_id, tree);
     }
 
-    /// Filter for only directories.
+    /// Filter `arena` for only directories.
     fn filter_directories(root_id: NodeId, tree: &mut Arena<Node>) {
         let to_detach = root_id
             .descendants(tree)
@@ -299,9 +302,13 @@ impl Tree {
             .filter(|&descendant_id| !tree[descendant_id].get().is_dir())
             .collect::<Vec<_>>();
 
-        for descendant_id in to_detach {
-            descendant_id.detach(tree);
+        if to_detach.is_empty() {
+            return;
         }
+
+        to_detach
+            .iter()
+            .for_each(|node_id| node_id.detach(tree));
     }
 
     /// Compute total number of files for a single directory without recurring into child

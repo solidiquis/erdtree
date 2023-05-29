@@ -25,7 +25,7 @@ pub trait Escaped: AsRef<str> {
         'outer: while let Some(ch) = chars.next() {
             resultant.push(ch);
 
-            if ch == '\u{1b}'{
+            if ch == '\u{1b}' {
                 for code in chars.by_ref() {
                     resultant.push(code);
 

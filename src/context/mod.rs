@@ -493,7 +493,7 @@ impl Context {
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
                     }
-                    _ => {},
+                    _ => {}
                 }
 
                 let matched = overrides.matched(dir_entry.path(), false);

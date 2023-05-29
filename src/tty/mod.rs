@@ -14,7 +14,7 @@ pub fn stdin_is_tty() -> bool {
     stdin().is_terminal()
 }
 
-/// Is stdout connected to a tty? Should be `false` if output is redirected to a file.
+/// Is stdout connected to a tty? Should be `false` if output is redirected to a file for example.
 pub fn stdout_is_tty() -> bool {
     stdout().is_terminal()
 }
