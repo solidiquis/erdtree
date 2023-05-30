@@ -306,9 +306,7 @@ impl Tree {
             return;
         }
 
-        to_detach
-            .iter()
-            .for_each(|node_id| node_id.detach(tree));
+        to_detach.iter().for_each(|node_id| node_id.detach(tree));
     }
 
     /// Compute total number of files for a single directory without recurring into child
