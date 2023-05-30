@@ -64,24 +64,26 @@ mod tty;
 mod utils;
 
 fn main() -> ExitCode {
-    let ctx = match Context::init() {
-        Ok(ctx) => ctx,
-        Err(e) => return error_and_exit(e),
-    };
+    if let Err(e) = run() {
+        eprintln!("{e}");
+        return ExitCode::FAILURE;
+    }
+    ExitCode::SUCCESS
+}
+
+fn run() -> Result<(), Box<dyn Error>> {
+    let ctx = Context::init()?;
 
     if let Some(shell) = ctx.completions {
         clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout());
-        return ExitCode::SUCCESS;
+        return Ok(());
     }
 
     styles::init(ctx.no_color());
 
     let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
 
-    let (tree, ctx) = match Tree::try_init_and_update_context(ctx, indicator.as_ref()) {
-        Ok(res) => res,
-        Err(e) => return error_and_exit(e),
-    };
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator.as_ref())?;
 
     let output = match ctx.layout {
         layout::Type::Flat => {
@@ -99,21 +101,11 @@ fn main() -> ExitCode {
     };
 
     if let Some(progress) = indicator {
-        if let Err(e) = progress.mailbox().send(Message::RenderReady) {
-            return error_and_exit(e);
-        }
-
-        if let Err(e) = progress.join_handle.join().unwrap() {
-            return error_and_exit(e);
-        }
+        progress.mailbox().send(Message::RenderReady)?;
+        progress.join_handle.join().unwrap()?;
     }
 
     println!("{output}");
 
-    ExitCode::SUCCESS
-}
-
-fn error_and_exit(e: impl Error) -> ExitCode {
-    eprintln!("{e}");
-    ExitCode::FAILURE
+    Ok(())
 }
