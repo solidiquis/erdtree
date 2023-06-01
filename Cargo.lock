@@ -256,7 +256,6 @@ dependencies = [
  "ignore",
  "indextree",
  "indoc",
- "is-terminal",
  "libc",
  "lscolors",
  "once_cell",

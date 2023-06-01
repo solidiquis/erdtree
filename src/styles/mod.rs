@@ -2,8 +2,7 @@ use crate::hash;
 use ansi_term::{Color, Style};
 use error::Error;
 use lscolors::LsColors;
-use once_cell::sync::OnceCell;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::OnceLock};
 
 /// Errors for this module.
 pub mod error;
@@ -33,49 +32,49 @@ pub const VTRT: &str = "\u{251C}\u{2500} ";
 /// **Note for `MacOS`**: `MacOS` uses the `LSCOLORS` environment variable which is in a format not
 /// supported by the `lscolors` crate. Mac users can either set their own `LS_COLORS` environment
 /// variable to customize output color or rely on the default.
-static LS_COLORS: OnceCell<LsColors> = OnceCell::new();
+static LS_COLORS: OnceLock<LsColors> = OnceLock::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
 /// printing of [`super::tree::Tree`]'s branches.
-static TREE_THEME: OnceCell<ThemesMap> = OnceCell::new();
+static TREE_THEME: OnceLock<ThemesMap> = OnceLock::new();
 
 /// Runtime evaluated static that contains ANSI-colored box drawing characters used for the
 /// printing of [`super::tree::Tree`]'s branches for descendents of symlinks.
-static LINK_THEME: OnceCell<ThemesMap> = OnceCell::new();
+static LINK_THEME: OnceLock<ThemesMap> = OnceLock::new();
 
 /// Runtime evaluated static that contains styles for disk usage output.
-static DU_THEME: OnceCell<HashMap<&'static str, Style>> = OnceCell::new();
+static DU_THEME: OnceLock<HashMap<&'static str, Style>> = OnceLock::new();
 
 /// Runtime evaluated static that contains styles for permissions.
 #[cfg(unix)]
-static PERMISSIONS_THEME: OnceCell<HashMap<char, Style>> = OnceCell::new();
+static PERMISSIONS_THEME: OnceLock<HashMap<char, Style>> = OnceLock::new();
 
 /// Runtime evaluated static that contains style for octal permissions.
 #[cfg(unix)]
-static OCTAL_PERMISSIONS_STYLE: OnceCell<Style> = OnceCell::new();
+static OCTAL_PERMISSIONS_STYLE: OnceLock<Style> = OnceLock::new();
 
 /// Runtime evaluated static that contains style for the general use placeholder "-".
-static PLACEHOLDER_STYLE: OnceCell<Style> = OnceCell::new();
+static PLACEHOLDER_STYLE: OnceLock<Style> = OnceLock::new();
 
 /// Runtime evaluated static that contains style for inode number i.e. `ino`.
 #[cfg(unix)]
-static INO_STYLE: OnceCell<Style> = OnceCell::new();
+static INO_STYLE: OnceLock<Style> = OnceLock::new();
 
 /// Runtime evaluated static that contains style for the file owner string.
 #[cfg(unix)]
-static OWNER_STYLE: OnceCell<Style> = OnceCell::new();
+static OWNER_STYLE: OnceLock<Style> = OnceLock::new();
 
 /// Runtime evaluated static that contains style for the file owner string.
 #[cfg(unix)]
-static GROUP_STYLE: OnceCell<Style> = OnceCell::new();
+static GROUP_STYLE: OnceLock<Style> = OnceLock::new();
 
 /// Runtime evaluated static that contains style for number of hardlinks i.e. `nlink`.
 #[cfg(unix)]
-static NLINK_STYLE: OnceCell<Style> = OnceCell::new();
+static NLINK_STYLE: OnceLock<Style> = OnceLock::new();
 
 /// Runtime evaluated static that contains style for datetime column.
 #[cfg(unix)]
-static DATETIME_STYLE: OnceCell<Style> = OnceCell::new();
+static DATETIME_STYLE: OnceLock<Style> = OnceLock::new();
 
 /// Map of the names box-drawing elements to their styled strings.
 pub type ThemesMap = HashMap<&'static str, String>;
