@@ -37,6 +37,10 @@ unsafe fn try_get_group(gid: libc::gid_t) -> Result<String, Errno> {
 
     let errno = errno();
 
+    if group.is_null() {
+        return Ok(gid.to_string());
+    }
+
     if errno.0 != 0 {
         return Err(errno);
     }
@@ -53,6 +57,10 @@ unsafe fn try_get_user(uid: libc::uid_t) -> Result<String, Errno> {
     let pwd = libc::getpwuid(uid);
 
     let errno = errno();
+
+    if pwd.is_null() {
+        return Ok(uid.to_string());
+    }
 
     if errno.0 != 0 {
         return Err(errno);
