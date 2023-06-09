@@ -9,7 +9,7 @@ impl UserGroupInfo for Metadata {}
 /// Trait that allows for files to query their owner and group.
 pub trait UserGroupInfo: MetadataExt {
     /// Attemps to query the owner of the implementor.
-    fn try_get_owner(&self) -> Result<String, Errno> {
+    fn try_get_owner(&self) -> Result<String, Error> {
         unsafe {
             let uid = self.uid();
             try_get_user(uid)
@@ -17,7 +17,7 @@ pub trait UserGroupInfo: MetadataExt {
     }
 
     /// Attempts to query both the owner and group of the implementor.
-    fn try_get_owner_and_group(&self) -> Result<(Owner, Group), Errno> {
+    fn try_get_owner_and_group(&self) -> Result<(Owner, Group), Error> {
         unsafe {
             let uid = self.uid();
             let gid = self.gid();
@@ -29,8 +29,20 @@ pub trait UserGroupInfo: MetadataExt {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("libc error")]
+    LibC(Errno),
+
+    #[error("Invalid user")]
+    InvalidUser,
+
+    #[error("Invalid group")]
+    InvalidGroup,
+}
+
 /// Attempts to return the name of the group associated with `gid`.
-unsafe fn try_get_group(gid: libc::gid_t) -> Result<String, Errno> {
+unsafe fn try_get_group(gid: libc::gid_t) -> Result<String, Error> {
     set_errno(Errno(0));
 
     let group = libc::getgrgid(gid);
@@ -38,7 +50,11 @@ unsafe fn try_get_group(gid: libc::gid_t) -> Result<String, Errno> {
     let errno = errno();
 
     if errno.0 != 0 {
-        return Err(errno);
+        return Err(Error::LibC(errno));
+    }
+
+    if group.is_null() {
+        return Err(Error::InvalidGroup);
     }
 
     let libc::group { gr_name, .. } = *group;
@@ -47,7 +63,7 @@ unsafe fn try_get_group(gid: libc::gid_t) -> Result<String, Errno> {
 }
 
 /// Attempts to return the name of the user associated with `uid`.
-unsafe fn try_get_user(uid: libc::uid_t) -> Result<String, Errno> {
+unsafe fn try_get_user(uid: libc::uid_t) -> Result<String, Error> {
     set_errno(Errno(0));
 
     let pwd = libc::getpwuid(uid);
@@ -55,7 +71,11 @@ unsafe fn try_get_user(uid: libc::uid_t) -> Result<String, Errno> {
     let errno = errno();
 
     if errno.0 != 0 {
-        return Err(errno);
+        return Err(Error::LibC(errno));
+    }
+
+    if pwd.is_null() {
+        return Err(Error::InvalidUser);
     }
 
     let libc::passwd { pw_name, .. } = *pwd;
