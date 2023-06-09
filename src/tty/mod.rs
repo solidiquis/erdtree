@@ -1,9 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
-use std::io::{
-    IsTerminal,
-    stdin,
-    stdout
-};
+use std::io::{stdin, stdout, IsTerminal};
 
 #[cfg(windows)]
 mod windows;
