@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.2] - 2023-06-12
+
+### Bug fixes
+- [Fixed segmentation fault that occurs with `--long` when file has an invalid user or group](https://github.com/solidiquis/erdtree/pull/193)
+- [Updated deprecated Nerd symbols](https://github.com/solidiquis/erdtree/pull/192)
+- [Change CJK and emoji block icons](https://github.com/solidiquis/erdtree/pull/194)
+
+**Full Changelog**: https://github.com/solidiquis/erdtree/compare/v3.0.1...v3.0.2
+
 ## [3.0.1] - 2023-05-28
 
 ### Bug fixes
