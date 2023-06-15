@@ -83,7 +83,12 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
 
-    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator.as_ref())?;
+    let (tree, ctx) = Tree::try_init_and_update_context(ctx, indicator.as_ref()).map_err(|err| {
+        if let Some(progress) = &indicator {
+            progress.mailbox().send(Message::RenderReady).unwrap()
+        }
+        err
+    })?;
 
     let output = match ctx.layout {
         layout::Type::Flat => {
