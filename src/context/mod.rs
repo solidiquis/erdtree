@@ -244,6 +244,7 @@ pub struct Context {
 trait AsVecOfStr {
     fn as_vec_of_str(&self) -> Vec<&str>;
 }
+
 impl AsVecOfStr for ArgMatches {
     fn as_vec_of_str(&self) -> Vec<&str> {
         self.ids().map(Id::as_str).collect()
@@ -255,70 +256,70 @@ type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, 
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
-    pub fn init() -> Result<Self, Error> {
+    pub fn try_init() -> Result<Self, Error> {
+        // User-provided arguments from command-line.
         let user_args = Self::command().args_override_self(true).get_matches();
 
-        let no_config = user_args
-            .get_one::<bool>("no_config")
-            .copied()
-            .unwrap_or(false);
-
-        if no_config {
+        if user_args.get_one::<bool>("no_config").is_some_and(|b| *b) {
             return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
         }
 
-        if let Some(ref config) = config::read_config_to_string::<&str>(None) {
-            let raw_config_args = config::parse(config);
-            let config_args = Self::command().get_matches_from(raw_config_args);
+        let Some(config) = config::read_config_to_string::<&str>(None) else {
+            return Self::from_arg_matches(&user_args).map_err(Error::ArgParse)
+        };
 
-            // If the user did not provide any arguments just read from config.
-            if !user_args.args_present() {
-                return Self::from_arg_matches(&config_args).map_err(Error::Config);
-            }
+        let raw_config_args = config::parse(&config);
 
-            // If the user did provide arguments we need to reconcile between config and
-            // user arguments.
-            let mut args = vec![OsString::from("--")];
+        // Config-provided command-line arguments.
+        let config_args = Self::command().get_matches_from(raw_config_args);
 
-            let mut ids = user_args.as_vec_of_str();
-
-            ids.extend(config_args.as_vec_of_str());
-
-            ids = crate::utils::uniq(ids);
-
-            // HACK:
-            // Going to need to figure out how to handle this better.
-            for id in ids
-                .into_iter()
-                .filter(|&id| id != "Context" && id != "group" && id != "searching")
-            {
-                if id == "dir" {
-                    if let Ok(Some(raw)) = user_args.try_get_raw(id) {
-                        let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
-
-                        args.extend(raw_args);
-                        continue;
-                    }
-                }
-
-                if let Some(user_arg) = user_args.value_source(id) {
-                    match user_arg {
-                        // prioritize the user arg if user provided a command line argument
-                        ValueSource::CommandLine => Self::pick_args_from(id, &user_args, &mut args),
-
-                        // otherwise prioritize argument from the config
-                        _ => Self::pick_args_from(id, &config_args, &mut args),
-                    }
-                } else {
-                    Self::pick_args_from(id, &config_args, &mut args);
-                }
-            }
-
-            let clargs = Self::command().get_matches_from(args);
-            return Self::from_arg_matches(&clargs).map_err(Error::Config);
+        // If the user did not provide any arguments just read from config.
+        if !user_args.args_present() {
+            return Self::from_arg_matches(&config_args).map_err(Error::Config);
         }
 
-        Self::from_arg_matches(&user_args).map_err(Error::ArgParse)
+        // Will server as the final list of arguments after user args and
+        // config args have been reconciled.
+        let mut args = vec![OsString::from("--")];
+
+        let ids = Self::command()
+            .get_arguments()
+            .map(|arg| arg.get_id().clone())
+            .collect::<Vec<_>>();
+
+        for id in ids {
+            let id_str = id.as_str();
+
+            if id_str == "dir" {
+                if let Ok(Some(dir)) = user_args.try_get_one::<PathBuf>(id_str) {
+                    args.push(dir.as_os_str().to_owned());
+                    continue;
+                }
+            }
+
+            let Some(source) = user_args.value_source(id_str) else {
+                if let Some(params) = Self::extract_args_from(id_str, &config_args) {
+                    args.extend(params);
+                }
+                continue;
+            };
+
+            let higher_precedent = match source {
+                // User provided argument takes precedent over argument from config
+                ValueSource::CommandLine => &user_args,
+
+                // otherwise prioritize argument from the config
+                _ => &config_args,
+            };
+
+            if let Some(params) = Self::extract_args_from(id_str, higher_precedent) {
+                args.extend(params);
+            }
+        }
+
+        let clargs = Self::command().get_matches_from(args);
+
+        Self::from_arg_matches(&clargs).map_err(Error::Config)
     }
 
     /// Determines whether or not it's appropriate to display color in output based on
@@ -369,20 +370,23 @@ impl Context {
     }
 
     /// Used to pick either from config or user args when constructing [Context].
-    fn pick_args_from(id: &str, matches: &ArgMatches, args: &mut Vec<OsString>) {
-        if let Ok(Some(raw)) = matches.try_get_raw(id) {
-            let kebap = id.replace('_', "-");
+    #[inline]
+    fn extract_args_from(id: &str, matches: &ArgMatches) -> Option<Vec<OsString>> {
+        let Ok(Some(raw)) = matches.try_get_raw(id) else {
+            return None
+        };
 
-            let raw_args = raw
-                .map(OsStr::to_owned)
-                .map(|s| vec![OsString::from(format!("--{kebap}")), s])
-                .filter(|pair| pair[1] != "false")
-                .flatten()
-                .filter(|s| s != "true")
-                .collect::<Vec<_>>();
+        let kebap = format!("--{}", id.replace('_', "-"));
 
-            args.extend(raw_args);
-        }
+        let raw_args = raw
+            .map(OsStr::to_owned)
+            .map(|s| [OsString::from(&kebap), s])
+            .filter(|[_key, val]| val != "false")
+            .flatten()
+            .filter(|s| s != "true")
+            .collect::<Vec<_>>();
+
+        Some(raw_args)
     }
 
     /// Predicate used for filtering via regular expressions and file-type. When matching regular

@@ -1,5 +1,3 @@
-use std::{cmp::Eq, collections::HashSet, hash::Hash};
-
 #[macro_export]
 /// Ruby-like way to crate a hashmap.
 macro_rules! hash {
@@ -19,19 +17,6 @@ macro_rules! hash {
             hash
         }
     };
-}
-
-/// Ensure every item in a `Vec` is unique.
-#[inline]
-pub fn uniq<T>(items: Vec<T>) -> Vec<T>
-where
-    T: Eq + Hash,
-{
-    items
-        .into_iter()
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect()
 }
 
 /// How many integral digits are there?
