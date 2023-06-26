@@ -378,7 +378,7 @@ long = true
 # How many lines of Rust are in this code base?
 # e.g. `erd --config rs`
 [rs]
-disk-usage = "word"
+disk-usage = "line"
 level = 1
 pattern = "\\.rs$"
 ```

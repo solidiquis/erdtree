@@ -326,7 +326,11 @@ impl Context {
     /// the Coloring, and whether or not stdout is connected to a tty.
     ///
     /// If Coloring is Force then this will always evaluate to `false`.
-    pub const fn no_color(&self) -> bool {
+    pub fn no_color(&self) -> bool {
+        if color::NO_COLOR.get().is_some_and(Option::is_some) {
+            return true;
+        }
+
         match self.color {
             Coloring::Auto if !self.stdout_is_tty => true,
             Coloring::None => true,

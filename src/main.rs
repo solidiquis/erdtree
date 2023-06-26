@@ -79,6 +79,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
+    context::color::no_color_env();
     styles::init(ctx.no_color());
 
     let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
