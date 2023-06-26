@@ -50,6 +50,7 @@ You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls
   - [Redirecting output and colorization](#redirecting-output-and-colorization)
   - [Parallelism](#parallelism)
   - [Completions](#completions)
+  - [Same filesystem](#same-filesystem)
 * [Comparisons against similar programs](#comparisons-against-similar-programs)
   - [exa](#exa)
   - [dua](#dua)
@@ -72,6 +73,9 @@ Arguments:
           Directory to traverse; defaults to current working directory
 
 Options:
+  -c, --config <CONFIG>
+          Use configuration of named table rather than the top-level table in .erdtree.toml
+
   -C, --color <COLOR>
           Mode of coloring output
           
@@ -200,7 +204,7 @@ Options:
   -T, --threads <THREADS>
           Number of threads to use
           
-          [default: 3]
+          [default: 10]
 
   -u, --unit <UNIT>
           Report disk usage in binary or SI units
@@ -210,6 +214,9 @@ Options:
           Possible values:
           - bin: Displays disk usage using binary prefixes
           - si:  Displays disk usage using SI prefixes
+
+  -x, --one-file-system
+          Prevent traversal into directories that are on different filesystems
 
   -y, --layout <LAYOUT>
           Which kind of layout to use when rendering the output
@@ -798,6 +805,15 @@ For empirical data on the subject checkout [this article](https://pkolaczk.githu
 ```
 $ et --completions zsh > ~/.oh-my-zsh/completions/_erd
 $ source ~/.zshrc
+```
+
+### Same filesystem
+
+If you are traversing a directory that contains mount points to other filesystems that you do not wish to traverse, use the following:
+
+```
+-x, --one-file-system
+      Prevent traversal into directories that are on different filesystems
 ```
 
 ## Rules for contributing

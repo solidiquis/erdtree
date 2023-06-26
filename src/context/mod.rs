@@ -158,6 +158,10 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t)]
     pub unit: PrefixKind,
 
+    /// Prevent traversal into directories that are on different filesystems
+    #[arg(short = 'x', long = "one-file-system")]
+    pub same_fs: bool,
+
     /// Which kind of layout to use when rendering the output
     #[arg(short = 'y', long, value_enum, default_value_t)]
     pub layout: layout::Type,
