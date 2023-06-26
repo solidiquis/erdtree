@@ -438,6 +438,12 @@ impl TryFrom<&Context> for WalkParallel {
             .overrides(ctx.no_git_override()?)
             .threads(ctx.threads);
 
+        if ctx.suppress_size && ctx.level() == 1 {
+            builder
+                .max_depth(Some(1))
+                .threads(1);
+        }
+
         if ctx.pattern.is_some() {
             if ctx.glob || ctx.iglob {
                 builder.filter_entry(ctx.glob_predicate()?);
