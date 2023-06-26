@@ -1,20 +1,4 @@
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-};
-
-const ERDTREE_CONFIG_NAME: &str = ".erdtreerc";
-const ERDTREE_CONFIG_PATH: &str = "ERDTREE_CONFIG_PATH";
-const ERDTREE_DIR: &str = "erdtree";
-
-#[cfg(unix)]
-const CONFIG_DIR: &str = ".config";
-
-#[cfg(unix)]
-const HOME: &str = "HOME";
-
-#[cfg(unix)]
-const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
+use std::{env, fs, path::PathBuf};
 
 /// Reads the config file into a `String` if there is one. When `None` is provided then the config
 /// is looked for in the following locations in order:
@@ -25,25 +9,19 @@ const XDG_CONFIG_HOME: &str = "XDG_CONFIG_HOME";
 /// - `$HOME/.config/erdtree/.erdtreerc`
 /// - `$HOME/.erdtreerc`
 #[cfg(unix)]
-pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
-    path.map(fs::read_to_string)
-        .and_then(Result::ok)
-        .or_else(config_from_config_path)
+pub fn read_config_to_string() -> Option<String> {
+    config_from_config_path()
         .or_else(config_from_xdg_path)
         .or_else(config_from_home)
         .map(|e| prepend_arg_prefix(&e))
 }
-
-/// Reads the config file into a `String` if there is one. When `None` is provided then the config
 /// is looked for in the following locations in order (Windows specific):
 ///
 /// - `$ERDTREE_CONFIG_PATH`
 /// - `%APPDATA%/erdtree/.erdtreerc`
 #[cfg(windows)]
-pub fn read_config_to_string<T: AsRef<Path>>(path: Option<T>) -> Option<String> {
-    path.map(fs::read_to_string)
-        .and_then(Result::ok)
-        .or_else(config_from_config_path)
+pub fn read_config_to_string() -> Option<String> {
+    config_from_config_path()
         .or_else(config_from_appdata)
         .map(|e| prepend_arg_prefix(&e))
 }
@@ -61,13 +39,13 @@ pub fn parse<'a>(config: &'a str) -> Vec<&'a str> {
                 .next()
                 .map_or(true, |ch| ch != '#')
         })
-        .flat_map(str::split_ascii_whitespace)
+        .flat_map(str::split_whitespace)
         .collect::<Vec<&'a str>>()
 }
 
 /// Try to read in config from `ERDTREE_CONFIG_PATH`.
 fn config_from_config_path() -> Option<String> {
-    env::var_os(ERDTREE_CONFIG_PATH)
+    env::var_os(super::ERDTREE_CONFIG_PATH)
         .map(PathBuf::from)
         .map(fs::read_to_string)
         .and_then(Result::ok)
@@ -78,15 +56,15 @@ fn config_from_config_path() -> Option<String> {
 /// - `$HOME/.erdtreerc`
 #[cfg(not(windows))]
 fn config_from_home() -> Option<String> {
-    let home = env::var_os(HOME).map(PathBuf::from)?;
+    let home = env::var_os(super::HOME).map(PathBuf::from)?;
 
     let config_path = home
-        .join(CONFIG_DIR)
-        .join(ERDTREE_DIR)
-        .join(ERDTREE_CONFIG_NAME);
+        .join(super::CONFIG_DIR)
+        .join(super::ERDTREE_DIR)
+        .join(super::ERDTREE_CONFIG_NAME);
 
     fs::read_to_string(config_path).ok().or_else(|| {
-        let config_path = home.join(ERDTREE_CONFIG_NAME);
+        let config_path = home.join(super::ERDTREE_CONFIG_NAME);
         fs::read_to_string(config_path).ok()
     })
 }
@@ -97,7 +75,9 @@ fn config_from_home() -> Option<String> {
 fn config_from_appdata() -> Option<String> {
     let app_data = dirs::config_dir()?;
 
-    let config_path = app_data.join(ERDTREE_DIR).join(ERDTREE_CONFIG_NAME);
+    let config_path = app_data
+        .join(super::ERDTREE_DIR)
+        .join(super::ERDTREE_CONFIG_NAME);
 
     fs::read_to_string(config_path).ok()
 }
@@ -107,12 +87,14 @@ fn config_from_appdata() -> Option<String> {
 /// - `$XDG_CONFIG_HOME/.erdtreerc`
 #[cfg(unix)]
 fn config_from_xdg_path() -> Option<String> {
-    let xdg_config = env::var_os(XDG_CONFIG_HOME).map(PathBuf::from)?;
+    let xdg_config = env::var_os(super::XDG_CONFIG_HOME).map(PathBuf::from)?;
 
-    let config_path = xdg_config.join(ERDTREE_DIR).join(ERDTREE_CONFIG_NAME);
+    let config_path = xdg_config
+        .join(super::ERDTREE_DIR)
+        .join(super::ERDTREE_CONFIG_NAME);
 
     fs::read_to_string(config_path).ok().or_else(|| {
-        let config_path = xdg_config.join(ERDTREE_CONFIG_NAME);
+        let config_path = xdg_config.join(super::ERDTREE_CONFIG_NAME);
         fs::read_to_string(config_path).ok()
     })
 }

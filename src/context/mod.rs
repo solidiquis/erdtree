@@ -1,6 +1,6 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
-use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
+use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Parser};
 use color::Coloring;
 use error::Error;
 use ignore::{
@@ -12,7 +12,9 @@ use std::{
     borrow::Borrow,
     convert::From,
     ffi::{OsStr, OsString},
+    num::NonZeroUsize,
     path::{Path, PathBuf},
+    thread::available_parallelism,
 };
 
 /// Operations to load in defaults from configuration file.
@@ -43,10 +45,6 @@ pub mod sort;
 #[cfg(unix)]
 pub mod time;
 
-/// Unit tests for [Context]
-#[cfg(test)]
-mod test;
-
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
@@ -56,6 +54,10 @@ mod test;
 pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
+
+    /// Use configuration of named table rather than the top-level table in .erdtree.toml
+    #[arg(short = 'c', long)]
+    pub config: Option<String>,
 
     /// Mode of coloring output
     #[arg(short = 'C', long, value_enum, default_value_t)]
@@ -241,16 +243,6 @@ pub struct Context {
     pub window_width: Option<usize>,
 }
 
-trait AsVecOfStr {
-    fn as_vec_of_str(&self) -> Vec<&str>;
-}
-
-impl AsVecOfStr for ArgMatches {
-    fn as_vec_of_str(&self) -> Vec<&str> {
-        self.ids().map(Id::as_str).collect()
-    }
-}
-
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
 
 impl Context {
@@ -260,26 +252,29 @@ impl Context {
         // User-provided arguments from command-line.
         let user_args = Self::command().args_override_self(true).get_matches();
 
+        // User provides `--no-config`.
         if user_args.get_one::<bool>("no_config").is_some_and(|b| *b) {
             return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
         }
 
-        let Some(config) = config::read_config_to_string::<&str>(None) else {
-            return Self::from_arg_matches(&user_args).map_err(Error::ArgParse)
+        // Load in `.erdtreerc` or `.erdtree.toml`.
+        let config_args = if let Some(config) = config::rc::read_config_to_string() {
+            let raw_args = config::rc::parse(&config);
+            Self::command().get_matches_from(raw_args)
+        } else if let Ok(config) = config::toml::load() {
+            let named_table = user_args.get_one::<String>("config");
+            let raw_args = config::toml::parse(config, named_table.map(String::as_str))?;
+
+            Self::command().get_matches_from(raw_args)
+        } else {
+            return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
         };
-
-        let raw_config_args = config::parse(&config);
-
-        // Config-provided command-line arguments.
-        let config_args = Self::command().get_matches_from(raw_config_args);
 
         // If the user did not provide any arguments just read from config.
         if !user_args.args_present() {
             return Self::from_arg_matches(&config_args).map_err(Error::Config);
         }
 
-        // Will server as the final list of arguments after user args and
-        // config args have been reconciled.
         let mut args = vec![OsString::from("--")];
 
         let ids = Self::command()
@@ -568,7 +563,7 @@ impl Context {
     }
 
     /// The default number of threads to use for disk-reads and parallel processing.
-    const fn num_threads() -> usize {
-        3
+    fn num_threads() -> usize {
+        available_parallelism().map(NonZeroUsize::get).unwrap_or(3)
     }
 }
