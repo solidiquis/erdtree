@@ -28,6 +28,8 @@ You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls
 * [Installation](#installation)
 * [Documentation](#documentation)
   - [Configuration file](#configuration-file)
+      - [Toml file](#toml-file)
+      - [.erdtreerc](#erdtreerc)
   - [Hardlinks](#hardlinks)
   - [Symlinks](#symlinks)
   - [Disk usage](#disk-usage)
@@ -316,6 +318,82 @@ Other means of installation to come.
 
 If `erdtree`'s out-of-the-box defaults don't meet your specific requirements, you can set your own defaults using a configuration file.
 
+The configuration file currently comes in two flavors: `.erdtreerc` (to be deprecated) and `.erdtree.toml`. If you have both,
+`.erdtreerc` will take precedent and `.erdtree.toml` will be disregarded, but please **note that `.erdtreerc` will be deprecated in the near future.** There is
+no reason to have both.
+
+#### TOML file
+
+`erdtree` will look for `.erdtree.toml in any of the following locations:
+
+On Unix-systems:
+
+```
+$ERDTREE_TOML_PATH
+$XDG_CONFIG_HOME/erdtree/.erdtree.toml
+$XDG_CONFIG_HOME/.erdtree.toml
+$HOME/.config/erdtree/.erdtree.toml
+$HOME/.erdtree.toml
+```
+
+On Windows:
+
+```
+%APPDATA%\erdtree\.erdtree.toml
+```
+
+[Here](example/.erdtree.toml) and below is an example of a valid `.erdtree.toml`:
+
+```toml
+icons = true
+human = true
+
+# Compute file sizes like `du`
+# e.g. `erd --config du`
+[du]
+disk_usage = "block"
+icons = true
+layout = "flat"
+no-ignore = true
+no-git = true
+hidden = true
+level = 1
+
+# Do as `ls -l`
+# e.g. `erd --config ls`
+[ls]
+icons = true
+human = true
+level = 1
+suppress-size = true
+long = true
+
+# How many lines of Rust are in this code base?
+# e.g. `erd --config rs`
+[rs]
+disk-usage = "word"
+level = 1
+pattern = "\\.rs$"
+```
+
+`.erdtree.toml` supports multiple configurations. The top-level table is the main config that will be applied without additional arguments.
+If you wish to use a separate configuration, create a named table like `du` above, set your arguments, and invoke it like so:
+
+```
+$ erd --config du
+
+# equivalent to
+
+$ erd --disk-usage block --icons --layout flat --no-ignore --no-git --hidden --level 1
+```
+
+As far as the arguments go there are only three rules you need to be aware of:
+1. `.erdtree.toml` only accepts long-named arguments without the preceding "--".
+2. Types are enforced, so numbers are expected to be numbers, booleans are expected to be booleans, strings are expected to be strings, and so on and so forth.
+3. `snake_case` and `kebap-case` works.
+
+#### .erdtreerc
+
 `erdtree` will look for a configuration file in any of the following locations:
 
 On Linux/Mac/Unix-like:
@@ -333,24 +411,11 @@ The format of a config file is as follows:
 - Every line is an `erdtree` option/argument.
 - Lines starting with `#` are considered comments and are thus ignored.
 
-Arguments passed to `erdtree` take precedence. If you have a config that you would like to ignore without deleting you can use `--no-config`.
+Arguments passed to `erdtree` on the command-line will override those found in `.erdtreerc`.
 
-Here is an example of a valid configuration file:
+[Click here](example/.erdtreerc) for an example `.erdtreerc`.
 
-```
-# Long argument
---icons
---human
-
-# or short argument
--l
-
-# args can be passed like this
--d logical
-
-# or like this
---unit=si
-```
+**If you have a config that you would like to ignore without deleting you can use `--no-config`.**
 
 ### Hardlinks
 
