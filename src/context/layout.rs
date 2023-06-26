@@ -10,6 +10,9 @@ pub enum Type {
     /// Outputs the tree with the root node at the top of the output
     Inverted,
 
-    /// Outputs a flat layout using paths rather than an ASCII tree.
+    /// Outputs a flat layout using paths rather than an ASCII tree
     Flat,
+
+    /// Outputs an inverted flat layout with the root at the to
+    InvFlat,
 }

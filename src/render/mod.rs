@@ -26,6 +26,9 @@ pub struct Engine<T> {
 /// The flat output that is similar to `du`, without the ASCII tree.
 pub struct Flat;
 
+/// Same as [`Flat`] but the root is at the top of the output.
+pub struct FlatInverted;
+
 /// The tree output with the root directory at the bottom of the output.
 pub struct Regular;
 
