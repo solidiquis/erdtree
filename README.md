@@ -134,9 +134,9 @@ Options:
           Which kind of timestamp to use; modified by default
 
           Possible values:
-          - create: Timestamp showing when the file was created
-          - access: Timestamp showing when the file was last accessed
-          - mod:    Timestamp showing when the file was last modified
+          - create: Time created (alias: ctime)
+          - access: Time last accessed (alias: atime)
+          - mod:    Time last modified (alias: mtime)
 
       --time-format <TIME_FORMAT>
           Which format to use for the timestamp; default by default
@@ -676,13 +676,13 @@ Currently only available on Unix-like platforms. Support for Windows is planned.
     --octal
       Show permissions in numeric octal format instead of symbolic
 
-    --time <TIME>
+  --time <TIME>
       Which kind of timestamp to use; modified by default
 
       Possible values:
-      - create: Timestamp showing when the file was created
-      - access: Timestamp showing when the file was last accessed
-      - mod:    Timestamp showing when the file was last modified
+      - create: Time created (alias: ctime)
+      - access: Time last accessed (alias: atime)
+      - mod:    Time last modified (alias: mtime)
 
     --time-format <TIME_FORMAT>
       Which format to use for the timestamp; default by default
