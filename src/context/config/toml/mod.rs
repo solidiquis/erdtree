@@ -200,13 +200,13 @@ mod windows {
     use std::{env, path::PathBuf};
 
     /// Try to read in config from the following location:
-    /// - `%APPDATA%/erdtree/.erdtreerc`
+    /// - `%APPDATA%/erdtree/.erdtree.toml`
     pub(super) fn load_toml() -> Option<Config> {
         super::toml_from_env().or_else(toml_from_appdata)
     }
 
     /// Try to read in config from the following location:
-    /// - `%APPDATA%/erdtree/.erdtreerc`
+    /// - `%APPDATA%/erdtree/.erdtree.toml`
     fn toml_from_appdata() -> Option<Config> {
         let app_data = dirs::config_dir()?;
 

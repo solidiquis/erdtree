@@ -260,6 +260,7 @@ impl Context {
         // Load in `.erdtreerc` or `.erdtree.toml`.
         let config_args = if let Some(config) = config::rc::read_config_to_string() {
             let raw_args = config::rc::parse(&config);
+
             Self::command().get_matches_from(raw_args)
         } else if let Ok(config) = config::toml::load() {
             let named_table = user_args.get_one::<String>("config");

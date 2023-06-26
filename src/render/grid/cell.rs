@@ -278,17 +278,17 @@ impl<'a> Cell<'a> {
             return write!(f, "");
         }
 
-        let padding = ctx.max_size_width
-            + 1
-            + match ctx.disk_usage {
-                DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
-                    PrefixKind::Si if ctx.human => 2,
-                    PrefixKind::Bin if ctx.human => 3,
-                    PrefixKind::Si => 0,
-                    PrefixKind::Bin => 1,
-                },
-                _ => 0,
-            };
+        let mut padding = ctx.max_size_width + 1;
+
+        match ctx.disk_usage {
+            DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
+                PrefixKind::Si if ctx.human => padding += 2,
+                PrefixKind::Bin if ctx.human => padding += 3,
+                PrefixKind::Si => padding += 0,
+                PrefixKind::Bin => padding += 1,
+            },
+            _ => padding -= 1,
+        }
 
         let formatted_placeholder = format!("{:>padding$}", styles::PLACEHOLDER);
 
