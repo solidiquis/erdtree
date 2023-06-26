@@ -436,6 +436,7 @@ impl TryFrom<&Context> for WalkParallel {
             .git_ignore(!ctx.no_ignore)
             .hidden(!ctx.hidden)
             .overrides(ctx.no_git_override()?)
+            .same_file_system(ctx.same_fs)
             .threads(ctx.threads);
 
         if ctx.suppress_size && ctx.level() == 1 {
