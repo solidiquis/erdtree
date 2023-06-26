@@ -97,7 +97,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             let render = Engine::<Flat>::new(tree, ctx);
             format!("{render}")
         }
-        layout::Type::InvFlat => {
+        layout::Type::Iflat => {
             let render = Engine::<FlatInverted>::new(tree, ctx);
             format!("{render}")
         }
