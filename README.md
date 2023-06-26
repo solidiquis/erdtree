@@ -28,6 +28,8 @@ You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls
 * [Installation](#installation)
 * [Documentation](#documentation)
   - [Configuration file](#configuration-file)
+      - [.erdtree.toml](#.erdtree.toml)
+      - [.erdtreerc](#.erdtreerc)
   - [Hardlinks](#hardlinks)
   - [Symlinks](#symlinks)
   - [Disk usage](#disk-usage)
@@ -340,7 +342,7 @@ On Windows:
 %APPDATA%\erdtree\.erdtree.toml
 ```
 
-[Here](examples/.erdtree.toml) and below is an example of a valid `.erdtree.toml`:
+[Here](example/.erdtree.toml) and below is an example of a valid `.erdtree.toml`:
 
 ```toml
 icons = true
