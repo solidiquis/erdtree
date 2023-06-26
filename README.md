@@ -378,7 +378,7 @@ long = true
 # How many lines of Rust are in this code base?
 # e.g. `erd --config rs`
 [rs]
-disk-usage = "word"
+disk-usage = "line"
 level = 1
 pattern = "\\.rs$"
 ```
@@ -772,6 +772,8 @@ If, however, the default behavior doesn't suit your needs you have control over 
       - auto:  Attempt to colorize output
       - force: Turn on colorization always
 ```
+
+`erdtree` also supports [NO_COLOR](https://no-color.org/).
 
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/colorization.png?raw=true" alt="failed to load picture" />
