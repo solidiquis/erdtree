@@ -773,6 +773,8 @@ If, however, the default behavior doesn't suit your needs you have control over 
       - force: Turn on colorization always
 ```
 
+`erdtree` also supports [NO_COLOR](https://no-color.org/).
+
 <p align="center">
   <img src="https://github.com/solidiquis/erdtree/blob/master/assets/colorization.png?raw=true" alt="failed to load picture" />
 </p>

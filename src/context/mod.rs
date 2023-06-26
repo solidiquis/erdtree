@@ -327,8 +327,8 @@ impl Context {
     ///
     /// If Coloring is Force then this will always evaluate to `false`.
     pub fn no_color(&self) -> bool {
-        if color::NO_COLOR.get().is_some_and(Option::is_some) {
-            return true;
+        if let Some(Some(var)) = color::NO_COLOR.get() {
+            return !var.is_empty();
         }
 
         match self.color {
