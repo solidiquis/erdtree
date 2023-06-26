@@ -22,7 +22,7 @@
 use clap::CommandFactory;
 use context::{layout, Context};
 use progress::Message;
-use render::{Engine, Flat, Inverted, Regular};
+use render::{Engine, Flat, FlatInverted, Inverted, Regular};
 use std::{error::Error, io::stdout, process::ExitCode};
 use tree::Tree;
 
@@ -95,6 +95,10 @@ fn run() -> Result<(), Box<dyn Error>> {
     let output = match ctx.layout {
         layout::Type::Flat => {
             let render = Engine::<Flat>::new(tree, ctx);
+            format!("{render}")
+        }
+        layout::Type::Iflat => {
+            let render = Engine::<FlatInverted>::new(tree, ctx);
             format!("{render}")
         }
         layout::Type::Inverted => {

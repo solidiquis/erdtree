@@ -199,7 +199,6 @@ mod unix {
 mod windows {
     use super::super::{ERDTREE_CONFIG_TOML, ERDTREE_DIR};
     use config::{Config, File};
-    use std::{env, path::PathBuf};
 
     /// Try to read in config from the following location:
     /// - `%APPDATA%\erdtree\.erdtree.toml`

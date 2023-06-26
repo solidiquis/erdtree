@@ -227,6 +227,7 @@ Options:
           - regular:  Outputs the tree with the root node at the bottom of the output
           - inverted: Outputs the tree with the root node at the top of the output
           - flat:     Outputs a flat layout using paths rather than an ASCII tree
+          - iflat:    Outputs an inverted flat layout with the root at the top of the output
 
   -., --hidden
           Show hidden files
@@ -525,7 +526,7 @@ Additionally, the word and line-count of directories are the summation of all of
 
 ### Layouts
 
-`erdtree` comes with three layouts:
+`erdtree` comes with four layouts:
 
 ```
 -y, --layout <LAYOUT>
@@ -537,6 +538,7 @@ Additionally, the word and line-count of directories are the summation of all of
       - regular:  Outputs the tree with the root node at the bottom of the output
       - inverted: Outputs the tree with the root node at the top of the output
       - flat:     Outputs a flat layout using paths rather than an ASCII tree
+      - iflat:    Outputs an inverted flat layout with the root at the top of the output
 ```
 
 * The `inverted` layout a more traditional `tree`-like layout where the root node is at the very top of the output.
