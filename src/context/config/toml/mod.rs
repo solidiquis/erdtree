@@ -23,7 +23,7 @@ enum ArgInstructions {
     Pass,
 }
 
-/// Takes in a `Config` that is generated from [`load_toml`] returning a `Vec<OsString>` which
+/// Takes in a `Config` that is generated from [`load`] returning a `Vec<OsString>` which
 /// represents command-line arguments from `.erdtree.toml`. If a `nested_table` is provided then
 /// the top-level table in `.erdtree.toml` is ignored and the configurations specified in the
 /// `nested_table` will be used instead.
@@ -122,6 +122,7 @@ fn parse_argument(keyword: &str, arg: &Value) -> Result<ArgInstructions, Error> 
     }
 }
 
+/// Concerned with how to load `.erdtree.toml` on Unix systems.
 #[cfg(unix)]
 mod unix {
     use super::super::{CONFIG_DIR, ERDTREE_CONFIG_TOML, ERDTREE_DIR, HOME, XDG_CONFIG_HOME};
@@ -193,6 +194,7 @@ mod unix {
     }
 }
 
+/// Concerned with how to load `.erdtree.toml` on Windows.
 #[cfg(windows)]
 mod windows {
     use super::super::{ERDTREE_CONFIG_TOML, ERDTREE_DIR};
@@ -200,13 +202,13 @@ mod windows {
     use std::{env, path::PathBuf};
 
     /// Try to read in config from the following location:
-    /// - `%APPDATA%/erdtree/.erdtree.toml`
+    /// - `%APPDATA%\erdtree\.erdtree.toml`
     pub(super) fn load_toml() -> Option<Config> {
         super::toml_from_env().or_else(toml_from_appdata)
     }
 
     /// Try to read in config from the following location:
-    /// - `%APPDATA%/erdtree/.erdtree.toml`
+    /// - `%APPDATA%\erdtree\.erdtree.toml`
     fn toml_from_appdata() -> Option<Config> {
         let app_data = dirs::config_dir()?;
 
