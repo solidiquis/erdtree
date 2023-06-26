@@ -28,7 +28,7 @@ You can think of `erdtree` as a little bit of `du`, `tree`, `find`, `wc` and `ls
 * [Installation](#installation)
 * [Documentation](#documentation)
   - [Configuration file](#configuration-file)
-      - [.erdtree.toml](#erdtree.toml)
+      - [Toml file](#toml-file)
       - [.erdtreerc](#erdtreerc)
   - [Hardlinks](#hardlinks)
   - [Symlinks](#symlinks)
@@ -322,7 +322,7 @@ The configuration file currently comes in two flavors: `.erdtreerc` (to be depre
 `.erdtreerc` will take precedent and `.erdtree.toml` will be disregarded, but please **note that `.erdtreerc` will be deprecated in the near future.** There is
 no reason to have both.
 
-#### .erdtree.toml
+#### TOML file
 
 `erdtree` will look for `.erdtree.toml in any of the following locations:
 
