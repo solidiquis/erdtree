@@ -107,8 +107,8 @@ impl<'a> Indicator<'a> {
                         Message::Index => indicator.index()?,
                         Message::DoneIndexing => {
                             indicator.update_state(IndicatorState::Rendering)?;
-                        }
-                        Message::RenderReady => {}
+                        },
+                        Message::RenderReady => {},
                     }
                 }
 
@@ -137,14 +137,14 @@ impl<'a> Indicator<'a> {
                 stdout.execute(terminal::Clear(ClearType::CurrentLine))?;
                 stdout.execute(cursor::RestorePosition)?;
                 self.rendering();
-            }
+            },
 
             (Rendering, Done) => {
                 let stdout = &mut self.stdout;
                 stdout.execute(terminal::Clear(ClearType::CurrentLine))?;
                 stdout.execute(cursor::RestorePosition)?;
                 stdout.execute(cursor::Show)?;
-            }
+            },
             _ => (),
         }
 

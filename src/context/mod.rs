@@ -1,6 +1,7 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
-use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Parser};
+use args::Reconciler;
+use clap::{FromArgMatches, Parser};
 use color::Coloring;
 use error::Error;
 use ignore::{
@@ -11,11 +12,14 @@ use regex::Regex;
 use std::{
     borrow::Borrow,
     convert::From,
-    ffi::{OsStr, OsString},
     num::NonZeroUsize,
     path::{Path, PathBuf},
     thread::available_parallelism,
 };
+
+/// Concerned with figuring out how to reconcile arguments provided via the command-line with
+/// arguments that come from a config file.
+pub mod args;
 
 /// Operations to load in defaults from configuration file.
 pub mod config;
@@ -253,73 +257,8 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn try_init() -> Result<Self, Error> {
-        // User-provided arguments from command-line.
-        let user_args = Self::command().args_override_self(true).get_matches();
-
-        // User provides `--no-config`.
-        if user_args.get_one::<bool>("no_config").is_some_and(|b| *b) {
-            return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
-        }
-
-        // Load in `.erdtreerc` or `.erdtree.toml`.
-        let config_args = if let Some(config) = config::rc::read_config_to_string() {
-            let raw_args = config::rc::parse(&config);
-
-            Self::command().get_matches_from(raw_args)
-        } else if let Ok(config) = config::toml::load() {
-            let named_table = user_args.get_one::<String>("config");
-            let raw_args = config::toml::parse(config, named_table.map(String::as_str))?;
-
-            Self::command().get_matches_from(raw_args)
-        } else {
-            return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
-        };
-
-        // If the user did not provide any arguments just read from config.
-        if !user_args.args_present() {
-            return Self::from_arg_matches(&config_args).map_err(Error::Config);
-        }
-
-        let mut args = vec![OsString::from("--")];
-
-        let ids = Self::command()
-            .get_arguments()
-            .map(|arg| arg.get_id().clone())
-            .collect::<Vec<_>>();
-
-        for id in ids {
-            let id_str = id.as_str();
-
-            if id_str == "dir" {
-                if let Ok(Some(dir)) = user_args.try_get_one::<PathBuf>(id_str) {
-                    args.push(dir.as_os_str().to_owned());
-                    continue;
-                }
-            }
-
-            let Some(source) = user_args.value_source(id_str) else {
-                if let Some(params) = Self::extract_args_from(id_str, &config_args) {
-                    args.extend(params);
-                }
-                continue;
-            };
-
-            let higher_precedent = match source {
-                // User provided argument takes precedent over argument from config
-                ValueSource::CommandLine => &user_args,
-
-                // otherwise prioritize argument from the config
-                _ => &config_args,
-            };
-
-            if let Some(params) = Self::extract_args_from(id_str, higher_precedent) {
-                args.extend(params);
-            }
-        }
-
-        let clargs = Self::command().get_matches_from(args);
-
-        Self::from_arg_matches(&clargs).map_err(Error::Config)
+        let args = Self::compute_args()?;
+        Self::from_arg_matches(&args).map_err(Error::Config)
     }
 
     /// Determines whether or not it's appropriate to display color in output based on
@@ -373,26 +312,6 @@ impl Context {
         self.file_type.unwrap_or_default()
     }
 
-    /// Used to pick either from config or user args when constructing [Context].
-    #[inline]
-    fn extract_args_from(id: &str, matches: &ArgMatches) -> Option<Vec<OsString>> {
-        let Ok(Some(raw)) = matches.try_get_raw(id) else {
-            return None
-        };
-
-        let kebap = format!("--{}", id.replace('_', "-"));
-
-        let raw_args = raw
-            .map(OsStr::to_owned)
-            .map(|s| [OsString::from(&kebap), s])
-            .filter(|[_key, val]| val != "false")
-            .flatten()
-            .filter(|s| s != "true")
-            .collect::<Vec<_>>();
-
-        Some(raw_args)
-    }
-
     /// Predicate used for filtering via regular expressions and file-type. When matching regular
     /// files, directories will always be included since matched files will need to be bridged back
     /// to the root node somehow. Empty sets not producing an output is handled by [`Tree`].
@@ -428,11 +347,11 @@ impl Context {
                 match file_type {
                     file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
                         return false
-                    }
+                    },
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
                 let file_name = dir_entry.file_name().to_string_lossy();
                 re.is_match(&file_name)
@@ -497,11 +416,11 @@ impl Context {
                 match file_type {
                     file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
                         return false
-                    }
+                    },
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
 
                 let matched = overrides.matched(dir_entry.path(), false);

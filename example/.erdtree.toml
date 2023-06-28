@@ -18,6 +18,8 @@ human = true
 level = 1
 suppress-size = true
 long = true
+no-ignore = true
+hidden = true
 
 # How many lines of Rust are in this code base?
 [rs]

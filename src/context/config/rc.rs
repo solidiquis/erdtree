@@ -1,6 +1,6 @@
 use std::{env, fs, path::PathBuf};
 
-/// Reads the config file into a `String` if there is one. When `None` is provided then the config
+/// Reads the config file into a `String` if there is one, otherwise returns `None`.
 /// is looked for in the following locations in order:
 ///
 /// - `$ERDTREE_CONFIG_PATH`

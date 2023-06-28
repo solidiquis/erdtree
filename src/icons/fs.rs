@@ -61,7 +61,7 @@ pub fn compute_with_color(
             let ansi_string: ANSIGenericString<str> = fg.bold().paint(icon);
             let styled_icon = ansi_string.to_string();
             Cow::from(styled_icon)
-        }
+        },
         _ => icon,
     };
 
