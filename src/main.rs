@@ -116,7 +116,17 @@ fn run() -> Result<(), Box<dyn Error>> {
         progress.join_handle.join().unwrap()?;
     }
 
-    println!("{output}");
+    #[cfg(debug_assertions)]
+    {
+        if std::env::var_os("ERDTREE_DEBUG").is_none() {
+            println!("{output}");
+        }
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        println!("{output}");
+    }
 
     Ok(())
 }

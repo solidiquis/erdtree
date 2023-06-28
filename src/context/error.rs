@@ -1,5 +1,5 @@
 use super::config::toml::error::Error as TomlError;
-use clap::Error as ClapError;
+use clap::{parser::MatchesError, Error as ClapError};
 use ignore::Error as IgnoreError;
 use regex::Error as RegexError;
 use std::convert::From;
@@ -26,6 +26,9 @@ pub enum Error {
 
     #[error("{0}")]
     ConfigError(TomlError),
+
+    #[error("{0}")]
+    MatchError(#[from] MatchesError),
 }
 
 impl From<TomlError> for Error {
