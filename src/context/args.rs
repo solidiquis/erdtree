@@ -7,7 +7,7 @@ use std::{
     path::PathBuf,
 };
 
-/// Allows the implementor to compute [`ArgMatches`] that reonciles arguments from both the
+/// Allows the implementor to compute [`ArgMatches`] that reconciles arguments from both the
 /// command-line as well as the config file that gets loaded.
 pub trait Reconciler: CommandFactory + FromArgMatches {
 
