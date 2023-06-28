@@ -143,7 +143,6 @@ impl<'a> Indicator<'a> {
                 let stdout = &mut self.stdout;
                 stdout.execute(terminal::Clear(ClearType::CurrentLine))?;
                 stdout.execute(cursor::RestorePosition)?;
-                stdout.execute(cursor::Show)?;
             },
             _ => (),
         }

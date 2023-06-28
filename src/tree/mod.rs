@@ -52,7 +52,7 @@ impl Tree {
 
     /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
     /// various properties necessary to render output.
-    pub fn try_init_and_update_context(
+    pub fn try_init(
         mut ctx: Context,
         indicator: Option<&IndicatorHandle>,
     ) -> Result<(Self, Context)> {

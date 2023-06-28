@@ -64,7 +64,11 @@ mod tty;
 mod utils;
 
 fn main() -> ExitCode {
-    if let Err(e) = run() {
+    let result = run();
+
+    tty::restore_tty();
+
+    if let Err(e) = result {
         eprintln!("{e}");
         return ExitCode::FAILURE;
     }
@@ -80,35 +84,33 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
 
     context::color::no_color_env();
+
     styles::init(ctx.no_color());
 
     let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
 
-    let (tree, ctx) =
-        Tree::try_init_and_update_context(ctx, indicator.as_ref()).map_err(|err| {
-            if let Some(ref progress) = indicator {
-                progress.mailbox().send(Message::RenderReady).unwrap();
+    let (tree, ctx) = match Tree::try_init(ctx, indicator.as_ref()) {
+        Ok(res) => res,
+        Err(err) => {
+            if let Some(thread) = indicator.map(|i| i.join_handle) {
+                thread.join().unwrap()?;
             }
-            err
-        })?;
+            return Err(Box::new(err));
+        },
+    };
+
+    macro_rules! compute_output {
+        ($t:ty) => {{
+            let render = Engine::<$t>::new(tree, ctx);
+            format!("{render}")
+        }};
+    }
 
     let output = match ctx.layout {
-        layout::Type::Flat => {
-            let render = Engine::<Flat>::new(tree, ctx);
-            format!("{render}")
-        },
-        layout::Type::Iflat => {
-            let render = Engine::<FlatInverted>::new(tree, ctx);
-            format!("{render}")
-        },
-        layout::Type::Inverted => {
-            let render = Engine::<Inverted>::new(tree, ctx);
-            format!("{render}")
-        },
-        layout::Type::Regular => {
-            let render = Engine::<Regular>::new(tree, ctx);
-            format!("{render}")
-        },
+        layout::Type::Flat => compute_output!(Flat),
+        layout::Type::Iflat => compute_output!(FlatInverted),
+        layout::Type::Inverted => compute_output!(Inverted),
+        layout::Type::Regular => compute_output!(Regular),
     };
 
     if let Some(progress) = indicator {
