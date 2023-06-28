@@ -96,19 +96,19 @@ fn run() -> Result<(), Box<dyn Error>> {
         layout::Type::Flat => {
             let render = Engine::<Flat>::new(tree, ctx);
             format!("{render}")
-        }
+        },
         layout::Type::Iflat => {
             let render = Engine::<FlatInverted>::new(tree, ctx);
             format!("{render}")
-        }
+        },
         layout::Type::Inverted => {
             let render = Engine::<Inverted>::new(tree, ctx);
             format!("{render}")
-        }
+        },
         layout::Type::Regular => {
             let render = Engine::<Regular>::new(tree, ctx);
             format!("{render}")
-        }
+        },
     };
 
     if let Some(progress) = indicator {

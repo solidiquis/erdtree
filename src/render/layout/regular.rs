@@ -50,7 +50,7 @@ impl Display for Engine<Regular> {
                     }
 
                     continue;
-                }
+                },
             };
 
             file_count_data.push(Tree::compute_file_count(current_node_id, arena));

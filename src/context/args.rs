@@ -10,10 +10,9 @@ use std::{
 /// Allows the implementor to compute [`ArgMatches`] that reconciles arguments from both the
 /// command-line as well as the config file that gets loaded.
 pub trait Reconciler: CommandFactory + FromArgMatches {
-
     /// Loads in arguments from both the command-line as well as the config file and reconciles
     /// identical arguments between the two using these rules:
-    /// 
+    ///
     /// 1. If no config file is present, use arguments strictly from the command-line.
     /// 2. If an argument was provided via the CLI then override the argument from the config.
     /// 3. If an argument is sourced from its default value because a user didn't provide it via
@@ -76,7 +75,7 @@ pub trait Reconciler: CommandFactory + FromArgMatches {
                     {
                         final_args.push(key);
                     };
-                }
+                },
                 ArgAction::SetFalse => continue,
                 _ => {
                     let Ok(Some(raw)) = argument_source.try_get_raw(id_str) else {
@@ -84,7 +83,7 @@ pub trait Reconciler: CommandFactory + FromArgMatches {
                     };
                     final_args.push(key);
                     final_args.extend(raw.map(OsStr::to_os_string));
-                }
+                },
             }
         }
 
@@ -99,7 +98,6 @@ impl Reconciler for Context {}
 fn init_empty_args() -> Vec<OsString> {
     vec![OsString::from("--")]
 }
-
 
 /// Loads an [`ArgMatches`] from `.erdtreerc`.
 #[inline]

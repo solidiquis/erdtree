@@ -79,7 +79,7 @@ impl<'a> Cell<'a> {
                 let icon = node.compute_icon(ctx.no_color());
 
                 write!(f, "{pre}{icon} {name}")
-            }
+            },
 
             _ => unreachable!(),
         }
@@ -319,11 +319,11 @@ impl<'a> Cell<'a> {
                 PrefixKind::Si => {
                     let pre = SiPrefix::from(metric.value);
                     styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-                }
+                },
                 PrefixKind::Bin => {
                     let pre = BinPrefix::from(metric.value);
                     styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-                }
+                },
             }
         };
 
@@ -351,11 +351,11 @@ impl<'a> Cell<'a> {
             PrefixKind::Si => {
                 let pre = SiPrefix::from(bytes);
                 styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-            }
+            },
             PrefixKind::Bin => {
                 let pre = BinPrefix::from(bytes);
                 styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-            }
+            },
         };
 
         let out = color.paint(format!("{metric:>max_size_width$}"));

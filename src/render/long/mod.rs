@@ -67,7 +67,7 @@ impl fmt::Display for Display<'_> {
         match (group, ino, nlink) {
             (false, false, false) => {
                 write!(f, "{perms} {owner} {time}")
-            }
+            },
 
             (true, true, true) => {
                 let group_out = Cell::new(node, ctx, cell::Kind::Group);
@@ -78,46 +78,46 @@ impl fmt::Display for Display<'_> {
                     f,
                     "{ino_out} {perms} {nlink_out} {owner} {group_out} {time}"
                 )
-            }
+            },
 
             (true, false, false) => {
                 let group_out = Cell::new(node, ctx, cell::Kind::Group);
 
                 write!(f, "{perms} {owner} {group_out} {time}")
-            }
+            },
 
             (true, true, false) => {
                 let group_out = Cell::new(node, ctx, cell::Kind::Group);
                 let ino_out = Cell::new(node, ctx, cell::Kind::Ino);
 
                 write!(f, "{ino_out} {perms} {owner} {group_out} {time}")
-            }
+            },
 
             (false, false, true) => {
                 let nlink_out = Cell::new(node, ctx, cell::Kind::Nlink);
 
                 write!(f, "{perms} {nlink_out} {owner} {time}")
-            }
+            },
 
             (true, false, true) => {
                 let group_out = Cell::new(node, ctx, cell::Kind::Group);
                 let nlink_out = Cell::new(node, ctx, cell::Kind::Nlink);
 
                 write!(f, "{perms} {nlink_out} {owner} {group_out} {time}")
-            }
+            },
 
             (false, true, false) => {
                 let ino_out = Cell::new(node, ctx, cell::Kind::Ino);
 
                 write!(f, "{ino_out} {perms} {owner} {time}")
-            }
+            },
 
             (false, true, true) => {
                 let ino_out = Cell::new(node, ctx, cell::Kind::Ino);
                 let nlink_out = Cell::new(node, ctx, cell::Kind::Nlink);
 
                 write!(f, "{ino_out} {perms} {nlink_out} {owner} {time}")
-            }
+            },
         }
     }
 }

@@ -51,12 +51,12 @@ pub fn parse(config: Config, named_table: Option<&str>) -> Result<Vec<OsString>,
                 let fmt_key = process_key(k);
                 parsed_args.push(fmt_key);
                 parsed_args.push(parsed_value);
-            }
+            },
 
             ArgInstructions::PushKeyOnly => {
                 let fmt_key = process_key(k);
                 parsed_args.push(fmt_key);
-            }
+            },
 
             ArgInstructions::Pass => continue,
         }
@@ -110,7 +110,7 @@ fn parse_argument(keyword: &str, arg: &Value) -> Result<ArgInstructions, Error> 
             } else {
                 Ok(ArgInstructions::Pass)
             }
-        }
+        },
         ValueKind::String(val) => Ok(ArgInstructions::PushKeyValue {
             parsed_value: OsString::from(val),
         }),

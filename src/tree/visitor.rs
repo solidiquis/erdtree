@@ -46,7 +46,7 @@ impl ParallelVisitor for Branch<'_> {
             Ok(node) => {
                 self.tx.send(TraversalState::from(node)).unwrap();
                 WalkState::Continue
-            }
+            },
             _ => WalkState::Skip,
         }
     }

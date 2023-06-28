@@ -123,7 +123,7 @@ impl Display for Metric {
                 } else {
                     format!("{} {}", self.value, SiPrefix::Base)
                 }
-            }
+            },
             PrefixKind::Bin => {
                 if self.human_readable {
                     let unit = BinPrefix::from(self.value);
@@ -138,7 +138,7 @@ impl Display for Metric {
                 } else {
                     format!("{} {}", self.value, BinPrefix::Base)
                 }
-            }
+            },
         };
 
         write!(f, "{display}")?;

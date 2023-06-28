@@ -347,11 +347,11 @@ impl Context {
                 match file_type {
                     file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
                         return false
-                    }
+                    },
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
                 let file_name = dir_entry.file_name().to_string_lossy();
                 re.is_match(&file_name)
@@ -416,11 +416,11 @@ impl Context {
                 match file_type {
                     file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
                         return false
-                    }
+                    },
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
 
                 let matched = overrides.matched(dir_entry.path(), false);
