@@ -279,7 +279,7 @@ $ cargo install erdtree
 The Windows version relies on some experimental features in order to properly support hard-link detection. If you want to build from `crates.io` you'll first need to install the nightly toolchain before installing `erdtree`:
 
 ```
-$ rustup toolchain install nightly-2023-03-05
+$ rustup toolchain install nightly-2023-06-11
 ```
 
 Thereafter:

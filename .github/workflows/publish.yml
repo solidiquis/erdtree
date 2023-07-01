@@ -45,7 +45,7 @@ jobs:
           
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            toolchain: nightly-2023-03-05
+            toolchain: nightly-2023-06-11
             use-cross: false
 
     steps:
