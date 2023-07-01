@@ -13,6 +13,7 @@ use std::{
     time::Duration,
 };
 
+/// Timeout used for [`IndicatorHandle`]'s `priority_mailbox`.
 const PRIORITY_MAIL_TIMEOUT: Duration = Duration::from_nanos(1);
 
 /// Responsible for displying the progress indicator. This struct will be owned by a separate
@@ -27,6 +28,9 @@ pub struct Indicator<'a> {
 /// This struct is how the outside world will inform the [`Indicator`] about the progress of the
 /// program. The `join_handle` returns the handle to the thread that owns the [`Indicator`] and the
 /// `mailbox` is the [`SyncSender`] channel that allows [`Message`]s to be sent to [`Indicator`].
+///
+/// The `priority_mailbox` is used to prematurely terminate the [`Indicator`] in the case of say a
+/// `SIGINT` signal.
 pub struct IndicatorHandle {
     pub join_handle: Option<JoinHandle<Result<(), Error>>>,
     mailbox: SyncSender<Message>,
@@ -107,6 +111,7 @@ impl IndicatorHandle {
         self.priority_mailbox.clone()
     }
 
+    /// Send a message through to the `priority_mailbox` tear down the [`Indicator`].
     pub fn terminate(this: Option<Arc<Self>>) -> Result<(), Error> {
         if let Some(mut handle) = this {
             handle.priority_mailbox().send(())?;

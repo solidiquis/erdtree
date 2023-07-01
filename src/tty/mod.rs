@@ -21,7 +21,9 @@ pub fn stdout_is_tty() -> bool {
 
 /// Restore terminal settings.
 pub fn restore_tty() {
-    stdout().execute(cursor::Show).expect("Failed to restore cursor");
+    stdout()
+        .execute(cursor::Show)
+        .expect("Failed to restore cursor");
 }
 
 /// Attempts to get the current size of the tty's window. Returns `None` if stdout isn't tty or if
