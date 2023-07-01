@@ -5,9 +5,15 @@ use crossterm::{
 };
 use std::{
     io::{self, Write},
-    sync::mpsc::{self, Sender},
-    thread,
+    sync::{
+        mpsc::{self, SendError, SyncSender},
+        Arc,
+    },
+    thread::{self, JoinHandle},
+    time::Duration,
 };
+
+const PRIORITY_MAIL_TIMEOUT: Duration = Duration::from_nanos(1);
 
 /// Responsible for displying the progress indicator. This struct will be owned by a separate
 /// thread that is responsible for displaying the progress text whereas the [`IndicatorHandle`]
@@ -20,10 +26,11 @@ pub struct Indicator<'a> {
 
 /// This struct is how the outside world will inform the [`Indicator`] about the progress of the
 /// program. The `join_handle` returns the handle to the thread that owns the [`Indicator`] and the
-/// `mailbox` is the [`Sender`] channel that allows [`Message`]s to be sent to [`Indicator`].
+/// `mailbox` is the [`SyncSender`] channel that allows [`Message`]s to be sent to [`Indicator`].
 pub struct IndicatorHandle {
-    pub join_handle: thread::JoinHandle<Result<(), Error>>,
-    mailbox: Sender<Message>,
+    pub join_handle: Option<JoinHandle<Result<(), Error>>>,
+    mailbox: SyncSender<Message>,
+    priority_mailbox: SyncSender<()>,
 }
 
 /// The different messages that could be sent to the thread that owns the [`Indicator`].
@@ -41,7 +48,7 @@ pub enum Message {
 }
 
 /// All of the different states the [`Indicator`] can be in during its life cycle.
-#[derive(Default, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 enum IndicatorState {
     /// We are currently reading from disk.
     #[default]
@@ -57,7 +64,13 @@ enum IndicatorState {
 /// Errors associated with [`crossterm`];
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
-pub struct Error(#[from] io::Error);
+pub enum Error {
+    #[error("#{0}")]
+    Io(#[from] io::Error),
+
+    #[error("#{0}")]
+    Send(#[from] SendError<()>),
+}
 
 impl Default for Indicator<'_> {
     /// Default constructor for [`Indicator`].
@@ -73,18 +86,39 @@ impl Default for Indicator<'_> {
 impl IndicatorHandle {
     /// The constructor for an [`IndicatorHandle`].
     pub fn new(
-        join_handle: thread::JoinHandle<Result<(), Error>>,
-        mailbox: Sender<Message>,
+        join_handle: Option<JoinHandle<Result<(), Error>>>,
+        mailbox: SyncSender<Message>,
+        priority_mailbox: SyncSender<()>,
     ) -> Self {
         Self {
             join_handle,
             mailbox,
+            priority_mailbox,
         }
     }
 
     /// Getter for a cloned `mailbox` wherewith to send [`Message`]s to the [`Indicator`].
-    pub fn mailbox(&self) -> Sender<Message> {
+    pub fn mailbox(&self) -> SyncSender<Message> {
         self.mailbox.clone()
+    }
+
+    /// Getter for a cloned `priority_mailbox` wherewith to send [`Message`]s to the [`Indicator`].
+    pub fn priority_mailbox(&self) -> SyncSender<()> {
+        self.priority_mailbox.clone()
+    }
+
+    pub fn terminate(this: Option<Arc<Self>>) -> Result<(), Error> {
+        if let Some(mut handle) = this {
+            handle.priority_mailbox().send(())?;
+
+            if let Some(hand) = Arc::get_mut(&mut handle) {
+                hand.join_handle
+                    .take()
+                    .map(|h| h.join().unwrap())
+                    .transpose()?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -93,7 +127,8 @@ impl<'a> Indicator<'a> {
     /// through its internal states. An [`IndicatorHandle`] is returned as a mechanism to allow the
     /// outside world to send messages to the worker thread and ultimately to the [`Indicator`].
     pub fn measure() -> IndicatorHandle {
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::sync_channel(1024);
+        let (ptx, prx) = mpsc::sync_channel(1);
 
         let join_handle = thread::spawn(move || {
             let mut indicator = Self::default();
@@ -102,27 +137,29 @@ impl<'a> Indicator<'a> {
             indicator.stdout.execute(cursor::Hide)?;
 
             while let Ok(msg) = rx.recv() {
-                if indicator.state == IndicatorState::Indexing {
-                    match msg {
-                        Message::Index => indicator.index()?,
-                        Message::DoneIndexing => {
-                            indicator.update_state(IndicatorState::Rendering)?;
-                        },
-                        Message::RenderReady => {},
-                    }
-                }
-
-                if indicator.state == IndicatorState::Rendering && msg == Message::RenderReady {
+                if prx.recv_timeout(PRIORITY_MAIL_TIMEOUT).is_ok() {
                     indicator.update_state(IndicatorState::Done)?;
                     break;
                 }
+
+                match msg {
+                    Message::Index => indicator.index()?,
+                    Message::DoneIndexing => {
+                        indicator.update_state(IndicatorState::Rendering)?;
+                    },
+                    Message::RenderReady => {
+                        indicator.update_state(IndicatorState::Done)?;
+                        return Ok(());
+                    },
+                }
+
                 indicator.stdout.execute(cursor::RestorePosition)?;
             }
 
             Ok(())
         });
 
-        IndicatorHandle::new(join_handle, tx)
+        IndicatorHandle::new(Some(join_handle), tx, ptx)
     }
 
     /// Updates the `state` of the [`Indicator`] to `new_state`, immediately running an associated
@@ -139,11 +176,10 @@ impl<'a> Indicator<'a> {
                 self.rendering();
             },
 
-            (Rendering, Done) => {
+            (Rendering | Indexing, Done) => {
                 let stdout = &mut self.stdout;
                 stdout.execute(terminal::Clear(ClearType::CurrentLine))?;
                 stdout.execute(cursor::RestorePosition)?;
-                stdout.execute(cursor::Show)?;
             },
             _ => (),
         }

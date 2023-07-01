@@ -23,7 +23,7 @@ use clap::CommandFactory;
 use context::{layout, Context};
 use progress::Message;
 use render::{Engine, Flat, FlatInverted, Inverted, Regular};
-use std::{error::Error, io::stdout, process::ExitCode};
+use std::{error::Error, io::stdout, process::ExitCode, sync::Arc};
 use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
@@ -64,7 +64,11 @@ mod tty;
 mod utils;
 
 fn main() -> ExitCode {
-    if let Err(e) = run() {
+    let result = run();
+
+    tty::restore_tty();
+
+    if let Err(e) = result {
         eprintln!("{e}");
         return ExitCode::FAILURE;
     }
@@ -80,40 +84,53 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
 
     context::color::no_color_env();
+
     styles::init(ctx.no_color());
 
-    let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
+    let indicator = (ctx.stdout_is_tty && !ctx.no_progress)
+        .then(progress::Indicator::measure)
+        .map(Arc::new);
 
-    let (tree, ctx) =
-        Tree::try_init_and_update_context(ctx, indicator.as_ref()).map_err(|err| {
-            if let Some(ref progress) = indicator {
-                progress.mailbox().send(Message::RenderReady).unwrap();
-            }
-            err
+    if indicator.is_some() {
+        let indicator = indicator.clone();
+
+        ctrlc::set_handler(move || {
+            let _ = progress::IndicatorHandle::terminate(indicator.clone());
+            tty::restore_tty();
         })?;
+    }
 
-    let output = match ctx.layout {
-        layout::Type::Flat => {
-            let render = Engine::<Flat>::new(tree, ctx);
-            format!("{render}")
-        },
-        layout::Type::Iflat => {
-            let render = Engine::<FlatInverted>::new(tree, ctx);
-            format!("{render}")
-        },
-        layout::Type::Inverted => {
-            let render = Engine::<Inverted>::new(tree, ctx);
-            format!("{render}")
-        },
-        layout::Type::Regular => {
-            let render = Engine::<Regular>::new(tree, ctx);
-            format!("{render}")
+    let (tree, ctx) = match Tree::try_init(ctx, indicator.clone()) {
+        Ok(res) => res,
+        Err(err) => {
+            let _ = progress::IndicatorHandle::terminate(indicator);
+            return Err(Box::new(err));
         },
     };
 
-    if let Some(progress) = indicator {
+    macro_rules! compute_output {
+        ($t:ty) => {{
+            let render = Engine::<$t>::new(tree, ctx);
+            format!("{render}")
+        }};
+    }
+
+    let output = match ctx.layout {
+        layout::Type::Flat => compute_output!(Flat),
+        layout::Type::Iflat => compute_output!(FlatInverted),
+        layout::Type::Inverted => compute_output!(Inverted),
+        layout::Type::Regular => compute_output!(Regular),
+    };
+
+    if let Some(mut progress) = indicator {
         progress.mailbox().send(Message::RenderReady)?;
-        progress.join_handle.join().unwrap()?;
+
+        if let Some(hand) = Arc::get_mut(&mut progress) {
+            hand.join_handle
+                .take()
+                .map(|h| h.join().unwrap())
+                .transpose()?;
+        }
     }
 
     #[cfg(debug_assertions)]

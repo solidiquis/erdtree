@@ -2,7 +2,7 @@ use crate::{
     context::{column, Context},
     disk_usage::file_size::FileSize,
     fs::inode::Inode,
-    progress::{self, IndicatorHandle, Message},
+    progress::{IndicatorHandle, Message},
     utils,
 };
 use count::FileCount;
@@ -16,7 +16,10 @@ use std::{
     fs,
     path::PathBuf,
     result::Result as StdResult,
-    sync::mpsc::{self, Sender},
+    sync::{
+        mpsc::{self, Sender},
+        Arc,
+    },
     thread,
 };
 use visitor::{BranchVisitorBuilder, TraversalState};
@@ -52,9 +55,9 @@ impl Tree {
 
     /// Initiates file-system traversal and [Tree] as well as updates the [Context] object with
     /// various properties necessary to render output.
-    pub fn try_init_and_update_context(
+    pub fn try_init(
         mut ctx: Context,
-        indicator: Option<&IndicatorHandle>,
+        indicator: Option<Arc<IndicatorHandle>>,
     ) -> Result<(Self, Context)> {
         let mut column_properties = column::Properties::from(&ctx);
 
@@ -102,12 +105,12 @@ impl Tree {
     fn traverse(
         ctx: &Context,
         column_properties: &mut column::Properties,
-        indicator: Option<&IndicatorHandle>,
+        indicator: Option<Arc<IndicatorHandle>>,
     ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
 
-        let progress_indicator_mailbox = indicator.map(progress::IndicatorHandle::mailbox);
+        let progress_indicator_mailbox = indicator.map(|arc| arc.mailbox());
 
         thread::scope(|s| {
             let res = s.spawn(move || {
@@ -117,7 +120,9 @@ impl Tree {
 
                 while let Ok(TraversalState::Ongoing(node)) = rx.recv() {
                     if let Some(ref mailbox) = progress_indicator_mailbox {
-                        let _ = mailbox.send(Message::Index);
+                        if mailbox.send(Message::Index).is_err() {
+                            return Err(Error::Terminated);
+                        }
                     }
 
                     if node.is_dir() {
@@ -147,7 +152,9 @@ impl Tree {
                 }
 
                 if let Some(ref mailbox) = progress_indicator_mailbox {
-                    let _ = mailbox.send(Message::DoneIndexing);
+                    if mailbox.send(Message::DoneIndexing).is_err() {
+                        return Err(Error::Terminated);
+                    }
                 }
 
                 let root_id = root_id.ok_or(Error::MissingRoot)?;
@@ -179,7 +186,7 @@ impl Tree {
 
             walker.visit(&mut visitor_builder);
 
-            tx.send(TraversalState::Done).unwrap();
+            let _ = tx.send(TraversalState::Done);
 
             res.join().unwrap()
         })
