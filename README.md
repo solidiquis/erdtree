@@ -332,7 +332,7 @@ no reason to have both.
 
 #### TOML file
 
-`erdtree` will look for `.erdtree.toml in any of the following locations:
+`erdtree` will look for `.erdtree.toml` in any of the following locations:
 
 On Unix-systems:
 

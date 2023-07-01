@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.1] - 2023-07-01
+
+[This patches](https://github.com/solidiquis/erdtree/pull/215) a deadlock that occurs when `--pattern` fails to make any matches and the progress indicator is enabled which causes `erdtree` to completely freeze.
+
 ## [3.1.0] - 2023-07-01
 
 ### [What's new](https://github.com/solidiquis/erdtree/pull/202)
