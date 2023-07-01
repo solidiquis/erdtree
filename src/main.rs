@@ -23,7 +23,7 @@ use clap::CommandFactory;
 use context::{layout, Context};
 use progress::Message;
 use render::{Engine, Flat, FlatInverted, Inverted, Regular};
-use std::{error::Error, io::stdout, process::ExitCode};
+use std::{error::Error, io::stdout, process::ExitCode, sync::Arc};
 use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
@@ -87,14 +87,23 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     styles::init(ctx.no_color());
 
-    let indicator = (ctx.stdout_is_tty && !ctx.no_progress).then(progress::Indicator::measure);
+    let indicator = (ctx.stdout_is_tty && !ctx.no_progress)
+        .then(progress::Indicator::measure)
+        .map(Arc::new);
 
-    let (tree, ctx) = match Tree::try_init(ctx, indicator.as_ref()) {
+    if indicator.is_some() {
+        let indicator = indicator.clone();
+
+        ctrlc::set_handler(move || {
+            let _ = progress::IndicatorHandle::terminate(indicator.clone());
+            tty::restore_tty();
+        })?;
+    }
+
+    let (tree, ctx) = match Tree::try_init(ctx, indicator.clone()) {
         Ok(res) => res,
         Err(err) => {
-            if let Some(thread) = indicator.map(|i| i.join_handle) {
-                thread.join().unwrap()?;
-            }
+            let _ = progress::IndicatorHandle::terminate(indicator);
             return Err(Box::new(err));
         },
     };
@@ -113,9 +122,15 @@ fn run() -> Result<(), Box<dyn Error>> {
         layout::Type::Regular => compute_output!(Regular),
     };
 
-    if let Some(progress) = indicator {
+    if let Some(mut progress) = indicator {
         progress.mailbox().send(Message::RenderReady)?;
-        progress.join_handle.join().unwrap()?;
+
+        if let Some(hand) = Arc::get_mut(&mut progress) {
+            hand.join_handle
+                .take()
+                .map(|h| h.join().unwrap())
+                .transpose()?;
+        }
     }
 
     #[cfg(debug_assertions)]

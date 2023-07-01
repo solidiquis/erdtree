@@ -30,6 +30,7 @@ clap = { version = "4.1.1", features = ["derive"] }
 clap_complete = "4.1.1"
 config = { version = "0.13.3", features = ["toml"] }
 crossterm = "0.26.1"
+ctrlc = "3.4.0"
 dirs = "5.0"
 errno = "0.3.1"
 filesize = "0.2.0"

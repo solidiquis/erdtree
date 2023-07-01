@@ -33,8 +33,11 @@ pub enum Error {
 
     #[cfg(unix)]
     #[error("{0}")]
-    Persmissions(#[from] PermissionsError),
+    Permissions(#[from] PermissionsError),
 
     #[error("{0}")]
     UninitializedTheme(#[from] StyleError<'static>),
+
+    #[error("Terminated erdtree...")]
+    Terminated,
 }
