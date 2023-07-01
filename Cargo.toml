@@ -1,6 +1,6 @@
 [package]
 name = "erdtree"
-version = "3.0.2"
+version = "3.1.0"
 edition = "2021"
 authors = ["Benjamin Nguyen <benjamin.van.nguyen@gmail.com>"]
 description = """
@@ -12,7 +12,7 @@ documentation = "https://github.com/solidiquis/erdtree"
 homepage = "https://github.com/solidiquis/erdtree"
 repository = "https://github.com/solidiquis/erdtree"
 keywords = ["tree", "find", "ls", "du", "commandline"]
-exclude = ["assets/*", "scripts/*"]
+exclude = ["assets/*", "scripts/*", "example/*"]
 readme = "README.md"
 license = "MIT"
 rust-version = "1.70.0"
@@ -28,7 +28,9 @@ ansi_term = "0.12.1"
 chrono = "0.4.24"
 clap = { version = "4.1.1", features = ["derive"] }
 clap_complete = "4.1.1"
+config = { version = "0.13.3", features = ["toml"] }
 crossterm = "0.26.1"
+ctrlc = "3.4.0"
 dirs = "5.0"
 errno = "0.3.1"
 filesize = "0.2.0"

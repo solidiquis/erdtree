@@ -3,7 +3,93 @@ All notable changes to this project will be documented in this file.
  
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.1.0] - 2023-07-01
+
+### [What's new](https://github.com/solidiquis/erdtree/pull/202)
+- [Multiple configs with .erdtree.toml](https://github.com/solidiquis/erdtree/pull/201)
+- [Increased performance with --suppress-size](https://github.com/solidiquis/erdtree/pull/203)
+- [-x, --one-file-system](https://github.com/solidiquis/erdtree/pull/204)
+- [Support for NO_COLOR](https://github.com/solidiquis/erdtree/pull/205)
+- [Inverted flat layout](https://github.com/solidiquis/erdtree/pull/206)
+- [Aliases: atime, ctime, and mtime](https://github.com/solidiquis/erdtree/pull/207)
+- [ctrlc handler to restore cursor if progress indicator is enabled](https://github.com/solidiquis/erdtree/pull/210)
+
+
+### [.erdtree.toml](https://github.com/solidiquis/erdtree/pull/201)
+
+First and foremost:
+
+**`.erdtreerc` is planned for deprecation by v3.3 so please migrate to `.erdtree.toml` by then.**
+
+There is now support for multiple configs:
+
+```
+-c, --config <CONFIG>  Use configuration of named table rather than the top-level table in .erdtree.toml
+```
+
+So given the following example `.erdtree.toml`:
+
+```toml
+icons = true
+human = true
+
+# Compute file sizes like `du`
+[du]
+disk_usage = "block"
+icons = true
+layout = "flat"
+no-ignore = true
+no-git = true
+hidden = true
+level = 1
+
+# Do as `ls -l`
+[ls]
+icons = true
+human = true
+level = 1
+suppress-size = true
+long = true
+no-ignore = true
+hidden = true
+
+# How many lines of Rust are in this code base?
+[rs]
+disk-usage = "line"
+level = 1
+pattern = "\\.rs$"
+```
+
+```
+$ erd
+
+# equivalant to 
+
+$ erd --human --icons
+```
+
+...
+
+```
+$ erd -c ls
+
+# equivalent to
+
+$ erd --icons --human --level 1 --suppress-size --long --no-ignore --hidden
+```
+
+etc.
+
+For further information on how to get started with the new `.erdtree.toml` please refer to the [README.md](README.md#toml-file).
+
+**NOTE**:
+- Multiple configs are only supported via `.erdtree.toml`.
+- If you have both a `.erdtree.toml` and `.erdtreerc` then the latter will take precedent. Attempts to use `--config` in said case will result in an error and a warning asking to migrate from `.erdtreerc` to `.erdtree.toml`.
+- Again: **`.erdtreerc` will be deprecated in favor of `.erdtree.toml` by v3.3**
+
+
 ## [3.0.2] - 2023-06-12
+- Added support for `.erdtree.toml`
 
 ### Bug fixes
 - [Fixed segmentation fault that occurs with `--long` when file has an invalid user or group](https://github.com/solidiquis/erdtree/pull/193)

@@ -12,10 +12,10 @@ pub fn comparator(ctx: &Context) -> Box<NodeComparator> {
     match ctx.dir_order {
         dir::Order::First => {
             Box::new(move |a, b| dir_first_comparator(a, b, base_comparator(sort_type)))
-        }
+        },
         dir::Order::Last => {
             Box::new(move |a, b| dir_last_comparator(a, b, base_comparator(sort_type)))
-        }
+        },
         dir::Order::None => base_comparator(sort_type),
     }
 }

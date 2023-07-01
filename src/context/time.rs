@@ -3,14 +3,17 @@ use clap::ValueEnum;
 /// Different types of timestamps available in long-view.
 #[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum Stamp {
-    /// Timestamp showing when the file was created.
+    /// Time created (alias: ctime)
+    #[value(alias("ctime"))]
     Create,
 
-    /// Timestamp showing when the file was last accessed.
+    /// Time last accessed (alias: atime)
+    #[value(alias("atime"))]
     Access,
 
-    /// Timestamp showing when the file was last modified.
+    /// Time last modified (alias: mtime)
     #[default]
+    #[value(alias("mtime"))]
     Mod,
 }
 

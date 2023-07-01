@@ -1,0 +1,28 @@
+icons = true
+human = true
+
+# Compute file sizes like `du`
+[du]
+disk_usage = "block"
+icons = true
+layout = "flat"
+no-ignore = true
+no-git = true
+hidden = true
+level = 1
+
+# Do as `ls -l`
+[ls]
+icons = true
+human = true
+level = 1
+suppress-size = true
+long = true
+no-ignore = true
+hidden = true
+
+# How many lines of Rust are in this code base?
+[rs]
+disk-usage = "line"
+level = 1
+pattern = "\\.rs$"

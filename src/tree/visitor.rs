@@ -44,9 +44,11 @@ impl ParallelVisitor for Branch<'_> {
 
         match Node::try_from((dir_entry, self.ctx)) {
             Ok(node) => {
-                self.tx.send(TraversalState::from(node)).unwrap();
+                if self.tx.send(TraversalState::from(node)).is_err() {
+                    return WalkState::Quit;
+                }
                 WalkState::Continue
-            }
+            },
             _ => WalkState::Skip,
         }
     }

@@ -256,28 +256,28 @@ impl TryFrom<(DirEntry, &Context)> for Node {
                     DiskUsage::Logical => {
                         let metric = byte::Metric::init_logical(&metadata, ctx.unit, ctx.human);
                         Some(FileSize::Byte(metric))
-                    }
+                    },
                     DiskUsage::Physical => {
                         let metric =
                             byte::Metric::init_physical(path, &metadata, ctx.unit, ctx.human);
                         Some(FileSize::Byte(metric))
-                    }
+                    },
                     DiskUsage::Line => {
                         let metric = line_count::Metric::init(path);
                         metric.map(FileSize::Line)
-                    }
+                    },
                     DiskUsage::Word => {
                         let metric = word_count::Metric::init(path);
                         metric.map(FileSize::Word)
-                    }
+                    },
 
                     #[cfg(unix)]
                     DiskUsage::Block => {
                         let metric = block::Metric::init(&metadata);
                         Some(FileSize::Block(metric))
-                    }
+                    },
                 }
-            }
+            },
             _ => None,
         };
 

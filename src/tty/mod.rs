@@ -1,4 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
+use crossterm::{cursor, ExecutableCommand};
 use std::io::{stdin, stdout, IsTerminal};
 
 #[cfg(windows)]
@@ -16,6 +17,13 @@ pub fn stdin_is_tty() -> bool {
 /// Is stdout connected to a tty? Should be `false` if output is redirected to a file for example.
 pub fn stdout_is_tty() -> bool {
     stdout().is_terminal()
+}
+
+/// Restore terminal settings.
+pub fn restore_tty() {
+    stdout()
+        .execute(cursor::Show)
+        .expect("Failed to restore cursor");
 }
 
 /// Attempts to get the current size of the tty's window. Returns `None` if stdout isn't tty or if

@@ -1,6 +1,7 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
 use crate::tty;
-use clap::{parser::ValueSource, ArgMatches, CommandFactory, FromArgMatches, Id, Parser};
+use args::Reconciler;
+use clap::{FromArgMatches, Parser};
 use color::Coloring;
 use error::Error;
 use ignore::{
@@ -11,9 +12,14 @@ use regex::Regex;
 use std::{
     borrow::Borrow,
     convert::From,
-    ffi::{OsStr, OsString},
+    num::NonZeroUsize,
     path::{Path, PathBuf},
+    thread::available_parallelism,
 };
+
+/// Concerned with figuring out how to reconcile arguments provided via the command-line with
+/// arguments that come from a config file.
+pub mod args;
 
 /// Operations to load in defaults from configuration file.
 pub mod config;
@@ -43,19 +49,19 @@ pub mod sort;
 #[cfg(unix)]
 pub mod time;
 
-/// Unit tests for [Context]
-#[cfg(test)]
-mod test;
-
 /// Defines the CLI.
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "3.0.2")]
+#[command(version = "3.1.0")]
 #[command(about = "erdtree (erd) is a cross-platform, multi-threaded, and general purpose filesystem and disk usage utility.", long_about = None)]
 pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
+
+    /// Use configuration of named table rather than the top-level table in .erdtree.toml
+    #[arg(short = 'c', long)]
+    pub config: Option<String>,
 
     /// Mode of coloring output
     #[arg(short = 'C', long, value_enum, default_value_t)]
@@ -156,6 +162,10 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t)]
     pub unit: PrefixKind,
 
+    /// Prevent traversal into directories that are on different filesystems
+    #[arg(short = 'x', long = "one-file-system")]
+    pub same_fs: bool,
+
     /// Which kind of layout to use when rendering the output
     #[arg(short = 'y', long, value_enum, default_value_t)]
     pub layout: layout::Type,
@@ -241,91 +251,25 @@ pub struct Context {
     pub window_width: Option<usize>,
 }
 
-trait AsVecOfStr {
-    fn as_vec_of_str(&self) -> Vec<&str>;
-}
-impl AsVecOfStr for ArgMatches {
-    fn as_vec_of_str(&self) -> Vec<&str> {
-        self.ids().map(Id::as_str).collect()
-    }
-}
-
 type Predicate = Result<Box<dyn Fn(&DirEntry) -> bool + Send + Sync + 'static>, Error>;
 
 impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
-    pub fn init() -> Result<Self, Error> {
-        let user_args = Self::command().args_override_self(true).get_matches();
-
-        let no_config = user_args
-            .get_one::<bool>("no_config")
-            .copied()
-            .unwrap_or(false);
-
-        if no_config {
-            return Self::from_arg_matches(&user_args).map_err(Error::ArgParse);
-        }
-
-        if let Some(ref config) = config::read_config_to_string::<&str>(None) {
-            let raw_config_args = config::parse(config);
-            let config_args = Self::command().get_matches_from(raw_config_args);
-
-            // If the user did not provide any arguments just read from config.
-            if !user_args.args_present() {
-                return Self::from_arg_matches(&config_args).map_err(Error::Config);
-            }
-
-            // If the user did provide arguments we need to reconcile between config and
-            // user arguments.
-            let mut args = vec![OsString::from("--")];
-
-            let mut ids = user_args.as_vec_of_str();
-
-            ids.extend(config_args.as_vec_of_str());
-
-            ids = crate::utils::uniq(ids);
-
-            // HACK:
-            // Going to need to figure out how to handle this better.
-            for id in ids
-                .into_iter()
-                .filter(|&id| id != "Context" && id != "group" && id != "searching")
-            {
-                if id == "dir" {
-                    if let Ok(Some(raw)) = user_args.try_get_raw(id) {
-                        let raw_args = raw.map(OsStr::to_owned).collect::<Vec<OsString>>();
-
-                        args.extend(raw_args);
-                        continue;
-                    }
-                }
-
-                if let Some(user_arg) = user_args.value_source(id) {
-                    match user_arg {
-                        // prioritize the user arg if user provided a command line argument
-                        ValueSource::CommandLine => Self::pick_args_from(id, &user_args, &mut args),
-
-                        // otherwise prioritize argument from the config
-                        _ => Self::pick_args_from(id, &config_args, &mut args),
-                    }
-                } else {
-                    Self::pick_args_from(id, &config_args, &mut args);
-                }
-            }
-
-            let clargs = Self::command().get_matches_from(args);
-            return Self::from_arg_matches(&clargs).map_err(Error::Config);
-        }
-
-        Self::from_arg_matches(&user_args).map_err(Error::ArgParse)
+    pub fn try_init() -> Result<Self, Error> {
+        let args = Self::compute_args()?;
+        Self::from_arg_matches(&args).map_err(Error::Config)
     }
 
     /// Determines whether or not it's appropriate to display color in output based on
     /// the Coloring, and whether or not stdout is connected to a tty.
     ///
     /// If Coloring is Force then this will always evaluate to `false`.
-    pub const fn no_color(&self) -> bool {
+    pub fn no_color(&self) -> bool {
+        if let Some(Some(var)) = color::NO_COLOR.get() {
+            return !var.is_empty();
+        }
+
         match self.color {
             Coloring::Auto if !self.stdout_is_tty => true,
             Coloring::None => true,
@@ -368,23 +312,6 @@ impl Context {
         self.file_type.unwrap_or_default()
     }
 
-    /// Used to pick either from config or user args when constructing [Context].
-    fn pick_args_from(id: &str, matches: &ArgMatches, args: &mut Vec<OsString>) {
-        if let Ok(Some(raw)) = matches.try_get_raw(id) {
-            let kebap = id.replace('_', "-");
-
-            let raw_args = raw
-                .map(OsStr::to_owned)
-                .map(|s| vec![OsString::from(format!("--{kebap}")), s])
-                .filter(|pair| pair[1] != "false")
-                .flatten()
-                .filter(|s| s != "true")
-                .collect::<Vec<_>>();
-
-            args.extend(raw_args);
-        }
-    }
-
     /// Predicate used for filtering via regular expressions and file-type. When matching regular
     /// files, directories will always be included since matched files will need to be bridged back
     /// to the root node somehow. Empty sets not producing an output is handled by [`Tree`].
@@ -420,11 +347,11 @@ impl Context {
                 match file_type {
                     file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
                         return false
-                    }
+                    },
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
                 let file_name = dir_entry.file_name().to_string_lossy();
                 re.is_match(&file_name)
@@ -489,11 +416,11 @@ impl Context {
                 match file_type {
                     file::Type::File if entry_type.map_or(true, |ft| !ft.is_file()) => {
                         return false
-                    }
+                    },
                     file::Type::Link if entry_type.map_or(true, |ft| !ft.is_symlink()) => {
                         return false
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
 
                 let matched = overrides.matched(dir_entry.path(), false);
@@ -564,7 +491,7 @@ impl Context {
     }
 
     /// The default number of threads to use for disk-reads and parallel processing.
-    const fn num_threads() -> usize {
-        3
+    fn num_threads() -> usize {
+        available_parallelism().map(NonZeroUsize::get).unwrap_or(3)
     }
 }

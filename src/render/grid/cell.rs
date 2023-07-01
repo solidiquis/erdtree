@@ -79,7 +79,7 @@ impl<'a> Cell<'a> {
                 let icon = node.compute_icon(ctx.no_color());
 
                 write!(f, "{pre}{icon} {name}")
-            }
+            },
 
             _ => unreachable!(),
         }
@@ -278,17 +278,17 @@ impl<'a> Cell<'a> {
             return write!(f, "");
         }
 
-        let padding = ctx.max_size_width
-            + 1
-            + match ctx.disk_usage {
-                DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
-                    PrefixKind::Si if ctx.human => 2,
-                    PrefixKind::Bin if ctx.human => 3,
-                    PrefixKind::Si => 0,
-                    PrefixKind::Bin => 1,
-                },
-                _ => 0,
-            };
+        let mut padding = ctx.max_size_width + 1;
+
+        match ctx.disk_usage {
+            DiskUsage::Logical | DiskUsage::Physical => match ctx.unit {
+                PrefixKind::Si if ctx.human => padding += 2,
+                PrefixKind::Bin if ctx.human => padding += 3,
+                PrefixKind::Si => padding += 0,
+                PrefixKind::Bin => padding += 1,
+            },
+            _ => padding -= 1,
+        }
 
         let formatted_placeholder = format!("{:>padding$}", styles::PLACEHOLDER);
 
@@ -319,11 +319,11 @@ impl<'a> Cell<'a> {
                 PrefixKind::Si => {
                     let pre = SiPrefix::from(metric.value);
                     styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-                }
+                },
                 PrefixKind::Bin => {
                     let pre = BinPrefix::from(metric.value);
                     styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-                }
+                },
             }
         };
 
@@ -351,11 +351,11 @@ impl<'a> Cell<'a> {
             PrefixKind::Si => {
                 let pre = SiPrefix::from(bytes);
                 styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-            }
+            },
             PrefixKind::Bin => {
                 let pre = BinPrefix::from(bytes);
                 styles::get_du_theme().unwrap().get(pre.as_str()).unwrap()
-            }
+            },
         };
 
         let out = color.paint(format!("{metric:>max_size_width$}"));
