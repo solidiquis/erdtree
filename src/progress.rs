@@ -10,11 +10,7 @@ use std::{
         Arc,
     },
     thread::{self, JoinHandle},
-    time::Duration,
 };
-
-/// Timeout used for [`IndicatorHandle`]'s `priority_mailbox`.
-const PRIORITY_MAIL_TIMEOUT: Duration = Duration::from_nanos(1);
 
 /// Responsible for displying the progress indicator. This struct will be owned by a separate
 /// thread that is responsible for displaying the progress text whereas the [`IndicatorHandle`]
@@ -28,13 +24,9 @@ pub struct Indicator<'a> {
 /// This struct is how the outside world will inform the [`Indicator`] about the progress of the
 /// program. The `join_handle` returns the handle to the thread that owns the [`Indicator`] and the
 /// `mailbox` is the [`SyncSender`] channel that allows [`Message`]s to be sent to [`Indicator`].
-///
-/// The `priority_mailbox` is used to prematurely terminate the [`Indicator`] in the case of say a
-/// `SIGINT` signal.
 pub struct IndicatorHandle {
     pub join_handle: Option<JoinHandle<Result<(), Error>>>,
     mailbox: SyncSender<Message>,
-    priority_mailbox: SyncSender<()>,
 }
 
 /// The different messages that could be sent to the thread that owns the [`Indicator`].
@@ -49,6 +41,9 @@ pub enum Message {
     /// Message that indicates that the output is ready to be flushed and that we should cleanup
     /// the [`Indicator`] as well as the screen.
     RenderReady,
+
+    /// Tear down the progress indicator for whatever reason.
+    Finish,
 }
 
 /// All of the different states the [`Indicator`] can be in during its life cycle.
@@ -73,7 +68,7 @@ pub enum Error {
     Io(#[from] io::Error),
 
     #[error("#{0}")]
-    Send(#[from] SendError<()>),
+    Send(#[from] SendError<Message>),
 }
 
 impl Default for Indicator<'_> {
@@ -92,12 +87,10 @@ impl IndicatorHandle {
     pub fn new(
         join_handle: Option<JoinHandle<Result<(), Error>>>,
         mailbox: SyncSender<Message>,
-        priority_mailbox: SyncSender<()>,
     ) -> Self {
         Self {
             join_handle,
             mailbox,
-            priority_mailbox,
         }
     }
 
@@ -106,15 +99,10 @@ impl IndicatorHandle {
         self.mailbox.clone()
     }
 
-    /// Getter for a cloned `priority_mailbox` wherewith to send [`Message`]s to the [`Indicator`].
-    pub fn priority_mailbox(&self) -> SyncSender<()> {
-        self.priority_mailbox.clone()
-    }
-
     /// Send a message through to the `priority_mailbox` tear down the [`Indicator`].
     pub fn terminate(this: Option<Arc<Self>>) -> Result<(), Error> {
         if let Some(mut handle) = this {
-            handle.priority_mailbox().send(())?;
+            handle.mailbox().send(Message::Finish)?;
 
             if let Some(hand) = Arc::get_mut(&mut handle) {
                 hand.join_handle
@@ -134,7 +122,6 @@ impl<'a> Indicator<'a> {
     /// outside world to send messages to the worker thread and ultimately to the [`Indicator`].
     pub fn measure() -> IndicatorHandle {
         let (tx, rx) = mpsc::sync_channel(1024);
-        let (ptx, prx) = mpsc::sync_channel(1);
 
         let join_handle = thread::spawn(move || {
             let mut indicator = Self::default();
@@ -143,17 +130,12 @@ impl<'a> Indicator<'a> {
             indicator.stdout.execute(cursor::Hide)?;
 
             while let Ok(msg) = rx.recv() {
-                if prx.recv_timeout(PRIORITY_MAIL_TIMEOUT).is_ok() {
-                    indicator.update_state(IndicatorState::Done)?;
-                    return Ok(());
-                }
-
                 match msg {
                     Message::Index => indicator.index()?,
                     Message::DoneIndexing => {
                         indicator.update_state(IndicatorState::Rendering)?;
                     },
-                    Message::RenderReady => {
+                    Message::RenderReady | Message::Finish => {
                         indicator.update_state(IndicatorState::Done)?;
                         return Ok(());
                     },
@@ -165,7 +147,7 @@ impl<'a> Indicator<'a> {
             Ok(())
         });
 
-        IndicatorHandle::new(Some(join_handle), tx, ptx)
+        IndicatorHandle::new(Some(join_handle), tx)
     }
 
     /// Updates the `state` of the [`Indicator`] to `new_state`, immediately running an associated
