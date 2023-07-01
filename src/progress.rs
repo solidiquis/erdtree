@@ -123,6 +123,7 @@ impl IndicatorHandle {
                     .transpose()?;
             }
         }
+
         Ok(())
     }
 }
@@ -144,7 +145,7 @@ impl<'a> Indicator<'a> {
             while let Ok(msg) = rx.recv() {
                 if prx.recv_timeout(PRIORITY_MAIL_TIMEOUT).is_ok() {
                     indicator.update_state(IndicatorState::Done)?;
-                    break;
+                    return Ok(());
                 }
 
                 match msg {
@@ -185,6 +186,7 @@ impl<'a> Indicator<'a> {
                 let stdout = &mut self.stdout;
                 stdout.execute(terminal::Clear(ClearType::CurrentLine))?;
                 stdout.execute(cursor::RestorePosition)?;
+                stdout.execute(cursor::Show)?;
             },
             _ => (),
         }

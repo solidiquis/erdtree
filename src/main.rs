@@ -64,14 +64,11 @@ mod tty;
 mod utils;
 
 fn main() -> ExitCode {
-    let result = run();
-
-    tty::restore_tty();
-
-    if let Err(e) = result {
+    if let Err(e) = run() {
         eprintln!("{e}");
         return ExitCode::FAILURE;
     }
+
     ExitCode::SUCCESS
 }
 
