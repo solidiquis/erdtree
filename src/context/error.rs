@@ -29,6 +29,12 @@ pub enum Error {
 
     #[error("{0}")]
     MatchError(#[from] MatchesError),
+
+    #[error("'--config' was specified but a `.erdtree.toml` file could not be found")]
+    NoToml,
+
+    #[error("Please migrate from `erdtreerc` to `.erdtree.toml` to make use of `--config`")]
+    Rc,
 }
 
 impl From<TomlError> for Error {

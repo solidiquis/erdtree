@@ -1,6 +1,6 @@
 [package]
 name = "erdtree"
-version = "3.0.2"
+version = "3.1.0"
 edition = "2021"
 authors = ["Benjamin Nguyen <benjamin.van.nguyen@gmail.com>"]
 description = """

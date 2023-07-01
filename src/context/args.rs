@@ -27,12 +27,22 @@ pub trait Reconciler: CommandFactory + FromArgMatches {
         }
 
         let maybe_config_args = {
+            let named_table = user_args.get_one::<String>("config");
+
             if let Some(rc) = load_rc_config_args() {
+                if named_table.is_some() {
+                    return Err(Error::Rc);
+                }
+
                 Some(rc)
             } else {
-                let named_table = user_args.get_one::<String>("config");
+                let toml = load_toml_config_args(named_table.map(String::as_str))?;
 
-                load_toml_config_args(named_table.map(String::as_str))?
+                if named_table.is_some() && toml.is_none() {
+                    return Err(Error::NoToml);
+                }
+
+                toml
             }
         };
 
