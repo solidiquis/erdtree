@@ -9,8 +9,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - [Fix loading .erdtree.toml on Windows](https://github.com/solidiquis/erdtree/issues/217) [#218](https://github.com/solidiquis/erdtree/pull/218)
 - [Fix race to print to stdout/stderr which made error messages not appear at times](https://github.com/solidiquis/erdtree/issues/219) [#220](https://github.com/solidiquis/erdtree/pull/220)
 
-[This patches](https://github.com/solidiquis/erdtree/pull/215) a deadlock that occurs when `--pattern` fails to make any matches and the progress indicator is enabled which causes `erdtree` to completely freeze.
-
 ## [3.1.1] - 2023-07-01
 
 [This patches](https://github.com/solidiquis/erdtree/pull/215) a deadlock that occurs when `--pattern` fails to make any matches and the progress indicator is enabled which causes `erdtree` to completely freeze.
