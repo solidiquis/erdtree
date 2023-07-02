@@ -257,8 +257,10 @@ impl Context {
     /// Initializes [Context], optionally reading in the configuration file to override defaults.
     /// Arguments provided will take precedence over config.
     pub fn try_init() -> Result<Self, Error> {
-        let args = Self::compute_args()?;
-        Self::from_arg_matches(&args).map_err(Error::Config)
+        Self::compute_args().and_then(|args| {
+            color::no_color_env();
+            Self::from_arg_matches(&args).map_err(Error::Config)
+        })
     }
 
     /// Determines whether or not it's appropriate to display color in output based on

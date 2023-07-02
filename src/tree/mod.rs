@@ -16,10 +16,7 @@ use std::{
     fs,
     path::PathBuf,
     result::Result as StdResult,
-    sync::{
-        mpsc::{self, Sender},
-        Arc,
-    },
+    sync::mpsc::{self, Sender},
     thread,
 };
 use visitor::{BranchVisitorBuilder, TraversalState};
@@ -30,10 +27,7 @@ pub mod count;
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
 
-/// Contains components of the [`Tree`] data structure that derive from [`DirEntry`].
-///
-/// [`Tree`]: Tree
-/// [`DirEntry`]: ignore::DirEntry
+/// Contains components of the [`Tree`] data structure that derive from [`ignore::DirEntry`].
 pub mod node;
 
 /// Custom visitor that operates on each thread during filesystem traversal.
@@ -57,7 +51,7 @@ impl Tree {
     /// various properties necessary to render output.
     pub fn try_init(
         mut ctx: Context,
-        indicator: Option<Arc<IndicatorHandle>>,
+        indicator: Option<&IndicatorHandle>,
     ) -> Result<(Self, Context)> {
         let mut column_properties = column::Properties::from(&ctx);
 
@@ -105,12 +99,12 @@ impl Tree {
     fn traverse(
         ctx: &Context,
         column_properties: &mut column::Properties,
-        indicator: Option<Arc<IndicatorHandle>>,
+        indicator: Option<&IndicatorHandle>,
     ) -> Result<(Arena<Node>, NodeId)> {
         let walker = WalkParallel::try_from(ctx)?;
         let (tx, rx) = mpsc::channel();
 
-        let progress_indicator_mailbox = indicator.map(|arc| arc.mailbox());
+        let progress_indicator_mailbox = indicator.map(IndicatorHandle::mailbox);
 
         thread::scope(|s| {
             let res = s.spawn(move || {
