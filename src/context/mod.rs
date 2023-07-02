@@ -53,7 +53,7 @@ pub mod time;
 #[derive(Parser, Debug)]
 #[command(name = "erdtree")]
 #[command(author = "Benjamin Nguyen. <benjamin.van.nguyen@gmail.com>")]
-#[command(version = "3.1.1")]
+#[command(version = "3.1.2")]
 #[command(about = "erdtree (erd) is a cross-platform, multi-threaded, and general purpose filesystem and disk usage utility.", long_about = None)]
 pub struct Context {
     /// Directory to traverse; defaults to current working directory
