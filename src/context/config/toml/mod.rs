@@ -215,7 +215,7 @@ mod windows {
             .join(ERDTREE_DIR)
             .join(ERDTREE_CONFIG_TOML)
             .to_str()
-            .and_then(|s| s.strip_prefix(".toml"))
+            .and_then(|s| s.strip_suffix(".toml"))
             .map(File::with_name)?;
 
         Config::builder().add_source(file).build().ok()
