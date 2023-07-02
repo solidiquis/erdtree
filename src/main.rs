@@ -99,7 +99,10 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     if let Some(mut progress) = indicator {
-        progress.mailbox().send(Message::RenderReady)?;
+        progress
+            .mailbox()
+            .send(Message::RenderReady)
+            .map_err(|_e| tree::error::Error::Terminated)?;
 
         progress
             .join_handle
