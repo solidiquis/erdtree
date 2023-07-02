@@ -6,10 +6,7 @@ use crossterm::{
 };
 use std::{
     io::{self, Write},
-    sync::{
-        mpsc::{self, SendError, SyncSender},
-        Arc,
-    },
+    sync::mpsc::{self, SendError, SyncSender},
     thread::{self, JoinHandle},
 };
 
@@ -101,22 +98,25 @@ impl IndicatorHandle {
     }
 
     /// Analogous to [`Self::try_terminate`] but panics if failure.
-    pub fn terminate(this: Option<Arc<Self>>) {
+    pub fn terminate(this: Option<Self>) {
         Self::try_terminate(this).expect("Failed to properly terminate the progress indicator");
     }
 
     /// Attempts to terminate the [`Indicator`] with cleanup.
-    pub fn try_terminate(this: Option<Arc<Self>>) -> Result<(), Error> {
+    pub fn try_terminate(this: Option<Self>) -> Result<(), Error> {
         if let Some(mut handle) = this {
-            eprintln!("{}", Arc::strong_count(&handle));
-            handle.mailbox().send(Message::Finish)?;
+            // This is allowed to fail silently. If user administers interrupt then the `Indicator`
+            // will be dropped along with the receiving end of the `mailbox`.
+            //
+            // If user does not administer interrupt but file-system traversal fails for whatever
+            // reason then this will proceed as normal.
+            let _ = handle.mailbox().send(Message::Finish);
 
-            if let Some(hand) = Arc::get_mut(&mut handle) {
-                hand.join_handle
-                    .take()
-                    .map(|h| h.join().unwrap())
-                    .transpose()?;
-            }
+            handle
+                .join_handle
+                .take()
+                .map(|h| h.join().unwrap())
+                .transpose()?;
         }
 
         Ok(())
@@ -128,15 +128,14 @@ impl<'a> Indicator<'a> {
     /// a progress indicator is enabled via [`Context`]. Upon initialization an interrupt handler is
     /// also registered. Sources of panic can come from [`IndicatorHandle::terminate`] or
     /// [`ctrlc::set_handler`].
-    pub fn maybe_init(ctx: &Context) -> Option<Arc<IndicatorHandle>> {
+    pub fn maybe_init(ctx: &Context) -> Option<IndicatorHandle> {
         (ctx.stdout_is_tty && !ctx.no_progress)
             .then(Indicator::measure)
             .map(|indicator| {
-                let indicator = Arc::new(indicator);
-                let arc = indicator.clone();
+                let mailbox = indicator.mailbox();
 
                 let int_handler = move || {
-                    IndicatorHandle::terminate(Some(arc.clone()));
+                    let _ = mailbox.try_send(Message::Finish);
                     tty::restore_tty();
                 };
 

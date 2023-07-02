@@ -10,16 +10,13 @@
     clippy::style,
     clippy::suspicious
 )]
-#![allow(
-    clippy::cast_precision_loss,
-    clippy::struct_excessive_bools,
-)]
+#![allow(clippy::cast_precision_loss, clippy::struct_excessive_bools)]
 
 use clap::CommandFactory;
 use context::{layout, Context};
 use progress::{Indicator, IndicatorHandle, Message};
 use render::{Engine, Flat, FlatInverted, Inverted, Regular};
-use std::{error::Error, io::stdout, process::ExitCode, sync::Arc};
+use std::{error::Error, io::stdout, process::ExitCode};
 use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
@@ -78,7 +75,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let indicator = Indicator::maybe_init(&ctx);
 
     let (tree, ctx) = {
-        match Tree::try_init(ctx, indicator.clone()) {
+        match Tree::try_init(ctx, indicator.as_ref()) {
             Ok(res) => res,
             Err(err) => {
                 IndicatorHandle::terminate(indicator);
@@ -104,12 +101,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     if let Some(mut progress) = indicator {
         progress.mailbox().send(Message::RenderReady)?;
 
-        if let Some(hand) = Arc::get_mut(&mut progress) {
-            hand.join_handle
-                .take()
-                .map(|h| h.join().unwrap())
-                .transpose()?;
-        }
+        progress
+            .join_handle
+            .take()
+            .map(|h| h.join().unwrap())
+            .transpose()?;
     }
 
     #[cfg(debug_assertions)]
