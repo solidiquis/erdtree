@@ -285,7 +285,7 @@ $ rustup toolchain install nightly-2023-06-11
 Thereafter:
 
 ```
-$ cargo +nightly-2023-03-05 install erdtree
+$ cargo +nightly-2023-06-11 install erdtree
 ```
 
 ### Homebrew-core

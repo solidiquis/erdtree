@@ -1,3 +1,4 @@
+use crate::{context::Context, tty};
 use crossterm::{
     cursor,
     terminal::{self, ClearType},
@@ -99,9 +100,15 @@ impl IndicatorHandle {
         self.mailbox.clone()
     }
 
-    /// Send a message through to the `priority_mailbox` tear down the [`Indicator`].
-    pub fn terminate(this: Option<Arc<Self>>) -> Result<(), Error> {
+    /// Analogous to [`Self::try_terminate`] but panics if failure.
+    pub fn terminate(this: Option<Arc<Self>>) {
+        Self::try_terminate(this).expect("Failed to properly terminate the progress indicator");
+    }
+
+    /// Attempts to terminate the [`Indicator`] with cleanup.
+    pub fn try_terminate(this: Option<Arc<Self>>) -> Result<(), Error> {
         if let Some(mut handle) = this {
+            eprintln!("{}", Arc::strong_count(&handle));
             handle.mailbox().send(Message::Finish)?;
 
             if let Some(hand) = Arc::get_mut(&mut handle) {
@@ -117,6 +124,28 @@ impl IndicatorHandle {
 }
 
 impl<'a> Indicator<'a> {
+    /// Initializes an [`Indicator`] returning an atomic reference counter of an [`IndicatorHandle`] if
+    /// a progress indicator is enabled via [`Context`]. Upon initialization an interrupt handler is
+    /// also registered. Sources of panic can come from [`IndicatorHandle::terminate`] or
+    /// [`ctrlc::set_handler`].
+    pub fn maybe_init(ctx: &Context) -> Option<Arc<IndicatorHandle>> {
+        (ctx.stdout_is_tty && !ctx.no_progress)
+            .then(Indicator::measure)
+            .map(|indicator| {
+                let indicator = Arc::new(indicator);
+                let arc = indicator.clone();
+
+                let int_handler = move || {
+                    IndicatorHandle::terminate(Some(arc.clone()));
+                    tty::restore_tty();
+                };
+
+                ctrlc::set_handler(int_handler).expect("Failed to set interrupt handler");
+
+                indicator
+            })
+    }
+
     /// Initializes a worker thread that owns [`Indicator`] that awaits on [`Message`]s to traverse
     /// through its internal states. An [`IndicatorHandle`] is returned as a mechanism to allow the
     /// outside world to send messages to the worker thread and ultimately to the [`Indicator`].

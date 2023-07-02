@@ -30,10 +30,7 @@ pub mod count;
 /// Errors related to traversal, [Tree] construction, and the like.
 pub mod error;
 
-/// Contains components of the [`Tree`] data structure that derive from [`DirEntry`].
-///
-/// [`Tree`]: Tree
-/// [`DirEntry`]: ignore::DirEntry
+/// Contains components of the [`Tree`] data structure that derive from [`ignore::DirEntry`].
 pub mod node;
 
 /// Custom visitor that operates on each thread during filesystem traversal.

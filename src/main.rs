@@ -11,17 +11,13 @@
     clippy::suspicious
 )]
 #![allow(
-    clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
-    clippy::cast_sign_loss,
-    clippy::let_underscore_untyped,
     clippy::struct_excessive_bools,
-    clippy::too_many_arguments
 )]
 
 use clap::CommandFactory;
 use context::{layout, Context};
-use progress::Message;
+use progress::{Indicator, IndicatorHandle, Message};
 use render::{Engine, Flat, FlatInverted, Inverted, Regular};
 use std::{error::Error, io::stdout, process::ExitCode, sync::Arc};
 use tree::Tree;
@@ -44,10 +40,7 @@ mod icons;
 /// Concerned with displaying a progress indicator when stdout is a tty.
 mod progress;
 
-/// Concerned with taking an initialized [`Tree`] and its [`Node`]s and rendering the output.
-///
-/// [`Tree`]: tree::Tree
-/// [`Node`]: tree::node::Node
+/// Concerned with taking an initialized [`tree::Tree`] and its [`tree::node::Node`]s and rendering the output.
 mod render;
 
 /// Global used throughout the program to paint the output.
@@ -80,29 +73,18 @@ fn run() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    context::color::no_color_env();
-
     styles::init(ctx.no_color());
 
-    let indicator = (ctx.stdout_is_tty && !ctx.no_progress)
-        .then(progress::Indicator::measure)
-        .map(Arc::new);
+    let indicator = Indicator::maybe_init(&ctx);
 
-    if indicator.is_some() {
-        let indicator = indicator.clone();
-
-        ctrlc::set_handler(move || {
-            let _ = progress::IndicatorHandle::terminate(indicator.clone());
-            tty::restore_tty();
-        })?;
-    }
-
-    let (tree, ctx) = match Tree::try_init(ctx, indicator.clone()) {
-        Ok(res) => res,
-        Err(err) => {
-            let _ = progress::IndicatorHandle::terminate(indicator);
-            return Err(Box::new(err));
-        },
+    let (tree, ctx) = {
+        match Tree::try_init(ctx, indicator.clone()) {
+            Ok(res) => res,
+            Err(err) => {
+                IndicatorHandle::terminate(indicator);
+                return Err(Box::new(err));
+            },
+        }
     };
 
     macro_rules! compute_output {
