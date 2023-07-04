@@ -118,13 +118,13 @@ fn run() -> Result<(), Box<dyn Error>> {
     #[cfg(debug_assertions)]
     {
         if std::env::var_os("ERDTREE_DEBUG").is_none() {
-            let _ = stdout().write(output.as_bytes());
+            let _ = writeln!(stdout(), "{output}");
         }
     }
 
     #[cfg(not(debug_assertions))]
     {
-        let _ = stdout().write(output.as_bytes());
+        let _ = writeln!(stdout(), "{output}");
     }
 
     Ok(())
