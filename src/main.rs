@@ -16,7 +16,11 @@ use clap::CommandFactory;
 use context::{layout, Context};
 use progress::{Indicator, IndicatorHandle, Message};
 use render::{Engine, Flat, FlatInverted, Inverted, Regular};
-use std::{error::Error, io::stdout, process::ExitCode};
+use std::{
+    error::Error,
+    io::{stdout, Write},
+    process::ExitCode,
+};
 use tree::Tree;
 
 /// Operations to wrangle ANSI escaped strings.
@@ -114,13 +118,13 @@ fn run() -> Result<(), Box<dyn Error>> {
     #[cfg(debug_assertions)]
     {
         if std::env::var_os("ERDTREE_DEBUG").is_none() {
-            println!("{output}");
+            let _ = stdout().write(output.as_bytes());
         }
     }
 
     #[cfg(not(debug_assertions))]
     {
-        println!("{output}");
+        let _ = stdout().write(output.as_bytes());
     }
 
     Ok(())
