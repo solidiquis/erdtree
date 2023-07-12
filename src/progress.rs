@@ -136,7 +136,7 @@ impl<'a> Indicator<'a> {
 
                 let int_handler = move || {
                     let _ = mailbox.try_send(Message::Finish);
-                    tty::restore_tty();
+                    tty::restore();
                 };
 
                 ctrlc::set_handler(int_handler).expect("Failed to set interrupt handler");
