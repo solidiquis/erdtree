@@ -1,5 +1,5 @@
 use super::disk_usage::{file_size::DiskUsage, units::PrefixKind};
-use crate::tty;
+
 use args::Reconciler;
 use clap::{FromArgMatches, Parser};
 use color::Coloring;
@@ -12,6 +12,7 @@ use regex::Regex;
 use std::{
     borrow::Borrow,
     convert::From,
+    io::{stdin, stdout, IsTerminal},
     num::NonZeroUsize,
     path::{Path, PathBuf},
     thread::available_parallelism,
@@ -206,11 +207,11 @@ pub struct Context {
     /* INTERNAL USAGE BELOW */
     //////////////////////////
     /// Is stdin in a tty?
-    #[clap(skip = tty::stdin_is_tty())]
+    #[clap(skip = stdin().is_terminal())]
     pub stdin_is_tty: bool,
 
     /// Is stdin in a tty?
-    #[clap(skip = tty::stdout_is_tty())]
+    #[clap(skip = stdout().is_terminal())]
     pub stdout_is_tty: bool,
 
     /// Restricts column width of size not including units
@@ -465,7 +466,7 @@ impl Context {
     /// Setter for `window_width` which is set to the current terminal emulator's window width.
     #[inline]
     pub fn set_window_width(&mut self) {
-        self.window_width = crate::tty::get_window_width(self.stdout_is_tty);
+        self.window_width = crate::tty::get_window_width();
     }
 
     /// Answers whether disk usage is asked to be reported in bytes.
