@@ -13,7 +13,7 @@ pub mod fs;
 /// Attempts to return an icon given a file extension along with its default color code 8-bit
 /// value.
 fn icon_from_ext(ext: &OsStr) -> Option<(u8, &'static str)> {
-    EXT_ICON_MAP.get(ext).map(|(code, icon)| (*code, *icon))
+    EXT_ICON_MAP.get(ext).copied()
 }
 
 /// Attempts to return an icon based on file type.

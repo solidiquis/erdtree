@@ -66,7 +66,7 @@ pub trait Reconciler: CommandFactory + FromArgMatches {
             let argument_source = user_args
                 .value_source(id_str)
                 .map_or(&config_args, |source| {
-                    if matches!(source, ValueSource::CommandLine) {
+                    if source == ValueSource::CommandLine {
                         &user_args
                     } else {
                         &config_args
@@ -112,25 +112,19 @@ fn init_empty_args() -> Vec<OsString> {
 /// Loads an [`ArgMatches`] from `.erdtreerc`.
 #[inline]
 fn load_rc_config_args() -> Option<ArgMatches> {
-    if let Some(rc_config) = config::rc::read_config_to_string() {
+    config::rc::read_config_to_string().map(|rc_config| {
         let parsed_args = config::rc::parse(&rc_config);
-        let config_args = Context::command().get_matches_from(parsed_args);
-
-        return Some(config_args);
-    }
-
-    None
+        Context::command().get_matches_from(parsed_args)
+    })
 }
 
 /// Loads an [`ArgMatches`] from `.erdtree.toml`.
 #[inline]
 fn load_toml_config_args(named_table: Option<&str>) -> Result<Option<ArgMatches>, Error> {
-    if let Ok(toml_config) = config::toml::load() {
+    config::toml::load().map_or(Ok(None), |toml_config| {
         let parsed_args = config::toml::parse(toml_config, named_table)?;
         let config_args = Context::command().get_matches_from(parsed_args);
 
-        return Ok(Some(config_args));
-    }
-
-    Ok(None)
+        Ok(Some(config_args))
+    })
 }

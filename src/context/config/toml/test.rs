@@ -21,7 +21,7 @@ fn parse_toml() -> Result<(), Box<dyn std::error::Error>> {
         threads = 10
     "#;
 
-    config_file.write(toml_contents.as_bytes())?;
+    config_file.write_all(toml_contents.as_bytes())?;
 
     let file = config_file
         .path()

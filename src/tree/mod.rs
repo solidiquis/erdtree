@@ -207,12 +207,7 @@ impl Tree {
         for child_id in &children {
             let index = *child_id;
 
-            let is_dir = {
-                let arena = tree[index].get();
-                arena.is_dir()
-            };
-
-            if is_dir {
+            if tree[index].get().is_dir() {
                 Self::assemble_tree(
                     tree,
                     index,
@@ -252,10 +247,6 @@ impl Tree {
 
         let dir = tree[current_node_id].get();
 
-        #[cfg(unix)]
-        Self::update_column_properties(column_properties, dir, ctx);
-
-        #[cfg(not(unix))]
         Self::update_column_properties(column_properties, dir, ctx);
 
         children.sort_by(|&id_a, &id_b| {
@@ -321,7 +312,6 @@ impl Tree {
     }
 
     /// Updates [`column::Properties`] with provided [`Node`].
-    #[cfg(unix)]
     fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
         if let Some(file_size) = node.file_size() {
             if ctx.byte_metric() && ctx.human {
@@ -348,6 +338,7 @@ impl Tree {
             };
         }
 
+        #[cfg(unix)]
         if ctx.long {
             if let Some(owner) = node.owner() {
                 let owner_len = owner.len();
@@ -388,35 +379,6 @@ impl Tree {
                     col_props.max_block_width = blocks_num_integral;
                 }
             }
-        }
-    }
-
-    /// Updates [column::Properties] with provided [Node].
-    #[cfg(not(unix))]
-    fn update_column_properties(col_props: &mut column::Properties, node: &Node, ctx: &Context) {
-        if let Some(file_size) = node.file_size() {
-            if ctx.byte_metric() && ctx.human {
-                let out = format!("{file_size}");
-                let [size, unit]: [&str; 2] =
-                    out.split(' ').collect::<Vec<&str>>().try_into().unwrap();
-
-                let file_size_cols = size.len();
-                let file_size_unit_cols = unit.len();
-
-                if file_size_cols > col_props.max_size_width {
-                    col_props.max_size_width = file_size_cols;
-                }
-
-                if file_size_unit_cols > col_props.max_size_unit_width {
-                    col_props.max_size_unit_width = file_size_unit_cols;
-                }
-            } else {
-                let file_size_cols = utils::num_integral(file_size.value());
-
-                if file_size_cols > col_props.max_size_width {
-                    col_props.max_size_width = file_size_cols;
-                }
-            };
         }
     }
 }
