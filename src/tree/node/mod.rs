@@ -94,11 +94,7 @@ impl Node {
 
         let blocks = self.metadata.blocks();
 
-        if blocks == 0 {
-            None
-        } else {
-            Some(blocks)
-        }
+        (blocks != 0).then_some(blocks)
     }
 
     /// Timestamp of when file was last modified.
@@ -123,22 +119,14 @@ impl Node {
 
     /// Returns the underlying `ino` of the [`DirEntry`].
     #[cfg(unix)]
-    pub const fn ino(&self) -> Option<u64> {
-        if let Some(inode) = self.inode {
-            Some(inode.ino)
-        } else {
-            None
-        }
+    pub fn ino(&self) -> Option<u64> {
+        self.inode.map(|inode| inode.ino)
     }
 
     /// Returns the underlying `nlink` of the [`DirEntry`].
     #[cfg(unix)]
-    pub const fn nlink(&self) -> Option<u64> {
-        if let Some(inode) = self.inode {
-            Some(inode.nlink)
-        } else {
-            None
-        }
+    pub fn nlink(&self) -> Option<u64> {
+        self.inode.map(|inode| inode.nlink)
     }
 
     /// Returns `true` if node is a directory.

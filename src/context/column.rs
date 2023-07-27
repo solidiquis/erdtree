@@ -3,6 +3,7 @@ use std::convert::From;
 
 /// Utility struct to help store maximum column widths for attributes of each node. Each width is
 /// measured as the number of columns of the tty's window.
+#[derive(Default)]
 pub struct Properties {
     pub max_size_width: usize,
     pub max_size_unit_width: usize,
@@ -32,18 +33,8 @@ impl From<&Context> for Properties {
         };
 
         Self {
-            max_size_width: 0,
             max_size_unit_width: unit_width,
-            #[cfg(unix)]
-            max_nlink_width: 0,
-            #[cfg(unix)]
-            max_ino_width: 0,
-            #[cfg(unix)]
-            max_block_width: 0,
-            #[cfg(unix)]
-            max_owner_width: 0,
-            #[cfg(unix)]
-            max_group_width: 0,
+            ..Default::default()
         }
     }
 }

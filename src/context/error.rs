@@ -2,7 +2,6 @@ use super::config::toml::error::Error as TomlError;
 use clap::{parser::MatchesError, Error as ClapError};
 use ignore::Error as IgnoreError;
 use regex::Error as RegexError;
-use std::convert::From;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -25,7 +24,7 @@ pub enum Error {
     PatternNotProvided,
 
     #[error("{0}")]
-    ConfigError(TomlError),
+    ConfigError(#[from] TomlError),
 
     #[error("{0}")]
     MatchError(#[from] MatchesError),
@@ -35,10 +34,4 @@ pub enum Error {
 
     #[error("Please migrate from `erdtreerc` to `.erdtree.toml` to make use of `--config`")]
     Rc,
-}
-
-impl From<TomlError> for Error {
-    fn from(value: TomlError) -> Self {
-        Self::ConfigError(value)
-    }
 }
