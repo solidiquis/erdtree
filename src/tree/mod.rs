@@ -397,6 +397,7 @@ impl TryFrom<&Context> for WalkParallel {
         builder
             .follow_links(ctx.follow)
             .git_ignore(!ctx.no_ignore)
+            .git_global(!ctx.no_ignore)
             .hidden(!ctx.hidden)
             .overrides(ctx.no_git_override()?)
             .same_file_system(ctx.same_fs)
