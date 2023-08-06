@@ -221,10 +221,6 @@ impl Tree {
 
             let node = tree[index].get();
 
-            #[cfg(unix)]
-            Self::update_column_properties(column_properties, node, ctx);
-
-            #[cfg(not(unix))]
             Self::update_column_properties(column_properties, node, ctx);
 
             // If a hard-link is already accounted for then don't increment parent dir size.
