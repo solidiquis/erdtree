@@ -10,7 +10,7 @@
     clippy::style,
     clippy::suspicious
 )]
-#![allow(clippy::cast_precision_loss, clippy::struct_excessive_bools)]
+#![allow(clippy::cast_precision_loss, clippy::struct_excessive_bools, clippy::wildcard_imports)]
 
 use clap::CommandFactory;
 use context::{layout, Context};
