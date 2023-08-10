@@ -63,16 +63,18 @@ fn base_comparator(sort_type: sort::Type) -> Box<NodeComparator> {
 }
 
 mod time_stamping {
+    pub(self) use crate::tree::node::Node;
+    pub(self) use core::cmp::Ordering;
+    pub(self) use std::time::SystemTime;
+
     pub mod accessed {
-        use crate::tree::node::Node;
-        use core::cmp::Ordering;
-        use std::time::SystemTime;
+        use super::*;
 
         /// Comparator that sorts [Node]s by Last Access timestamp, newer to older.
         pub fn comparator(a: &Node, b: &Node) -> Ordering {
             let a_stamp = a.accessed().unwrap_or_else(SystemTime::now);
             let b_stamp = b.accessed().unwrap_or_else(SystemTime::now);
-            a_stamp.cmp(&b_stamp)
+            b_stamp.cmp(&a_stamp)
         }
 
         /// Comparator that sorts [Node]s by Access timestamp, older to newer.
@@ -82,15 +84,13 @@ mod time_stamping {
     }
 
     pub mod created {
-        use crate::tree::node::Node;
-        use core::cmp::Ordering;
-        use std::time::SystemTime;
+        use super::*;
 
         /// Comparator that sorts [Node]s by Creation timestamp, newer to older.
         pub fn comparator(a: &Node, b: &Node) -> Ordering {
             let a_stamp = a.created().unwrap_or_else(SystemTime::now);
             let b_stamp = b.created().unwrap_or_else(SystemTime::now);
-            a_stamp.cmp(&b_stamp)
+            b_stamp.cmp(&a_stamp)
         }
 
         /// Comparator that sorts [Node]s by Creation timestamp, older to newer.
@@ -100,15 +100,13 @@ mod time_stamping {
     }
 
     pub mod modified {
-        use crate::tree::node::Node;
-        use core::cmp::Ordering;
-        use std::time::SystemTime;
+        use super::*;
 
         /// Comparator that sorts [Node]s by Alteration timestamp, newer to older.
         pub fn comparator(a: &Node, b: &Node) -> Ordering {
             let a_stamp = a.modified().unwrap_or_else(SystemTime::now);
             let b_stamp = b.modified().unwrap_or_else(SystemTime::now);
-            a_stamp.cmp(&b_stamp)
+            b_stamp.cmp(&a_stamp)
         }
 
         /// Comparator that sorts [Node]s by Alteration timestamp, older to newer.

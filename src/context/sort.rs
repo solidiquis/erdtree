@@ -16,20 +16,26 @@ pub enum Type {
     Rsize,
 
     /// Sort entries by newer to older Accessing Date
+    #[value(alias("atime"))]
     Access,
 
     /// Sort entries by older to newer Accessing Date
+    #[value(alias("ratime"))]
     Raccess,
 
     /// Sort entries by newer to older Creation Date
+    #[value(alias("ctime"))]
     Create,
 
     /// Sort entries by older to newer Creation Date
+    #[value(alias("rctime"))]
     Rcreate,
 
     /// Sort entries by newer to older Alteration Date
+    #[value(alias("mtime"))]
     Mod,
 
     /// Sort entries by older to newer Alteration Date
+    #[value(alias("rmtime"))]
     Rmod,
 }
