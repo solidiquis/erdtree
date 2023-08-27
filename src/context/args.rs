@@ -121,10 +121,9 @@ fn load_rc_config_args() -> Option<ArgMatches> {
 /// Loads an [`ArgMatches`] from `.erdtree.toml`.
 #[inline]
 fn load_toml_config_args(named_table: Option<&str>) -> Result<Option<ArgMatches>, Error> {
-    config::toml::load().map_or(Ok(None), |toml_config| {
-        let parsed_args = config::toml::parse(toml_config, named_table)?;
-        let config_args = Context::command().get_matches_from(parsed_args);
+    let toml_config = config::toml::load()?;
+    let parsed_args = config::toml::parse(toml_config, named_table)?;
+    let config_args = Context::command().get_matches_from(parsed_args);
 
-        Ok(Some(config_args))
-    })
+    Ok(Some(config_args))
 }
