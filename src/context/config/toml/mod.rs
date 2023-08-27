@@ -68,22 +68,29 @@ pub fn parse(config: Config, named_table: Option<&str>) -> Result<Vec<OsString>,
 /// Reads in `.erdtree.toml` file.
 pub fn load() -> Result<Config, Error> {
     #[cfg(windows)]
-    return windows::load_toml().ok_or(Error::LoadConfig);
+    return windows::load_toml();
 
     #[cfg(unix)]
-    unix::load_toml().ok_or(Error::LoadConfig)
+    unix::load_toml()
 }
 
-/// Attempts to load in `.erdtree.toml` from `$ERDTREE_TOML_PATH`. Will return `None` for whatever
-/// reason.
-fn toml_from_env() -> Option<Config> {
+/// Attempts to load in `.erdtree.toml` from `$ERDTREE_TOML_PATH`.
+fn toml_from_env() -> Result<Config, Error> {
     let config = env::var_os(super::ERDTREE_TOML_PATH)
         .map(OsString::into_string)
-        .and_then(Result::ok)?;
+        .transpose()
+        .map_err(|_| Error::LoadConfig)?
+        .ok_or(Error::LoadConfig)?;
 
-    let file = config.strip_suffix(".toml").map(File::with_name)?;
+    let file = config
+        .strip_suffix(".toml")
+        .map(File::with_name)
+        .ok_or(Error::LoadConfig)?;
 
-    Config::builder().add_source(file).build().ok()
+    Config::builder()
+        .add_source(file)
+        .build()
+        .map_err(Error::from)
 }
 
 /// Simple utility used to extract the underlying value from the [`Value`] enum that we get when
@@ -126,7 +133,8 @@ fn parse_argument(keyword: &str, arg: &Value) -> Result<ArgInstructions, Error> 
 #[cfg(unix)]
 mod unix {
     use super::super::{CONFIG_DIR, ERDTREE_CONFIG_TOML, ERDTREE_DIR, HOME, XDG_CONFIG_HOME};
-    use config::{Config, File};
+    use super::Error;
+    use config::{Config, ConfigError, File};
     use std::{env, path::PathBuf};
 
     /// Looks for `.erdtree.toml` in the following locations in order:
@@ -136,18 +144,20 @@ mod unix {
     /// - `$XDG_CONFIG_HOME/.erdtree.toml`
     /// - `$HOME/.config/erdtree/.erdtree.toml`
     /// - `$HOME/.erdtree.toml`
-    pub(super) fn load_toml() -> Option<Config> {
+    pub(super) fn load_toml() -> Result<Config, Error> {
         super::toml_from_env()
-            .or_else(toml_from_xdg_path)
-            .or_else(toml_from_home)
+            .or_else(|_| toml_from_xdg_path())
+            .or_else(|_| toml_from_home())
     }
 
     /// Looks for `.erdtree.toml` in the following locations in order:
     ///
     /// - `$XDG_CONFIG_HOME/erdtree/.erdtree.toml`
     /// - `$XDG_CONFIG_HOME/.erdtree.toml`
-    fn toml_from_xdg_path() -> Option<Config> {
-        let config = env::var_os(XDG_CONFIG_HOME).map(PathBuf::from)?;
+    fn toml_from_xdg_path() -> Result<Config, Error> {
+        let config = env::var_os(XDG_CONFIG_HOME)
+            .map(PathBuf::from)
+            .ok_or(Error::LoadConfig)?;
 
         let mut file = config
             .join(ERDTREE_DIR)
@@ -164,15 +174,20 @@ mod unix {
                 .map(File::with_name);
         }
 
-        Config::builder().add_source(file?).build().ok()
+        file.map_or_else(
+            || Err(Error::LoadConfig),
+            |f| Config::builder().add_source(f).build().map_err(Error::from),
+        )
     }
 
     /// Looks for `.erdtree.toml` in the following locations in order:
     ///
     /// - `$HOME/.config/erdtree/.erdtree.toml`
     /// - `$HOME/.erdtree.toml`
-    fn toml_from_home() -> Option<Config> {
-        let home = env::var_os(HOME).map(PathBuf::from)?;
+    fn toml_from_home() -> Result<Config, Error> {
+        let home = env::var_os(HOME)
+            .map(PathBuf::from)
+            .ok_or(Error::LoadConfig)?;
 
         let mut file = home
             .join(CONFIG_DIR)
@@ -190,7 +205,16 @@ mod unix {
                 .map(File::with_name);
         }
 
-        Config::builder().add_source(file?).build().ok()
+        file.map_or_else(
+            || Err(Error::LoadConfig),
+            |f| Config::builder()
+                .add_source(f)
+                .build()
+                .map_err(|err| match err {
+                    ConfigError::FileParse { .. } | ConfigError::Type { .. } => Error::from(err),
+                    _ => Error::LoadConfig,
+                }),
+        )
     }
 }
 
@@ -198,17 +222,18 @@ mod unix {
 #[cfg(windows)]
 mod windows {
     use super::super::{ERDTREE_CONFIG_TOML, ERDTREE_DIR};
+    use super::Error;
     use config::{Config, File};
 
     /// Try to read in config from the following location:
     /// - `%APPDATA%\erdtree\.erdtree.toml`
-    pub(super) fn load_toml() -> Option<Config> {
+    pub(super) fn load_toml() -> Result<Config, Error> {
         super::toml_from_env().or_else(toml_from_appdata)
     }
 
     /// Try to read in config from the following location:
     /// - `%APPDATA%\erdtree\.erdtree.toml`
-    fn toml_from_appdata() -> Option<Config> {
+    fn toml_from_appdata() -> Result<Config, Error> {
         let app_data = dirs::config_dir()?;
 
         let file = app_data
@@ -218,6 +243,9 @@ mod windows {
             .and_then(|s| s.strip_suffix(".toml"))
             .map(File::with_name)?;
 
-        Config::builder().add_source(file).build().ok()
+        Config::builder()
+            .add_source(file)
+            .build()
+            .map_err(Error::from)
     }
 }

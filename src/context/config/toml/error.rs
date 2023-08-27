@@ -5,7 +5,7 @@ pub enum Error {
     #[error("Failed to load .erdtree.toml")]
     LoadConfig,
 
-    #[error("The configuration file is improperly formatted")]
+    #[error("The configuration file is improperly formatted: {0}")]
     InvalidFormat(#[from] ConfigError),
 
     #[error("Named table '{0}' was not found in '.erdtree.toml'")]
