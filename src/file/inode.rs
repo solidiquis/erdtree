@@ -16,7 +16,7 @@ impl Inode {
 }
 
 #[derive(Debug, thiserror::Error)]
-#[error("Insufficient information to compute inode")]
+#[error("Insufficient information to compute inode.")]
 pub struct INodeError;
 
 impl TryFrom<&Metadata> for Inode {

@@ -1,8 +1,9 @@
-use crate::{error::prelude::*, user::enums::BytePresentation};
+use crate::user::enums::BytePresentation;
 use ignore::DirEntry;
 use std::{
     fmt::{self, Display},
-    fs::Metadata,
+    fs::{self, Metadata},
+    io,
     ops::AddAssign,
 };
 
@@ -92,35 +93,52 @@ impl Usage {
     /// Gets the word count. Words are delimited by a whitespace or a sequence of whitespaces.
     /// Directories are initialized to 0. The `follow` argument determines whether or not to query the
     /// symlink target, otherwise the symlink will have a word count of 0.
-    pub fn init_word_count(data: &DirEntry, metadata: &Metadata, follow: bool) -> Result<Self> {
+    pub fn init_word_count(
+        data: &DirEntry,
+        metadata: &Metadata,
+        follow: bool,
+    ) -> Result<Self, io::Error> {
         if metadata.is_dir() || (metadata.is_symlink() && !follow) {
             return Ok(Self::WordCount(0));
         }
 
-        let word_count = std::fs::read_to_string(data.path())
-            .into_report(ErrorCategory::Internal)
-            .map(|data| data.split_whitespace().count())?;
+        let word_count =
+            std::fs::read_to_string(data.path()).map(|data| data.split_whitespace().count())?;
 
-        u64::try_from(word_count)
-            .into_report(ErrorCategory::Internal)
-            .map(Self::WordCount)
+        let word_count = u64::try_from(word_count).map_or_else(
+            |e| {
+                log::warn!("Usage::init_word_count {e}");
+                Self::WordCount(word_count as u64)
+            },
+            Self::WordCount,
+        );
+
+        Ok(word_count)
     }
 
     /// Gets the line count. Lines are delimited by the new-line ASCII char. Directories are
     /// initialized to 0. The `follow` argument determines whether or not to query the symlink
     /// target, otherwise the symlink will have a count of 0.
-    pub fn init_line_count(data: &DirEntry, metadata: &Metadata, follow: bool) -> Result<Self> {
+    pub fn init_line_count(
+        data: &DirEntry,
+        metadata: &Metadata,
+        follow: bool,
+    ) -> Result<Self, io::Error> {
         if metadata.is_dir() || (metadata.is_symlink() && !follow) {
             return Ok(Self::LineCount(0));
         }
 
-        let line_count = std::fs::read_to_string(data.path())
-            .into_report(ErrorCategory::Internal)
-            .map(|data| data.lines().count())?;
+        let line_count = fs::read_to_string(data.path()).map(|data| data.lines().count())?;
 
-        u64::try_from(line_count)
-            .into_report(ErrorCategory::Internal)
-            .map(Self::WordCount)
+        let line_count = u64::try_from(line_count).map_or_else(
+            |e| {
+                log::warn!("Usage::init_line_count {e}");
+                Self::WordCount(line_count as u64)
+            },
+            Self::LineCount,
+        );
+
+        Ok(line_count)
     }
 
     /// Gets the underlying numeric value representing the disk usage

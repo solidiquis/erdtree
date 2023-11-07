@@ -44,18 +44,12 @@ fn run() -> error::Result<()> {
         .transpose()?;
 
     let file_tree = if ctx.threads > 1 {
-        FileTree::init(&ctx)?
+        FileTree::init_parallel(&ctx)?
     } else {
         FileTree::init(&ctx)?
     };
 
-    let Some(indextree::NodeEdge::Start(id)) = file_tree.traverse().next() else {
-        panic!("womp");
-    };
-
-    let root = file_tree[id].get();
-
-    println!("{root:?}");
+    //println!("{}", file_tree[file_tree.root_id()].get().size().value());
 
     if let Some(logger) = logger {
         logger.flush();

@@ -1,17 +1,17 @@
 use crate::{
     disk,
-    error::prelude::*,
     user::{enums::Metric, Context},
 };
 use ignore::DirEntry;
 use std::{
     fs::{self, Metadata},
+    io,
     ops::Deref,
 };
 
 /// Concerned with querying information about a file's underlying inode.
 pub mod inode;
-use inode::Inode;
+use inode::{INodeError, Inode};
 
 /// Erdtree's wrapper around [`DirEntry`], it's metadata ([`Metadata`]). Also contains disk usage
 /// information of files. Directories will always be initialized to have a size of zero as they
@@ -42,13 +42,13 @@ impl File {
             follow,
             ..
         }: &Context,
-    ) -> Result<Self> {
+    ) -> Result<Self, io::Error> {
         let path = data.path();
 
         let metadata = if *follow {
-            fs::metadata(path).into_report(ErrorCategory::System)?
+            fs::metadata(path)?
         } else {
-            fs::symlink_metadata(path).into_report(ErrorCategory::System)?
+            fs::symlink_metadata(path)?
         };
 
         let size = match metric {
@@ -65,8 +65,8 @@ impl File {
     }
 
     /// Attempts to query the [`File`]'s underlying inode which is represented by [`Inode`].
-    pub fn inode(&self) -> Result<Inode> {
-        Inode::try_from(&self.metadata).into_report(ErrorCategory::Internal)
+    pub fn inode(&self) -> Result<Inode, INodeError> {
+        Inode::try_from(&self.metadata)
     }
 
     /// Gets a mutable reference to the `size` field.

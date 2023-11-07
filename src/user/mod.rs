@@ -1,6 +1,6 @@
 use crate::error::prelude::*;
 use clap::Parser;
-use std::{env, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 /// Enum definitions for enumerated command-line arguments.
 pub mod enums;
@@ -71,9 +71,16 @@ impl Context {
         self.dir.as_ref()
     }
 
+    pub fn dir_canonical(&self) -> Result<PathBuf> {
+        match self.dir() {
+            Some(root) => fs::canonicalize(root).into_report(ErrorCategory::Internal),
+            None => Self::get_current_dir(),
+        }
+    }
+
     pub fn get_current_dir() -> Result<PathBuf> {
         env::current_dir()
-            .and_then(std::fs::canonicalize)
+            .and_then(fs::canonicalize)
             .into_report(ErrorCategory::System)
             .context("Failed to access current working directory")
             .set_help("Ensure current directory exists and sufficient permissions are granted")
