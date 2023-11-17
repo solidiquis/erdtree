@@ -7,6 +7,16 @@ use std::{
     thread,
 };
 
+/// Errors that may arise whe reading from Disk.
+#[derive(Debug, thiserror::Error)]
+pub enum TraverseError {
+    #[error("Failed to query the root directory")]
+    RootDirMissing,
+}
+
+/// Parallel traversal algorithm. `op` takes in a single argument which is the [`File`] that is
+/// retrieved from disk, returning a [`Result`]. If `op` returns an `Err` then traversal will
+/// immediately conclude.
 pub fn run<F>(ctx: &Context, mut op: F) -> Result<()>
 where
     F: FnMut(File) -> Result<()> + Send,
@@ -38,6 +48,12 @@ where
     Ok(())
 }
 
+pub enum TraversalState {
+    Error(Error),
+    Ongoing(File),
+    Done,
+}
+
 pub struct Visitor<'a> {
     tx: Sender<TraversalState>,
     ctx: &'a Context,
@@ -46,12 +62,6 @@ pub struct Visitor<'a> {
 pub struct VisitorBuilder<'a> {
     tx: Sender<TraversalState>,
     ctx: &'a Context,
-}
-
-pub enum TraversalState {
-    Error(Error),
-    Ongoing(File),
-    Done,
 }
 
 impl<'a> VisitorBuilder<'a> {

@@ -1,10 +1,4 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
-#![allow(
-    clippy::cast_precision_loss,
-    clippy::struct_excessive_bools,
-    clippy::wildcard_imports,
-    clippy::obfuscated_if_else
-)]
 use log::Log;
 use std::process::ExitCode;
 
@@ -43,13 +37,14 @@ fn run() -> error::Result<()> {
         .then_some(logging::LoggityLog::init())
         .transpose()?;
 
-    let file_tree = if ctx.threads > 1 {
-        FileTree::init_parallel(&ctx)?
-    } else {
-        FileTree::init(&ctx)?
-    };
+    let file_tree = FileTree::init(&ctx)?;
 
-    //println!("{}", file_tree[file_tree.root_id()].get().size().value());
+    for node in file_tree.traverse() {
+        if let indextree::NodeEdge::Start(id) = node {
+            let node = file_tree[id].get();
+            println!("{} -> {}", node.path().display(), node.size().value());
+        }
+    }
 
     if let Some(logger) = logger {
         logger.flush();
