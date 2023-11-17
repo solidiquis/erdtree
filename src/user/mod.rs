@@ -3,7 +3,7 @@ use clap::Parser;
 use std::{env, fs, path::PathBuf};
 
 /// Enum definitions for enumerated command-line arguments.
-pub mod enums;
+pub mod args;
 
 /// Defines the CLI whose purpose is to capture user arguments and reconcile them with arguments
 /// found with a config file if relevant.
@@ -19,28 +19,33 @@ pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Show hidden files
+    /// Ignore hidden files
     #[arg(short = '.', long)]
-    pub hidden: bool,
+    pub no_hidden: bool,
+
+    /// Ignore .git directory
+    #[arg(long)]
+    pub no_git: bool,
+
+    /// Ignore files in .gitignore
+    #[arg(short = 'i', long)]
+    pub gitignore: bool,
 
     /// Report byte size in either binary or SI units
     #[arg(short, long, value_enum, default_value_t)]
-    pub byte_units: enums::BytePresentation,
-
-    /// Disable traversal of .git directory when traversing hidden files
-    #[arg(long, requires = "hidden")]
-    pub no_git: bool,
+    pub byte_units: args::BytePresentation,
 
     /// Follow symlinks
     #[arg(short = 'f', long)]
     pub follow: bool,
 
-    #[arg(short, long, value_enum, default_value_t)]
-    pub metric: enums::Metric,
+    /// Show extended metadata and attributes
+    #[cfg(unix)]
+    #[arg(short, long)]
+    pub long: bool,
 
-    /// Do not respect .gitignore files
-    #[arg(short = 'i', long)]
-    pub no_ignore: bool,
+    #[arg(short, long, value_enum, default_value_t)]
+    pub metric: args::Metric,
 
     /// Number of threads to use for disk reads
     #[arg(short = 'T', long, default_value_t = Context::default_num_threads())]

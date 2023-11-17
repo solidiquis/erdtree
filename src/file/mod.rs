@@ -1,6 +1,6 @@
 use crate::{
     disk,
-    user::{enums::Metric, Context},
+    user::{args::Metric, Context},
 };
 use ignore::DirEntry;
 use std::{
@@ -13,6 +13,10 @@ use std::{
 pub mod inode;
 use inode::{INodeError, Inode};
 
+/// File attributes specific to Unix systems.
+#[cfg(unix)]
+pub mod unix;
+
 /// Erdtree's wrapper around [`DirEntry`], it's metadata ([`Metadata`]). Also contains disk usage
 /// information of files. Directories will always be initialized to have a size of zero as they
 /// must be recursively computed.
@@ -21,15 +25,25 @@ pub struct File {
     data: DirEntry,
     metadata: Metadata,
     size: disk::Usage,
+    #[cfg(unix)]
+    unix_attrs: unix::Attrs,
 }
 
 impl File {
     /// Plain Jane constructor for [`File`].
-    pub fn new(data: DirEntry, metadata: Metadata, size: disk::Usage) -> Self {
+    pub fn new(
+        data: DirEntry,
+        metadata: Metadata,
+        size: disk::Usage,
+        #[cfg(unix)]
+        unix_attrs: unix::Attrs,
+    ) -> Self {
         Self {
             data,
             metadata,
             size,
+            #[cfg(unix)]
+            unix_attrs
         }
     }
 
@@ -40,6 +54,8 @@ impl File {
             metric,
             byte_units,
             follow,
+            #[cfg(unix)]
+            long,
             ..
         }: &Context,
     ) -> Result<Self, io::Error> {
@@ -61,7 +77,18 @@ impl File {
             Metric::Blocks => disk::Usage::init_blocks(&metadata),
         };
 
-        Ok(Self::new(data, metadata, size))
+        #[cfg(unix)]
+        let unix_attrs = long
+            .then(|| unix::Attrs::from((&metadata, &data)))
+            .unwrap_or_else(unix::Attrs::default);
+
+        Ok(Self::new(
+            data,
+            metadata,
+            size,
+            #[cfg(unix)]
+            unix_attrs
+        ))
     }
 
     /// Attempts to query the [`File`]'s underlying inode which is represented by [`Inode`].

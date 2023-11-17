@@ -3,11 +3,8 @@ use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId, Traverse};
 use std::{fs, ops::Deref, path::PathBuf};
 
-/// Serial and parallel traversal routines.
+/// Parallel disk reading
 mod traverse;
-
-/// Concerned with initializing [`Walk`] and [`WalkParallel`] from the user [`Context`].
-mod walker;
 
 /// Representation of the file-tree that is traversed starting from the root directory whose index
 /// in the underlying `arena` is `root_id`.
@@ -65,7 +62,8 @@ impl FileTree {
             .and_then(|p| branches.get(p))
             .and_then(|b| (b.len() == 1).then(|| b[0]))
             .ok_or(TreeError::RootDir)
-            .into_report(ErrorCategory::Internal)?;
+            .into_report(ErrorCategory::Internal)
+            .context(error_source!())?;
 
         let mut dfs_stack = vec![root_id];
         let mut inode_set = HashSet::default();

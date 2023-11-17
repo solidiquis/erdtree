@@ -17,6 +17,9 @@ mod file;
 /// Concerned with logging throughout the application.
 mod logging;
 
+/// Concerned with producing the program output.
+mod render;
+
 /// Virtual file-tree data structure and relevant operations.
 mod tree;
 use tree::FileTree;

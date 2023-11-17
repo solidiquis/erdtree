@@ -1,5 +1,5 @@
 use crate::{error::prelude::*, file::File, user::Context};
-use ignore::{DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkParallel, WalkState};
+use ignore::{DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkBuilder, WalkParallel, WalkState};
 use std::{
     ops::Deref,
     result::Result as StdResult,
@@ -21,7 +21,20 @@ pub fn run<F>(ctx: &Context, mut op: F) -> Result<()>
 where
     F: FnMut(File) -> Result<()> + Send,
 {
-    let parallel_walker = WalkParallel::try_from(ctx)?;
+    let parallel_walker = {
+        let path = ctx.dir_canonical()?;
+        let mut builder = WalkBuilder::new(path);
+
+        // TODO: .git dir
+        builder
+            .follow_links(ctx.follow)
+            .git_ignore(ctx.gitignore)
+            .git_global(ctx.gitignore)
+            .threads(ctx.threads)
+            .hidden(ctx.no_hidden)
+            .same_file_system(ctx.same_fs)
+            .build_parallel()
+    };
 
     let (tx, rx) = mpsc::channel::<TraversalState>();
     let mut builder = VisitorBuilder::new(tx.clone(), ctx);
