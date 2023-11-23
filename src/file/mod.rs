@@ -35,15 +35,14 @@ impl File {
         data: DirEntry,
         metadata: Metadata,
         size: disk::Usage,
-        #[cfg(unix)]
-        unix_attrs: unix::Attrs,
+        #[cfg(unix)] unix_attrs: unix::Attrs,
     ) -> Self {
         Self {
             data,
             metadata,
             size,
             #[cfg(unix)]
-            unix_attrs
+            unix_attrs,
         }
     }
 
@@ -87,13 +86,18 @@ impl File {
             metadata,
             size,
             #[cfg(unix)]
-            unix_attrs
+            unix_attrs,
         ))
     }
 
     /// Attempts to query the [`File`]'s underlying inode which is represented by [`Inode`].
     pub fn inode(&self) -> Result<Inode, INodeError> {
         Inode::try_from(&self.metadata)
+    }
+
+    /// Reader for `metadata` field.
+    pub fn metadata(&self) -> &Metadata {
+        &self.metadata
     }
 
     /// Gets a mutable reference to the `size` field.

@@ -1,7 +1,11 @@
 use crate::{error::prelude::*, file::File, user::Context};
 use ahash::{HashMap, HashSet};
-use indextree::{Arena, NodeId, Traverse};
+use indextree::{Arena, NodeId};
 use std::{fs, ops::Deref, path::PathBuf};
+
+/// Concerned with how to display user-presentable tree output.
+pub mod display;
+use display::column;
 
 /// Parallel disk reading
 mod traverse;
@@ -11,6 +15,7 @@ mod traverse;
 pub struct FileTree {
     root_id: NodeId,
     arena: Arena<File>,
+    column_widths: column::Widths,
 }
 
 /// Errors associated with [`FileTree`].
@@ -21,20 +26,15 @@ pub enum TreeError {
 }
 
 impl FileTree {
-    pub fn new(root_id: NodeId, arena: Arena<File>) -> Self {
-        Self { root_id, arena }
-    }
-
-    pub fn root_id(&self) -> NodeId {
-        self.root_id
-    }
-
     /// Like [`FileTree::init`] but leverages parallelism for disk-reads and [`File`] initialization.
     pub fn init(ctx: &Context) -> Result<Self> {
         let mut arena = Arena::new();
         let mut branches = HashMap::<PathBuf, Vec<NodeId>>::default();
+        let mut column_widths = column::Widths::default();
 
         traverse::run(ctx, |file| {
+            column_widths.update(&file, ctx);
+
             let node_id = arena.new_node(file);
             let file = arena[node_id].get();
             let file_path = file.path();
@@ -122,11 +122,23 @@ impl FileTree {
             }
         }
 
-        Ok(Self { root_id, arena })
+        Ok(Self {
+            root_id,
+            arena,
+            column_widths,
+        })
     }
 
-    pub fn traverse(&self) -> Traverse<'_, File> {
-        self.root_id.traverse(&self.arena)
+    pub fn root_id(&self) -> NodeId {
+        self.root_id
+    }
+
+    pub fn arena(&self) -> &Arena<File> {
+        &self.arena
+    }
+
+    pub fn node_is_dir(&self, id: NodeId) -> bool {
+        self[id].get().file_type().is_some_and(|ft| ft.is_dir())
     }
 }
 

@@ -1,5 +1,7 @@
 use crate::{error::prelude::*, file::File, user::Context};
-use ignore::{DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkBuilder, WalkParallel, WalkState};
+use ignore::{
+    DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkBuilder, WalkParallel, WalkState,
+};
 use std::{
     ops::Deref,
     result::Result as StdResult,
@@ -21,20 +23,7 @@ pub fn run<F>(ctx: &Context, mut op: F) -> Result<()>
 where
     F: FnMut(File) -> Result<()> + Send,
 {
-    let parallel_walker = {
-        let path = ctx.dir_canonical()?;
-        let mut builder = WalkBuilder::new(path);
-
-        // TODO: .git dir
-        builder
-            .follow_links(ctx.follow)
-            .git_ignore(ctx.gitignore)
-            .git_global(ctx.gitignore)
-            .threads(ctx.threads)
-            .hidden(ctx.no_hidden)
-            .same_file_system(ctx.same_fs)
-            .build_parallel()
-    };
+    let parallel_walker = walker::init(ctx)?;
 
     let (tx, rx) = mpsc::channel::<TraversalState>();
     let mut builder = VisitorBuilder::new(tx.clone(), ctx);
@@ -123,5 +112,48 @@ impl Deref for Visitor<'_> {
 
     fn deref(&self) -> &Self::Target {
         &self.tx
+    }
+}
+
+mod walker {
+    use crate::{error::prelude::*, user::Context};
+    use ignore::{
+        overrides::{Override, OverrideBuilder},
+        WalkBuilder, WalkParallel,
+    };
+    use std::path::Path;
+
+    pub fn init(ctx: &Context) -> Result<WalkParallel> {
+        let path = ctx.dir_canonical()?;
+        let mut builder = WalkBuilder::new(&path);
+
+        let walker = builder
+            .follow_links(ctx.follow)
+            .git_ignore(ctx.gitignore)
+            .git_global(ctx.gitignore)
+            .threads(ctx.threads)
+            .hidden(ctx.no_hidden)
+            .same_file_system(ctx.same_fs);
+
+        let overrides = build_overrides(ctx, &path)?;
+        walker.overrides(overrides);
+
+        Ok(walker.build_parallel())
+    }
+
+    pub fn build_overrides(ctx: &Context, path: &Path) -> Result<Override> {
+        let mut builder = OverrideBuilder::new(path);
+
+        if ctx.no_git {
+            builder
+                .add("!.git")
+                .into_report(ErrorCategory::Internal)
+                .context(error_source!())?;
+        }
+
+        builder
+            .build()
+            .into_report(ErrorCategory::Internal)
+            .context(error_source!())
     }
 }

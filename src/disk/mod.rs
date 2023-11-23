@@ -30,6 +30,7 @@ pub enum Usage {
     },
 
     /// The amount of blocks used to store the relevant file on disk.
+    #[cfg(unix)]
     Blocks(u64),
 
     /// The total amount of words in a file
@@ -233,96 +234,96 @@ fn test_bytes_display() {
         presentation: BytePresentation::Binary,
     };
 
-    assert_eq!(String::from("998   B"), format!("{size}"),);
+    assert_eq!(String::from("998   B"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(10),
         presentation: BytePresentation::Binary,
     };
 
-    assert_eq!(String::from("1.0 KiB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 KiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(20),
         presentation: BytePresentation::Binary,
     };
 
-    assert_eq!(String::from("1.0 MiB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 MiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(30),
         presentation: BytePresentation::Binary,
     };
 
-    assert_eq!(String::from("1.0 GiB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 GiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(40),
         presentation: BytePresentation::Binary,
     };
 
-    assert_eq!(String::from("1.0 TiB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 TiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(50),
         presentation: BytePresentation::Binary,
     };
 
-    assert_eq!(String::from("1.0 PiB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 PiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(30),
         presentation: BytePresentation::Binary,
     };
 
-    assert_eq!(String::from("1.0 GiB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 GiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(3),
         presentation: BytePresentation::StandardInternational,
     };
 
-    assert_eq!(String::from("1.0 KB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 KB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(6),
         presentation: BytePresentation::StandardInternational,
     };
 
-    assert_eq!(String::from("1.0 MB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 MB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(9),
         presentation: BytePresentation::StandardInternational,
     };
 
-    assert_eq!(String::from("1.0 GB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 GB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(12),
         presentation: BytePresentation::StandardInternational,
     };
 
-    assert_eq!(String::from("1.0 TB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 TB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(15),
         presentation: BytePresentation::StandardInternational,
     };
 
-    assert_eq!(String::from("1.0 PB"), format!("{size}"),);
+    assert_eq!(String::from("1.0 PB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 998,
         presentation: BytePresentation::StandardInternational,
     };
 
-    assert_eq!(String::from("998  B"), format!("{size}"),);
+    assert_eq!(String::from("998  B"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 1000,
         presentation: BytePresentation::Raw,
     };
 
-    assert_eq!(String::from("1000 B"), format!("{size}"),);
+    assert_eq!(String::from("1000 B"), format!("{size}"));
 }
