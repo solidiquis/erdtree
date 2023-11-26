@@ -21,9 +21,8 @@ mod file;
 /// Concerned with logging throughout the application.
 mod logging;
 
-/// Virtual file-tree data structure and relevant operations.
-mod tree;
-use tree::{display, FileTree};
+/// Concerned with rendering the program output.
+mod render;
 
 fn main() -> ExitCode {
     if let Err(e) = run() {
@@ -34,15 +33,19 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<()> {
-    let ctx = user::Context::init()?;
+    let mut ctx = user::Context::init()?;
 
     let logger = ctx
         .verbose
         .then_some(logging::LoggityLog::init())
         .transpose()?;
 
-    let file_tree = FileTree::init(&ctx)?;
-    let output = display::tree(&file_tree, &ctx)?;
+    let file_tree = file::Tree::init(&ctx).and_then(|(tree, column_metadata)| {
+        ctx.update_column_metadata(column_metadata);
+        Ok(tree)
+    })?;
+
+    let output = render::tree(&file_tree, &ctx)?;
 
     let mut stdout = stdout().lock();
     writeln!(stdout, "{output}").into_report(ErrorCategory::Warning)?;

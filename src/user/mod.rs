@@ -2,8 +2,13 @@ use crate::error::prelude::*;
 use clap::Parser;
 use std::{env, fs, path::PathBuf};
 
+#[cfg(unix)]
+
 /// Enum definitions for enumerated command-line arguments.
 pub mod args;
+
+/// Concerned with properties of columns in the output which is essentially a 2D grid.
+pub mod column;
 
 /// Defines the CLI whose purpose is to capture user arguments and reconcile them with arguments
 /// found with a config file if relevant.
@@ -64,15 +69,15 @@ pub struct Context {
     #[arg(long, requires = "long")]
     pub octal: bool,
 
-    /// Which kind of timestamp to use; modified by default
+    /// Which kind of timestamp to use
     #[cfg(unix)]
-    #[arg(long, value_enum, requires = "long")]
-    pub time: Option<args::TimeStamp>,
+    #[arg(long, value_enum, requires = "long", default_value_t)]
+    pub time: args::TimeStamp,
 
     /// Which format to use for the timestamp; default by default
     #[cfg(unix)]
-    #[arg(long = "time-format", value_enum, requires = "long")]
-    pub time_format: Option<args::TimeFormat>,
+    #[arg(long = "time-format", value_enum, requires = "long", default_value_t)]
+    pub time_format: args::TimeFormat,
 
     /// Maximum depth to display
     #[arg(short = 'L', long, value_name = "NUM")]
@@ -93,9 +98,19 @@ pub struct Context {
     #[arg(short = 'x', long = "one-file-system")]
     pub same_fs: bool,
 
+    /// Don't compute disk-usage and omit file size from output
+    #[arg(long)]
+    pub suppress_size: bool,
+
     /// Prints logs at the end of the output
     #[arg(short = 'v', long = "verbose")]
     pub verbose: bool,
+
+    //////////////////////////
+    /* INTERNAL USAGE BELOW */
+    //////////////////////////
+    #[clap(skip = column::Metadata::default())]
+    pub column_metadata: column::Metadata,
 }
 
 impl Context {
@@ -133,6 +148,10 @@ impl Context {
     /// sizes; this just determines how much to print.
     pub fn level(&self) -> usize {
         self.level.unwrap_or(usize::MAX)
+    }
+
+    pub fn update_column_metadata(&mut self, new_metadata: column::Metadata) {
+        self.column_metadata = new_metadata;
     }
 
     fn default_num_threads() -> usize {

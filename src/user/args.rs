@@ -29,10 +29,12 @@ pub enum BytePresentation {
     Raw,
 
     /// Reports byte size in binary units e.g. KiB
-    Binary,
+    #[value(alias("binary"))]
+    Bin,
 
     /// Reports byte size in SI units e.g. KB
-    StandardInternational,
+    #[value(alias("standard-international"))]
+    Si,
 }
 
 /// Different types of timestamps available in long-view.

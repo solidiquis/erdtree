@@ -1,6 +1,6 @@
 use crate::{error::prelude::*, file::File, user::Context};
 use ignore::{
-    DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkBuilder, WalkParallel, WalkState,
+    DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkState,
 };
 use std::{
     ops::Deref,
@@ -8,13 +8,6 @@ use std::{
     sync::mpsc::{self, Sender},
     thread,
 };
-
-/// Errors that may arise whe reading from Disk.
-#[derive(Debug, thiserror::Error)]
-pub enum TraverseError {
-    #[error("Failed to query the root directory")]
-    RootDirMissing,
-}
 
 /// Parallel traversal algorithm. `op` takes in a single argument which is the [`File`] that is
 /// retrieved from disk, returning a [`Result`]. If `op` returns an `Err` then traversal will

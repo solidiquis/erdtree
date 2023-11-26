@@ -14,6 +14,18 @@ pub mod prefix;
 #[cfg(unix)]
 const BLOCK_SIZE: u64 = 512;
 
+/// Padding between the numerical value the byte-unit, "B" used when reporting bytes.
+pub const RAW_PADDING: usize = 2;
+
+/// Padding between the numerical value and the SI units used when reporting bytes.
+pub const SI_PADDING: usize = 3;
+
+/// Padding between the numerical value and the binary units used when reporting bytes.
+pub const BIN_PADDING: usize = 4;
+
+/// Precision to use when reporting bytes in human-readable format.
+pub const FLOAT_PRECISION: usize = 1;
+
 /// Different metrics for reporting file size.
 #[derive(Debug)]
 pub enum Usage {
@@ -170,22 +182,22 @@ impl Display for Usage {
         macro_rules! byte_display {
             ($p:expr, $v:expr) => {
                 match $p {
-                    BytePresentation::Raw => write!(f, "{} B", $v),
-                    BytePresentation::Binary => {
+                    BytePresentation::Raw => write!(f, "{}{:>RAW_PADDING$}", $v, "B"),
+                    BytePresentation::Bin => {
                         let prefix = prefix::Binary::from($v);
 
                         if matches!(prefix, prefix::Binary::Base) {
-                            write!(f, "{} {:>3}", $v, "B")
+                            write!(f, "{}{:>BIN_PADDING$}", $v, "B")
                         } else {
                             let bytes = ($v as f64) / prefix.base_value();
-                            write!(f, "{bytes:.1} {prefix}B")
+                            write!(f, "{bytes:.FLOAT_PRECISION$} {prefix}B")
                         }
                     },
-                    BytePresentation::StandardInternational => {
+                    BytePresentation::Si => {
                         let prefix = prefix::Si::from($v);
 
                         if matches!(prefix, prefix::Si::Base) {
-                            write!(f, "{} {:>2}", $v, "B")
+                            write!(f, "{}{:>SI_PADDING$}", $v, "B")
                         } else {
                             let bytes = ($v as f64) / prefix.base_value();
                             write!(f, "{bytes:.1} {prefix}B")
@@ -231,91 +243,91 @@ impl AddAssign<u64> for Usage {
 fn test_bytes_display() {
     let size = Usage::Physical {
         value: 998,
-        presentation: BytePresentation::Binary,
+        presentation: BytePresentation::Bin,
     };
 
     assert_eq!(String::from("998   B"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(10),
-        presentation: BytePresentation::Binary,
+        presentation: BytePresentation::Bin,
     };
 
     assert_eq!(String::from("1.0 KiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(20),
-        presentation: BytePresentation::Binary,
+        presentation: BytePresentation::Bin,
     };
 
     assert_eq!(String::from("1.0 MiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(30),
-        presentation: BytePresentation::Binary,
+        presentation: BytePresentation::Bin,
     };
 
     assert_eq!(String::from("1.0 GiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(40),
-        presentation: BytePresentation::Binary,
+        presentation: BytePresentation::Bin,
     };
 
     assert_eq!(String::from("1.0 TiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(50),
-        presentation: BytePresentation::Binary,
+        presentation: BytePresentation::Bin,
     };
 
     assert_eq!(String::from("1.0 PiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 2_u64.pow(30),
-        presentation: BytePresentation::Binary,
+        presentation: BytePresentation::Bin,
     };
 
     assert_eq!(String::from("1.0 GiB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(3),
-        presentation: BytePresentation::StandardInternational,
+        presentation: BytePresentation::Si,
     };
 
     assert_eq!(String::from("1.0 KB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(6),
-        presentation: BytePresentation::StandardInternational,
+        presentation: BytePresentation::Si,
     };
 
     assert_eq!(String::from("1.0 MB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(9),
-        presentation: BytePresentation::StandardInternational,
+        presentation: BytePresentation::Si,
     };
 
     assert_eq!(String::from("1.0 GB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(12),
-        presentation: BytePresentation::StandardInternational,
+        presentation: BytePresentation::Si,
     };
 
     assert_eq!(String::from("1.0 TB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 10_u64.pow(15),
-        presentation: BytePresentation::StandardInternational,
+        presentation: BytePresentation::Si,
     };
 
     assert_eq!(String::from("1.0 PB"), format!("{size}"));
 
     let size = Usage::Physical {
         value: 998,
-        presentation: BytePresentation::StandardInternational,
+        presentation: BytePresentation::Si,
     };
 
     assert_eq!(String::from("998  B"), format!("{size}"));

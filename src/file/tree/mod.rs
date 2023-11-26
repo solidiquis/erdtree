@@ -1,39 +1,35 @@
-use crate::{error::prelude::*, file::File, user::Context};
+use crate::{error::prelude::*, file::File, user::{Context, column}};
 use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
 use std::{fs, ops::Deref, path::PathBuf};
-
-/// Concerned with how to display user-presentable tree output.
-pub mod display;
-use display::column;
 
 /// Parallel disk reading
 mod traverse;
 
 /// Representation of the file-tree that is traversed starting from the root directory whose index
 /// in the underlying `arena` is `root_id`.
-pub struct FileTree {
+pub struct Tree {
     root_id: NodeId,
     arena: Arena<File>,
-    column_widths: column::Widths,
 }
 
-/// Errors associated with [`FileTree`].
+/// Errors associated with [`Tree`].
 #[derive(Debug, thiserror::Error)]
 pub enum TreeError {
     #[error("Failed to extrapolate the root directory")]
     RootDir,
 }
 
-impl FileTree {
-    /// Like [`FileTree::init`] but leverages parallelism for disk-reads and [`File`] initialization.
-    pub fn init(ctx: &Context) -> Result<Self> {
+impl Tree {
+    /// Like [`Tree::init`] but leverages parallelism for disk-reads and [`File`] initialization.
+    pub fn init(ctx: &Context) -> Result<(Self, column::Metadata)> {
         let mut arena = Arena::new();
         let mut branches = HashMap::<PathBuf, Vec<NodeId>>::default();
-        let mut column_widths = column::Widths::default();
+        let mut col_md = column::Metadata::default();
 
         traverse::run(ctx, |file| {
-            column_widths.update(&file, ctx);
+            #[cfg(unix)]
+            col_md.update_unix_attrs_widths(&file, ctx);
 
             let node_id = arena.new_node(file);
             let file = arena[node_id].get();
@@ -86,7 +82,11 @@ impl FileTree {
                     let is_dir = child_node.file_type().is_some_and(|f| f.is_dir());
                     let size = child_node.size().value();
                     let inode = match child_node.inode() {
-                        Ok(value) => value,
+                        Ok(value) => {
+                            #[cfg(unix)]
+                            col_md.update_inode_attr_widths(&value);
+                            value
+                        },
                         Err(err) => {
                             log::warn!(
                                 "Failed to query inode of {} which may affect disk usage report: {}",
@@ -121,12 +121,14 @@ impl FileTree {
                 *arena[parent_id].get_mut().size_mut() += current_dir_size;
             }
         }
+        col_md.update_size_width(arena[root_id].get(), ctx);
+        let tree = Self { root_id, arena };
 
-        Ok(Self {
-            root_id,
-            arena,
-            column_widths,
-        })
+        Ok((tree, col_md))
+    }
+
+    pub fn init_without_disk_usage() -> Self {
+        todo!()
     }
 
     pub fn root_id(&self) -> NodeId {
@@ -136,13 +138,9 @@ impl FileTree {
     pub fn arena(&self) -> &Arena<File> {
         &self.arena
     }
-
-    pub fn node_is_dir(&self, id: NodeId) -> bool {
-        self[id].get().file_type().is_some_and(|ft| ft.is_dir())
-    }
 }
 
-impl Deref for FileTree {
+impl Deref for Tree {
     type Target = Arena<File>;
 
     fn deref(&self) -> &Self::Target {

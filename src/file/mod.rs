@@ -1,6 +1,9 @@
 use crate::{
     disk,
-    user::{args::Metric, Context},
+    user::{
+        args::{Metric, TimeFormat, TimeStamp},
+        Context,
+    },
 };
 use ignore::DirEntry;
 use std::{
@@ -12,6 +15,10 @@ use std::{
 /// Concerned with querying information about a file's underlying inode.
 pub mod inode;
 use inode::{INodeError, Inode};
+
+/// Concerned with the tree data structure that is used to produce the program output.
+pub mod tree;
+pub use tree::Tree;
 
 /// File attributes specific to Unix systems.
 #[cfg(unix)]
@@ -108,6 +115,32 @@ impl File {
     /// Gets an immmutable reference to the `size` field.
     pub fn size(&self) -> &disk::Usage {
         &self.size
+    }
+
+    #[cfg(unix)]
+    pub fn unix_attrs(&self) -> &unix::Attrs {
+        &self.unix_attrs
+    }
+
+    #[cfg(unix)]
+    pub fn timestamp_from_ctx(&self, ctx: &Context) -> Option<String> {
+        use chrono::{DateTime, Local};
+
+        let system_time = match ctx.time {
+            TimeStamp::Mod => self.metadata().accessed().ok(),
+            TimeStamp::Create => self.metadata().created().ok(),
+            TimeStamp::Access => self.metadata().accessed().ok(),
+        };
+
+        system_time
+            .map(DateTime::<Local>::from)
+            .map(|local_time| match ctx.time_format {
+                TimeFormat::Default => local_time.format("%d %h %H:%M %g"),
+                TimeFormat::Iso => local_time.format("%Y-%m-%d %H:%M:%S"),
+                TimeFormat::IsoStrict => local_time.format("%Y-%m-%dT%H:%M:%S%Z"),
+                TimeFormat::Short => local_time.format("%Y-%m-%d"),
+            })
+            .map(|dt| format!("{dt}"))
     }
 }
 

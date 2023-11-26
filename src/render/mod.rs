@@ -1,13 +1,5 @@
-use super::FileTree;
-use crate::{error::prelude::*, user::Context};
+use crate::{error::prelude::*, file, user::Context};
 use indextree::{NodeEdge, NodeId};
-use std::fmt::Write;
-
-/// Concerned with properties of individual columns in the output.
-pub mod column;
-
-/// Used as general placeholder for an empty field.
-pub const PLACEHOLDER: &str = "-";
 
 /// Used for padding between tree branches.
 pub const SEP: &str = "   ";
@@ -24,10 +16,15 @@ pub const BL_CORNER: &str = "\u{2514}\u{2500} ";
 /// The `├─` box drawing characters.
 pub const ROTATED_T: &str = "\u{251C}\u{2500} ";
 
-pub fn tree(file_tree: &FileTree, ctx: &Context) -> Result<String> {
+/// Concerned with the presentation of a single [`crate::file::File`] which constitutes a single
+/// row in the program output.
+mod row;
+
+pub fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     let arena = file_tree.arena();
     let root = file_tree.root_id();
     let max_depth = ctx.level();
+
     let mut buf = String::new();
 
     let is_first_sibling = |node_id: NodeId, depth: usize| {
@@ -37,6 +34,8 @@ pub fn tree(file_tree: &FileTree, ctx: &Context) -> Result<String> {
     };
 
     let mut inherited_prefix_components = vec![""];
+
+    let mut formatter = row::formatter(&mut buf, ctx);
 
     for node_edge in root.reverse_traverse(arena) {
         let (node, node_id, depth) = match node_edge {
@@ -73,21 +72,24 @@ pub fn tree(file_tree: &FileTree, ctx: &Context) -> Result<String> {
             },
         };
 
-        let name = node.file_name().to_string_lossy();
-        let inherited_prefix = inherited_prefix_components.join("");
+        let prefix = format!(
+            "{}{}",
+            inherited_prefix_components.join(""),
+            (depth > 0)
+                .then(|| {
+                    is_first_sibling(node_id, depth)
+                        .then_some(UL_CORNER)
+                        .unwrap_or(ROTATED_T)
+                })
+                .unwrap_or("")
+        );
 
-        let prefix = (depth > 0)
-            .then(|| {
-                is_first_sibling(node_id, depth)
-                    .then_some(UL_CORNER)
-                    .unwrap_or(ROTATED_T)
-            })
-            .unwrap_or("");
-
-        writeln!(buf, "{inherited_prefix}{prefix}{name}")
-            .into_report(ErrorCategory::Internal)
-            .context(error_source!())?;
+        if let Err(e) = formatter(&node, prefix) {
+            log::warn!("{e}");
+        }
     }
+
+    drop(formatter);
 
     Ok(buf)
 }
