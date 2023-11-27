@@ -81,8 +81,13 @@ pub struct Context {
     #[arg(short = 'L', long, value_name = "NUM")]
     level: Option<usize>,
 
+    /// Metric used when reporting disk usage
     #[arg(short, long, value_enum, default_value_t)]
     pub metric: args::Metric,
+
+    /// Omit empty directories from the output
+    #[arg(short, long)]
+    pub prune: bool,
 
     /// Which kind of layout to use when rendering the output
     #[arg(short = 'y', long, value_enum, default_value_t)]

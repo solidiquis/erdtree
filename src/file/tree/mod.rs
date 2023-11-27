@@ -5,7 +5,7 @@ use crate::{
 };
 use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
-use std::{fs, ops::Deref, path::PathBuf};
+use std::{ops::Deref, path::PathBuf};
 
 /// Parallel disk reading
 mod traverse;
@@ -30,6 +30,7 @@ impl Tree {
         let mut arena = Arena::new();
         let mut branches = HashMap::<PathBuf, Vec<NodeId>>::default();
         let mut col_md = column::Metadata::default();
+        let mut maybe_root_id = None;
 
         traverse::run(ctx, |file| {
             #[cfg(unix)]
@@ -39,28 +40,19 @@ impl Tree {
             let file = arena[node_id].get();
             let file_path = file.path();
 
+            maybe_root_id = (file.depth() == 0).then_some(node_id).or(maybe_root_id);
+
             if let Some(parent) = file_path.parent() {
                 if let Some(nodes) = branches.get_mut(parent) {
                     nodes.push(node_id);
                 } else {
                     branches.insert(parent.to_path_buf(), vec![node_id]);
                 }
-            } else {
-                let presumable_system_root = fs::canonicalize(file_path)
-                    .into_report(ErrorCategory::Internal)
-                    .context("Failed to canonicalize presumable root directory")?;
-
-                branches.insert(presumable_system_root, vec![]);
             }
             Ok(())
         })?;
 
-        let root_path = ctx.dir_canonical()?;
-
-        let root_id = root_path
-            .parent()
-            .and_then(|p| branches.get(p))
-            .and_then(|b| (b.len() == 1).then(|| b[0]))
+        let root_id = maybe_root_id
             .ok_or(TreeError::RootDir)
             .into_report(ErrorCategory::Internal)
             .context(error_source!())?;
@@ -93,9 +85,8 @@ impl Tree {
                         },
                         Err(err) => {
                             log::warn!(
-                                "Failed to query inode of {} which may affect disk usage report: {}",
+                                "Failed to query inode of {} which may affect disk usage report: {err}",
                                 child_node.path().display(),
-                                err
                             );
                             continue;
                         },
@@ -120,15 +111,34 @@ impl Tree {
 
             dfs_stack.pop();
 
-            if let Some(parent_id) = current_id.ancestors(&arena).skip(1).nth(0) {
+            if let Some(parent_id) = current_id.ancestors(&arena).nth(1) {
                 let current_dir_size = { arena[current_id].get().size().value() };
                 *arena[parent_id].get_mut().size_mut() += current_dir_size;
             }
         }
+
         col_md.update_size_width(arena[root_id].get(), ctx);
+
         let tree = Self { root_id, arena };
 
         Ok((tree, col_md))
+    }
+
+    pub fn prune(&mut self) {
+        let to_prune = self
+            .root_id
+            .descendants(&self.arena)
+            .filter(|n| {
+                self.arena[*n]
+                    .get()
+                    .file_type()
+                    .is_some_and(|ft| ft.is_dir() && n.children(&self.arena).count() == 0)
+            })
+            .collect::<Vec<_>>();
+
+        to_prune
+            .into_iter()
+            .for_each(|n| n.remove_subtree(&mut self.arena));
     }
 
     pub fn init_without_disk_usage() -> Self {

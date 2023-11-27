@@ -41,7 +41,7 @@ pub struct File {
 }
 
 pub struct DisplayName<'a> {
-    file: &'a File
+    file: &'a File,
 }
 
 impl File {
@@ -129,7 +129,7 @@ impl File {
     }
 
     pub fn symlink_target(&self) -> Option<&Path> {
-        self.symlink_target.as_ref().map(|pb| pb.as_path())
+        self.symlink_target.as_deref()
     }
 
     pub fn display_name(&self) -> DisplayName<'_> {
