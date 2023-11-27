@@ -20,12 +20,6 @@ pub const ROTATED_T: &str = "\u{251C}\u{2500} ";
 /// row in the program output.
 mod row;
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("Root node could not be computed")]
-    MissingRoot
-}
-
 pub fn output(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     match ctx.layout {
         Layout::Regular => tree(file_tree, ctx),
@@ -52,7 +46,10 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
 
     let mut formatter = row::formatter(&mut buf, ctx);
 
-    for node_edge in root.reverse_traverse(arena) {
+    let mut reverse_traverse = root.reverse_traverse(arena);
+    reverse_traverse.next();
+
+    for node_edge in reverse_traverse {
         let (node, node_id, depth) = match node_edge {
             NodeEdge::Start(node_id) => {
                 let node = arena[node_id].get();
@@ -71,10 +68,6 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
             NodeEdge::End(node_id) => {
                 let node = arena[node_id].get();
                 let depth = node.depth();
-
-                if depth == 0 {
-                    continue;
-                }
 
                 if utils::node_is_dir(&node) {
                     if is_first_sibling(node_id, depth) {
@@ -127,20 +120,11 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     let mut formatter = row::formatter(&mut buf, ctx);
 
     let mut traverse = root.traverse(arena);
+    traverse.next();
 
-    match traverse
-        .next()
-        .ok_or(Error::MissingRoot)
+    formatter(arena[root].get(), "".to_string())
         .into_report(ErrorCategory::Internal)
-        .context(error_source!())?
-    {
-        NodeEdge::Start(root_id) => {
-            formatter(arena[root_id].get(), "".to_string())
-                .into_report(ErrorCategory::Internal)
-                .context(error_source!())?;
-        }
-        _ => unreachable!()
-    }
+        .context(error_source!())?;
 
     for node_edge in traverse {
         let (node, node_id, depth) = match node_edge {
