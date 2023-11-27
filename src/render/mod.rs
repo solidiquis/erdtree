@@ -58,7 +58,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 let node = arena[node_id].get();
                 let depth = node.depth();
 
-                if utils::node_is_dir(node) {
+                if node.is_dir() {
                     inherited_prefix_components.pop();
                 }
 
@@ -72,7 +72,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 let node = arena[node_id].get();
                 let depth = node.depth();
 
-                if utils::node_is_dir(node) {
+                if node.is_dir() {
                     if is_first_sibling(node_id, depth) {
                         inherited_prefix_components.push(SEP);
                     } else {
@@ -145,7 +145,7 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 let node = arena[node_id].get();
                 let depth = node.depth();
 
-                if utils::node_is_dir(node) && depth < max_depth {
+                if node.is_dir() && depth < max_depth {
                     inherited_prefix_components.pop();
                 }
                 continue;
@@ -207,12 +207,4 @@ fn flat(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     drop(formatter);
 
     Ok(buf)
-}
-
-mod utils {
-    use crate::file::File;
-
-    pub fn node_is_dir(node: &File) -> bool {
-        node.file_type().is_some_and(|ft| ft.is_dir())
-    }
 }

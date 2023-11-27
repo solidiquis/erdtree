@@ -1,8 +1,9 @@
 use crate::{
     error::prelude::*,
     file::File,
-    user::{column, Context},
+    user::{args::Sort, column, Context},
 };
+use super::order::{self, FileComparator};
 use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
 use std::{ops::Deref, path::PathBuf};
@@ -104,6 +105,10 @@ impl Tree {
 
         column_metadata.update_size_width(arena[root_id].get(), ctx);
 
+        if let Some(comparator) = order::comparator(ctx) {
+            Self::tree_sort(root_id, &mut arena, comparator);
+        }
+
         let tree = Self { root_id, arena };
 
         Ok((tree, column_metadata))
@@ -134,15 +139,15 @@ impl Tree {
 
                 let child_node = arena[child_node_id].get();
 
-                let inode = match child_node.inode() {
+                #[cfg(unix)]
+                match child_node.inode() {
                     Ok(value) => {
-                        #[cfg(unix)]
                         column_metadata.update_inode_attr_widths(&value);
                         value
                     },
                     Err(err) => {
                         log::warn!(
-                            "Failed to query inode of {}",
+                            "Failed to query inode of {}: {err}",
                             child_node.path().display(),
                         );
                         continue;
@@ -156,6 +161,12 @@ impl Tree {
             }
 
             dfs_stack.pop();
+        }
+
+        if !matches!(ctx.sort, Sort::Size | Sort::Rsize) {
+            if let Some(comparator) = order::comparator(ctx) {
+                Self::tree_sort(root_id, &mut arena, comparator);
+            }
         }
 
         let tree = Self { root_id, arena };
@@ -210,10 +221,7 @@ impl Tree {
             .root_id
             .descendants(&self.arena)
             .filter(|n| {
-                self.arena[*n]
-                    .get()
-                    .file_type()
-                    .is_some_and(|ft| ft.is_dir() && n.children(&self.arena).count() == 0)
+                self.arena[*n].get().is_dir() && n.children(&self.arena).count() == 0
             })
             .collect::<Vec<_>>();
 
@@ -229,6 +237,12 @@ impl Tree {
     pub fn arena(&self) -> &Arena<File> {
         &self.arena
     }
+
+    /// Sort [`File`]s in the `arena` with the provided `comparator`.
+    pub fn tree_sort(root_id: NodeId, arena: &mut Arena<File>, comparator: Box<FileComparator>) {
+        todo!()
+    }
+
 }
 
 impl Deref for Tree {

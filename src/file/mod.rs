@@ -18,6 +18,9 @@ use std::{
 pub mod inode;
 use inode::{INodeError, Inode};
 
+/// Rules on how to order entries relative to their siblings or all other files.
+pub mod order;
+
 /// Concerned with the tree data structure that is used to produce the program output.
 pub mod tree;
 pub use tree::Tree;
@@ -160,6 +163,10 @@ impl File {
                 TimeFormat::Short => local_time.format("%Y-%m-%d"),
             })
             .map(|dt| format!("{dt}"))
+    }
+
+    pub fn is_dir(&self) -> bool {
+        self.file_type().is_some_and(|ft| ft.is_dir())
     }
 }
 

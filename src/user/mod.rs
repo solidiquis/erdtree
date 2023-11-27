@@ -89,6 +89,14 @@ pub struct Context {
     #[arg(short, long)]
     pub prune: bool,
 
+    /// How to sort entries
+    #[arg(short, long, value_enum, default_value_t)]
+    pub sort: args::Sort,
+
+    /// Sort directories before or after all other file types
+    #[arg(short, long, value_enum, default_value_t)]
+    pub dir_order: args::DirOrder,
+
     /// Which kind of layout to use when rendering the output
     #[arg(short = 'y', long, value_enum, default_value_t)]
     pub layout: args::Layout,

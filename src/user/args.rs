@@ -84,3 +84,61 @@ pub enum Layout {
     /// Outputs a flat layout using paths rather than an ASCII tree
     Flat,
 }
+
+/// Order in which to print entries relative to their siblings (tree layouts) or all others (flat
+/// layout).
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub enum Sort {
+    /// No ordering.
+    #[default]
+    None,
+
+    /// Sort entries by file name in lexicographical order
+    Name,
+    /// Sort entries by file name in reversed lexicographical order
+    Rname,
+
+    /// Sort entries by size smallest to largest, top to bottom
+    Size,
+
+    /// Sort entries by size largest to smallest, bottom to top
+    Rsize,
+
+    /// Sort entries by newer to older Accessing Date
+    #[value(alias("atime"))]
+    Access,
+
+    /// Sort entries by older to newer Accessing Date
+    #[value(alias("ratime"))]
+    Raccess,
+
+    /// Sort entries by newer to older Creation Date
+    #[value(alias("ctime"))]
+    Create,
+
+    /// Sort entries by older to newer Creation Date
+    #[value(alias("rctime"))]
+    Rcreate,
+
+    /// Sort entries by newer to older Alteration Date
+    #[value(alias("mtime"))]
+    Mod,
+
+    /// Sort entries by older to newer Alteration Date
+    #[value(alias("rmtime"))]
+    Rmod,
+}
+
+/// How directories should be ordered relative to regular files.
+#[derive(Clone, Copy, Debug, ValueEnum, PartialEq, Eq, Default)]
+pub enum DirOrder {
+    /// No particular ordering for directories relative to other files
+    #[default]
+    None,
+
+    /// Sort directories above files
+    First,
+
+    /// Sort directories below files
+    Last,
+}
