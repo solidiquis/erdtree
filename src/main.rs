@@ -40,10 +40,17 @@ fn run() -> Result<()> {
         .then_some(logging::LoggityLog::init())
         .transpose()?;
 
-    let mut file_tree = file::Tree::init(&ctx).map(|(tree, column_metadata)| {
-        ctx.update_column_metadata(column_metadata);
-        tree
-    })?;
+    let mut file_tree = if ctx.suppress_size {
+        file::Tree::init_without_disk_usage(&ctx).map(|(tree, column_metadata)| {
+            ctx.update_column_metadata(column_metadata);
+            tree
+        })?
+    } else {
+        file::Tree::init(&ctx).map(|(tree, column_metadata)| {
+            ctx.update_column_metadata(column_metadata);
+            tree
+        })?
+    };
 
     if ctx.prune {
         file_tree.prune();

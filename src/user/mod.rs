@@ -79,7 +79,7 @@ pub struct Context {
 
     /// Maximum depth to display
     #[arg(short = 'L', long, value_name = "NUM")]
-    level: Option<usize>,
+    pub level: Option<usize>,
 
     /// Metric used when reporting disk usage
     #[arg(short, long, value_enum, default_value_t)]

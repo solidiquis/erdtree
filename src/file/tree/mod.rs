@@ -17,6 +17,14 @@ pub struct Tree {
     arena: Arena<File>,
 }
 
+/// Intermediate components that will be used to construct the final [`Tree`] data structure.
+pub struct TransitionState {
+    arena: Arena<File>,
+    branches: HashMap<PathBuf, Vec<NodeId>>,
+    column_metadata: column::Metadata,
+    root_id: NodeId,
+}
+
 /// Errors associated with [`Tree`].
 #[derive(Debug, thiserror::Error)]
 pub enum TreeError {
@@ -27,35 +35,12 @@ pub enum TreeError {
 impl Tree {
     /// Like [`Tree::init`] but leverages parallelism for disk-reads and [`File`] initialization.
     pub fn init(ctx: &Context) -> Result<(Self, column::Metadata)> {
-        let mut arena = Arena::new();
-        let mut branches = HashMap::<PathBuf, Vec<NodeId>>::default();
-        let mut col_md = column::Metadata::default();
-        let mut maybe_root_id = None;
-
-        traverse::run(ctx, |file| {
-            #[cfg(unix)]
-            col_md.update_unix_attrs_widths(&file, ctx);
-
-            let node_id = arena.new_node(file);
-            let file = arena[node_id].get();
-            let file_path = file.path();
-
-            maybe_root_id = (file.depth() == 0).then_some(node_id).or(maybe_root_id);
-
-            if let Some(parent) = file_path.parent() {
-                if let Some(nodes) = branches.get_mut(parent) {
-                    nodes.push(node_id);
-                } else {
-                    branches.insert(parent.to_path_buf(), vec![node_id]);
-                }
-            }
-            Ok(())
-        })?;
-
-        let root_id = maybe_root_id
-            .ok_or(TreeError::RootDir)
-            .into_report(ErrorCategory::Internal)
-            .context(error_source!())?;
+        let TransitionState {
+            mut arena,
+            mut branches,
+            mut column_metadata,
+            root_id,
+        } = Self::load(ctx)?;
 
         let mut dfs_stack = vec![root_id];
         let mut inode_set = HashSet::default();
@@ -80,7 +65,7 @@ impl Tree {
                     let inode = match child_node.inode() {
                         Ok(value) => {
                             #[cfg(unix)]
-                            col_md.update_inode_attr_widths(&value);
+                            column_metadata.update_inode_attr_widths(&value);
                             value
                         },
                         Err(err) => {
@@ -117,13 +102,109 @@ impl Tree {
             }
         }
 
-        col_md.update_size_width(arena[root_id].get(), ctx);
+        column_metadata.update_size_width(arena[root_id].get(), ctx);
 
         let tree = Self { root_id, arena };
 
-        Ok((tree, col_md))
+        Ok((tree, column_metadata))
     }
 
+    pub fn init_without_disk_usage(ctx: &Context) -> Result<(Self, column::Metadata)> {
+        let TransitionState {
+            mut arena,
+            mut branches,
+            mut column_metadata,
+            root_id,
+        } = Self::load(ctx)?;
+
+        let mut dfs_stack = vec![root_id];
+
+        'outer: while let Some(node_id) = dfs_stack.last() {
+            let current_id = *node_id;
+
+            let current_node_path = arena[current_id].get().path();
+
+            let Some(children) = branches.get_mut(current_node_path) else {
+                dfs_stack.pop();
+                continue;
+            };
+
+            while let Some(child_node_id) = children.pop() {
+                current_id.append(child_node_id, &mut arena);
+
+                let child_node = arena[child_node_id].get();
+
+                let inode = match child_node.inode() {
+                    Ok(value) => {
+                        #[cfg(unix)]
+                        column_metadata.update_inode_attr_widths(&value);
+                        value
+                    },
+                    Err(err) => {
+                        log::warn!(
+                            "Failed to query inode of {}",
+                            child_node.path().display(),
+                        );
+                        continue;
+                    },
+                };
+
+                if child_node.file_type().is_some_and(|f| f.is_dir()) {
+                    dfs_stack.push(child_node_id);
+                    continue 'outer;
+                }
+            }
+
+            dfs_stack.pop();
+        }
+
+        let tree = Self { root_id, arena };
+
+        Ok((tree, column_metadata))
+    }
+
+    /// Reads data from disk and aggregates data along with metadata into a [`TransitionState`]
+    /// which callers would then consume to construct a [`Tree`].
+    fn load(ctx: &Context) -> Result<TransitionState> {
+        let mut arena = Arena::new();
+        let mut branches = HashMap::<PathBuf, Vec<NodeId>>::default();
+        let mut column_metadata = column::Metadata::default();
+        let mut maybe_root_id = None;
+
+        traverse::run(ctx, |file| {
+            #[cfg(unix)]
+            column_metadata.update_unix_attrs_widths(&file, ctx);
+
+            let node_id = arena.new_node(file);
+            let file = arena[node_id].get();
+            let file_path = file.path();
+
+            maybe_root_id = (file.depth() == 0).then_some(node_id).or(maybe_root_id);
+
+            if let Some(parent) = file_path.parent() {
+                if let Some(nodes) = branches.get_mut(parent) {
+                    nodes.push(node_id);
+                } else {
+                    branches.insert(parent.to_path_buf(), vec![node_id]);
+                }
+            }
+            Ok(())
+        })?;
+
+        let root_id = maybe_root_id
+            .ok_or(TreeError::RootDir)
+            .into_report(ErrorCategory::Internal)
+            .context(error_source!())?;
+
+        Ok(TransitionState {
+            arena,
+            branches,
+            column_metadata,
+            root_id,
+        })
+    }
+
+    /// Remove directories that have no children.
     pub fn prune(&mut self) {
         let to_prune = self
             .root_id
@@ -139,10 +220,6 @@ impl Tree {
         to_prune
             .into_iter()
             .for_each(|n| n.remove_subtree(&mut self.arena));
-    }
-
-    pub fn init_without_disk_usage() -> Self {
-        todo!()
     }
 
     pub fn root_id(&self) -> NodeId {

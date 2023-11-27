@@ -126,6 +126,10 @@ mod walker {
             .hidden(ctx.no_hidden)
             .same_file_system(ctx.same_fs);
 
+        if ctx.suppress_size {
+            walker.max_depth(ctx.level);
+        }
+
         let overrides = build_overrides(ctx, &path)?;
         walker.overrides(overrides);
 
