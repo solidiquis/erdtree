@@ -45,7 +45,7 @@ fn run() -> Result<()> {
         Ok(tree)
     })?;
 
-    let output = render::tree(&file_tree, &ctx)?;
+    let output = render::output(&file_tree, &ctx)?;
 
     let mut stdout = stdout().lock();
     writeln!(stdout, "{output}").into_report(ErrorCategory::Warning)?;

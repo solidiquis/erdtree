@@ -1,5 +1,5 @@
-use crate::{error::prelude::*, file::File, user::{Context, column}};
-use std::fmt::Write;
+use crate::{file::File, user::{Context, column}};
+use std::fmt::{self, Write};
 
 /// Concerned with how to present long-format for a particular file.
 #[cfg(unix)]
@@ -9,14 +9,14 @@ mod long;
 pub fn formatter<'a>(
     buf: &'a mut String,
     ctx: &'a Context,
-) -> Box<dyn FnMut(&File, String) -> Result<()> + 'a> {
+) -> Box<dyn FnMut(&File, String) -> fmt::Result + 'a> {
     Box::new(|file, prefix| {
         let size = format!("{}", file.size());
         let name = file.file_name().to_string_lossy();
         let column::Widths {
             size: size_width, ..
         } = ctx.col_widths();
-        writeln!(buf, "{size:>size_width$} {prefix}{name}").into_report(ErrorCategory::Warning)
+        writeln!(buf, "{size:>size_width$} {prefix}{name}")
     })
 }
 
@@ -24,7 +24,7 @@ pub fn formatter<'a>(
 pub fn formatter<'a>(
     buf: &'a mut String,
     ctx: &'a Context,
-) -> Box<dyn FnMut(&File, String) -> Result<()> + 'a> {
+) -> Box<dyn FnMut(&File, String) -> fmt::Result + 'a> {
     if !ctx.long {
         return Box::new(|file, prefix| {
             let size = format!("{}", file.size());
@@ -32,7 +32,7 @@ pub fn formatter<'a>(
             let column::Metadata {
                 max_size_width, ..
             } = ctx.column_metadata;
-            writeln!(buf, "{size:>max_size_width$} {prefix}{name}").into_report(ErrorCategory::Warning)
+            writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
         });
     }
 
@@ -44,6 +44,5 @@ pub fn formatter<'a>(
         let long_format = long::Format::new(file, ctx);
 
         writeln!(buf, "{long_format} {size:>max_size_width$} {prefix}{name}")
-            .into_report(ErrorCategory::Warning)
     })
 }
