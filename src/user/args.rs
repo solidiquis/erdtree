@@ -83,7 +83,4 @@ pub enum Layout {
 
     /// Outputs a flat layout using paths rather than an ASCII tree
     Flat,
-
-    /// Outputs an inverted flat layout with the root at the top of the output
-    Iflat,
 }

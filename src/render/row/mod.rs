@@ -13,10 +13,10 @@ pub fn formatter<'a>(
     Box::new(|file, prefix| {
         let size = format!("{}", file.size());
         let name = file.file_name().to_string_lossy();
-        let column::Widths {
-            size: size_width, ..
-        } = ctx.col_widths();
-        writeln!(buf, "{size:>size_width$} {prefix}{name}")
+        let column::Metadata {
+            max_size_width, ..
+        } = ctx.column_metadata;
+        writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
     })
 }
 

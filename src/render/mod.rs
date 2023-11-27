@@ -24,8 +24,7 @@ pub fn output(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     match ctx.layout {
         Layout::Regular => tree(file_tree, ctx),
         Layout::Inverted => inverted_tree(file_tree, ctx),
-        Layout::Flat => todo!(),
-        Layout::Iflat => todo!(),
+        Layout::Flat => flat(file_tree, ctx),
     }
 }
 
@@ -174,6 +173,33 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
         }
     }
 
+    drop(formatter);
+
+    Ok(buf)
+}
+
+fn flat(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
+    let arena = file_tree.arena();
+    let root = file_tree.root_id();
+    let max_depth = ctx.level();
+    let mut buf = String::new();
+
+    let mut formatter = row::formatter(&mut buf, ctx);
+
+    for node_edge in root.traverse(arena) {
+        let node_id = match node_edge {
+            NodeEdge::Start(_) => continue,
+            NodeEdge::End(id) => id
+        };
+
+        let node = arena[node_id].get();
+
+        if node.depth() > max_depth {
+            continue;
+        }
+
+        formatter(node, "".to_string()).into_report(ErrorCategory::Warning)?;
+    }
     drop(formatter);
 
     Ok(buf)

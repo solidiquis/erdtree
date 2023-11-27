@@ -2,8 +2,6 @@ use crate::error::prelude::*;
 use clap::Parser;
 use std::{env, fs, path::PathBuf};
 
-#[cfg(unix)]
-
 /// Enum definitions for enumerated command-line arguments.
 pub mod args;
 
