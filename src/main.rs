@@ -40,9 +40,9 @@ fn run() -> Result<()> {
         .then_some(logging::LoggityLog::init())
         .transpose()?;
 
-    let file_tree = file::Tree::init(&ctx).and_then(|(tree, column_metadata)| {
+    let file_tree = file::Tree::init(&ctx).map(|(tree, column_metadata)| {
         ctx.update_column_metadata(column_metadata);
-        Ok(tree)
+        tree
     })?;
 
     let output = render::output(&file_tree, &ctx)?;

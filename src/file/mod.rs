@@ -7,9 +7,11 @@ use crate::{
 };
 use ignore::DirEntry;
 use std::{
+    fmt::{self, Display},
     fs::{self, Metadata},
     io,
     ops::Deref,
+    path::{Path, PathBuf},
 };
 
 /// Concerned with querying information about a file's underlying inode.
@@ -32,8 +34,14 @@ pub struct File {
     data: DirEntry,
     metadata: Metadata,
     size: disk::Usage,
+    symlink_target: Option<PathBuf>,
+
     #[cfg(unix)]
     unix_attrs: unix::Attrs,
+}
+
+pub struct DisplayName<'a> {
+    file: &'a File
 }
 
 impl File {
@@ -42,12 +50,14 @@ impl File {
         data: DirEntry,
         metadata: Metadata,
         size: disk::Usage,
+        symlink_target: Option<PathBuf>,
         #[cfg(unix)] unix_attrs: unix::Attrs,
     ) -> Self {
         Self {
             data,
             metadata,
             size,
+            symlink_target,
             #[cfg(unix)]
             unix_attrs,
         }
@@ -67,10 +77,10 @@ impl File {
     ) -> Result<Self, io::Error> {
         let path = data.path();
 
-        let metadata = if *follow {
-            fs::metadata(path)?
+        let (symlink_target, metadata) = if *follow {
+            (fs::read_link(path).ok(), fs::metadata(path)?)
         } else {
-            fs::symlink_metadata(path)?
+            (None, fs::symlink_metadata(path)?)
         };
 
         let size = match metric {
@@ -92,6 +102,7 @@ impl File {
             data,
             metadata,
             size,
+            symlink_target,
             #[cfg(unix)]
             unix_attrs,
         ))
@@ -115,6 +126,14 @@ impl File {
     /// Gets an immmutable reference to the `size` field.
     pub fn size(&self) -> &disk::Usage {
         &self.size
+    }
+
+    pub fn symlink_target(&self) -> Option<&Path> {
+        self.symlink_target.as_ref().map(|pb| pb.as_path())
+    }
+
+    pub fn display_name(&self) -> DisplayName<'_> {
+        DisplayName { file: self }
     }
 
     #[cfg(unix)]
@@ -149,5 +168,17 @@ impl Deref for File {
 
     fn deref(&self) -> &Self::Target {
         &self.data
+    }
+}
+
+impl Display for DisplayName<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let file_name = self.file.file_name().to_string_lossy();
+
+        if let Some(link_target) = self.file.symlink_target() {
+            write!(f, "{file_name} \u{2192} {}", link_target.display())
+        } else {
+            write!(f, "{file_name}")
+        }
     }
 }

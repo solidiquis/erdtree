@@ -38,8 +38,14 @@ impl Metadata {
             .timestamp_from_ctx(ctx)
             .map_or(0, |s| s.len())
             .max(self.max_time_width);
-        self.max_owner_width = unix_attrs.owner().map_or(0, str::len).max(self.max_owner_width);
-        self.max_group_width = unix_attrs.group().map_or(0, str::len).max(self.max_group_width);
+        self.max_owner_width = unix_attrs
+            .owner()
+            .map_or(0, str::len)
+            .max(self.max_owner_width);
+        self.max_group_width = unix_attrs
+            .group()
+            .map_or(0, str::len)
+            .max(self.max_group_width);
     }
 
     #[cfg(unix)]

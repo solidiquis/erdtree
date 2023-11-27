@@ -1,7 +1,5 @@
 use crate::{error::prelude::*, file::File, user::Context};
-use ignore::{
-    DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkState,
-};
+use ignore::{DirEntry, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 use std::{
     ops::Deref,
     result::Result as StdResult,

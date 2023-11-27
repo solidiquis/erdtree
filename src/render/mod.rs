@@ -1,4 +1,8 @@
-use crate::{error::prelude::*, file, user::{args::Layout, Context}};
+use crate::{
+    error::prelude::*,
+    file,
+    user::{args::Layout, Context},
+};
 use indextree::{NodeEdge, NodeId};
 
 /// Used for padding between tree branches.
@@ -37,7 +41,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
 
     let is_first_sibling = |node_id: NodeId, depth: usize| {
         (depth > 0)
-            .then(|| node_id.following_siblings(arena).skip(1).next().is_none())
+            .then(|| node_id.following_siblings(arena).nth(1).is_none())
             .unwrap_or(false)
     };
 
@@ -54,7 +58,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 let node = arena[node_id].get();
                 let depth = node.depth();
 
-                if utils::node_is_dir(&node) {
+                if utils::node_is_dir(node) {
                     inherited_prefix_components.pop();
                 }
 
@@ -68,7 +72,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 let node = arena[node_id].get();
                 let depth = node.depth();
 
-                if utils::node_is_dir(&node) {
+                if utils::node_is_dir(node) {
                     if is_first_sibling(node_id, depth) {
                         inherited_prefix_components.push(SEP);
                     } else {
@@ -91,7 +95,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 .unwrap_or("")
         );
 
-        if let Err(e) = formatter(&node, prefix) {
+        if let Err(e) = formatter(node, prefix) {
             log::warn!("{e}");
         }
     }
@@ -110,7 +114,7 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
 
     let is_last_sibling = |node_id: NodeId, depth: usize| {
         (depth > 0)
-            .then(|| node_id.following_siblings(arena).skip(1).next().is_none())
+            .then(|| node_id.following_siblings(arena).nth(1).is_none())
             .unwrap_or(false)
     };
 
@@ -136,16 +140,16 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 }
 
                 (node, node_id, depth)
-            }
+            },
             NodeEdge::End(node_id) => {
                 let node = arena[node_id].get();
                 let depth = node.depth();
 
-                if utils::node_is_dir(&node) && depth < max_depth {
+                if utils::node_is_dir(node) && depth < max_depth {
                     inherited_prefix_components.pop();
                 }
                 continue;
-            }
+            },
         };
 
         let prefix = format!(
@@ -160,11 +164,11 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
                 .unwrap_or("")
         );
 
-        if let Err(e) = formatter(&node, prefix) {
+        if let Err(e) = formatter(node, prefix) {
             log::warn!("{e}");
         }
 
-        if utils::node_is_dir(&node) && depth < max_depth {
+        if utils::node_is_dir(node) && depth < max_depth {
             if is_last_sibling(node_id, depth) {
                 inherited_prefix_components.push(SEP);
             } else {
@@ -189,7 +193,7 @@ fn flat(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     for node_edge in root.traverse(arena) {
         let node_id = match node_edge {
             NodeEdge::Start(_) => continue,
-            NodeEdge::End(id) => id
+            NodeEdge::End(id) => id,
         };
 
         let node = arena[node_id].get();

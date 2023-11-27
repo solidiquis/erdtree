@@ -1,4 +1,8 @@
-use crate::{error::prelude::*, file::File, user::{Context, column}};
+use crate::{
+    error::prelude::*,
+    file::File,
+    user::{column, Context},
+};
 use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
 use std::{fs, ops::Deref, path::PathBuf};

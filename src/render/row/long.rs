@@ -1,17 +1,17 @@
 use crate::{
     file::{
-        inode::{Inode, INodeError},
+        inode::{INodeError, Inode},
         unix::{
             permissions::{FileModeXAttrs, SymbolicNotation},
             xattr::ExtendedAttr,
         },
         File,
     },
-    user::{Context, column},
+    user::{column, Context},
 };
 use std::{
     convert::From,
-    fmt::{self, Display}
+    fmt::{self, Display},
 };
 
 /// The width of the file-type, permissions of each class, as well as the indicator that there are
@@ -31,7 +31,6 @@ pub struct Format<'a> {
     file: &'a File,
 }
 
-
 impl<'a> Format<'a> {
     pub fn new(file: &'a File, ctx: &'a Context) -> Self {
         Self { file, ctx }
@@ -40,7 +39,7 @@ impl<'a> Format<'a> {
 
 impl From<INodeError> for fmt::Error {
     fn from(_e: INodeError) -> Self {
-        fmt::Error::default()
+        fmt::Error
     }
 }
 
@@ -55,13 +54,20 @@ impl Display for Format<'_> {
             ..
         } = self.ctx;
 
-        let file_mode = self.file
+        let timestamp = self
+            .file
+            .timestamp_from_ctx(self.ctx)
+            .unwrap_or_else(|| String::from(PLACEHOLDER));
+
+        let file_mode = self
+            .file
             .metadata()
             .permissions()
             .try_mode_symbolic_notation()
-            .map_err(|_e| fmt::Error::default())?;
+            .map_err(|_e| fmt::Error)?;
 
-        let attrs = self.file
+        let attrs = self
+            .file
             .has_xattrs()
             .then(|| format!("{}", FileModeXAttrs(&file_mode)))
             .unwrap_or_else(|| format!("{}", file_mode));
@@ -71,89 +77,180 @@ impl Display for Format<'_> {
 
         match (enable_group, enable_ino, enable_nlink, enable_octal) {
             (false, false, false, false) => {
-                let column::Metadata { max_owner_width, .. } = column_metadata;
-                write!(f, "{attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$}")
-            }
+                let column::Metadata {
+                    max_owner_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
+                write!(
+                    f,
+                    "{attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {timestamp:>max_time_width$}"
+                )
+            },
             (true, false, false, false) => {
-                let column::Metadata { max_owner_width, max_group_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_group_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
-                write!(f, "{attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
             (false, true, false, false) => {
-                let column::Metadata { max_owner_width, max_ino_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_ino_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let Inode { ino, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {timestamp:>max_time_width$}")
+            },
             (false, false, true, false) => {
-                let column::Metadata { max_owner_width, max_nlink_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_nlink_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let Inode { nlink, .. } = self.file.inode()?;
-                write!(f, "{attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$}")
-            }
+                write!(f, "{attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {timestamp:>max_time_width$}")
+            },
             (true, true, false, false) => {
-                let column::Metadata { max_owner_width, max_group_width, max_ino_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_group_width,
+                    max_ino_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
                 let Inode { ino, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
             (true, false, true, false) => {
-                let column::Metadata { max_owner_width, max_group_width, max_nlink_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_group_width,
+                    max_nlink_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
                 let Inode { nlink, .. } = self.file.inode()?;
-                write!(f, "{attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
             (false, true, true, false) => {
-                let column::Metadata { max_owner_width, max_ino_width, max_nlink_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_ino_width,
+                    max_nlink_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let Inode { ino, nlink, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {timestamp:>max_time_width$}")
+            },
             (true, true, true, false) => {
-                let column::Metadata { max_owner_width, max_ino_width, max_nlink_width, max_group_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_ino_width,
+                    max_nlink_width,
+                    max_group_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
                 let Inode { ino, nlink, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
             (false, false, false, true) => {
-                let column::Metadata { max_owner_width, .. } = column_metadata;
-                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$}")
-            }
+                let column::Metadata {
+                    max_owner_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
+                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {timestamp:>max_time_width$}")
+            },
             (true, false, false, true) => {
-                let column::Metadata { max_owner_width, max_group_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_group_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
-                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
             (true, true, false, true) => {
-                let column::Metadata { max_owner_width, max_group_width, max_ino_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_group_width,
+                    max_ino_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
                 let Inode { ino, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
             (true, false, true, true) => {
-                let column::Metadata { max_owner_width, max_group_width, max_nlink_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_group_width,
+                    max_nlink_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
                 let Inode { nlink, .. } = self.file.inode()?;
-                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
             (false, false, true, true) => {
-                let column::Metadata { max_owner_width, max_nlink_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_nlink_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let Inode { nlink, .. } = self.file.inode()?;
-                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$}")
-            }
+                write!(f, "{file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {timestamp:>max_time_width$}")
+            },
             (false, true, false, true) => {
-                let column::Metadata { max_owner_width, max_ino_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_ino_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let Inode { ino, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {owner:>max_owner_width$} {timestamp:>max_time_width$}")
+            },
             (false, true, true, true) => {
-                let column::Metadata { max_owner_width, max_ino_width, max_nlink_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_ino_width,
+                    max_nlink_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let Inode { ino, nlink, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {timestamp:>max_time_width$}")
+            },
             (true, true, true, true) => {
-                let column::Metadata { max_owner_width, max_ino_width, max_nlink_width, max_group_width, .. } = column_metadata;
+                let column::Metadata {
+                    max_owner_width,
+                    max_ino_width,
+                    max_nlink_width,
+                    max_group_width,
+                    max_time_width,
+                    ..
+                } = column_metadata;
                 let group = unix_attrs.group().unwrap_or(PLACEHOLDER);
                 let Inode { ino, nlink, .. } = self.file.inode()?;
-                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$}")
-            }
+                write!(f, "{ino:max_ino_width$} {file_mode:0OCTAL_PERMISSIONS_WIDTH$o} {attrs:<ATTRS_WIDTH$} {nlink:>max_nlink_width$} {owner:>max_owner_width$} {group:>max_group_width$} {timestamp:>max_time_width$}")
+            },
         }
     }
 }
