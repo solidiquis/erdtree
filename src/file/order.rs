@@ -6,19 +6,19 @@ use std::cmp::Ordering;
 pub type FileComparator = dyn Fn(&File, &File) -> Ordering;
 
 /// Yields function pointer to the appropriate `File` comparator.
-pub fn comparator(Context { sort, dir_order, .. }: &Context) -> Option<Box<FileComparator>> {
+pub fn comparator(sort: Sort, dir_order: DirOrder) -> Option<Box<FileComparator>> {
     if matches!(sort, Sort::None) {
         return None;
     }
 
     match dir_order {
         DirOrder::First => {
-            Some(Box::new(move |a, b| dir_first_comparator(a, b, base_comparator(*sort))))
+            Some(Box::new(move |a, b| dir_first_comparator(a, b, base_comparator(sort))))
         },
         DirOrder::Last => {
-            Some(Box::new(move |a, b| dir_last_comparator(a, b, base_comparator(*sort))))
+            Some(Box::new(move |a, b| dir_last_comparator(a, b, base_comparator(sort))))
         },
-        DirOrder::None => Some(base_comparator(*sort)),
+        DirOrder::None => Some(base_comparator(sort)),
     }
 }
 

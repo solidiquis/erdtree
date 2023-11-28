@@ -43,71 +43,87 @@ impl Tree {
             root_id,
         } = Self::load(ctx)?;
 
-        let mut dfs_stack = vec![root_id];
+        let mut dir_stack = vec![root_id];
         let mut inode_set = HashSet::default();
 
-        'outer: while let Some(node_id) = dfs_stack.last() {
-            let current_id = *node_id;
+        // Keeps track of which directory entry we're at for each directory while doing depth first
+        // traversal. The key is the NodeID of a directory with the value being an index into a
+        // slice of the directory's children.
+        let mut dirent_cursor_map = HashMap::<NodeId, usize>::default();
 
-            let current_node_path = arena[current_id].get().path();
+        // Map of dynamically computed directory sizes.
+        let mut dirsize_map = HashMap::<NodeId, u64>::default();
 
-            let Some(children) = branches.get_mut(current_node_path) else {
-                dfs_stack.pop();
+        'outer: while let Some(node_id) = dir_stack.last() {
+            let current_dir = *node_id;
+
+            let current_node_path = arena[current_dir].get().path();
+
+            let Some(dirents) = branches.get_mut(current_node_path) else {
+                dir_stack.pop();
                 continue;
             };
 
-            while let Some(child_node_id) = children.pop() {
-                current_id.append(child_node_id, &mut arena);
+            let current_dirsize = dirsize_map.entry(current_dir).or_insert(0);
+            let dirent_cursor = dirent_cursor_map.entry(current_dir).or_insert(0);
 
-                let (child_size, child_is_dir, child_inode) = {
-                    let child_node = arena[child_node_id].get();
-                    let is_dir = child_node.file_type().is_some_and(|f| f.is_dir());
-                    let size = child_node.size().value();
-                    let inode = match child_node.inode() {
-                        Ok(value) => {
-                            #[cfg(unix)]
-                            column_metadata.update_inode_attr_widths(&value);
-                            value
-                        },
-                        Err(err) => {
-                            log::warn!(
-                                "Failed to query inode of {} which may affect disk usage report: {err}",
-                                child_node.path().display(),
-                            );
-                            continue;
-                        },
-                    };
-                    (size, is_dir, inode)
-                };
+            for dirent_node_id in &dirents[*dirent_cursor..] {
+                *dirent_cursor += 1;
+                let dirent_node_id = *dirent_node_id;
+                let dirent_node = arena[dirent_node_id].get();
 
-                if child_is_dir {
-                    dfs_stack.push(child_node_id);
+                if dirent_node.is_dir() {
+                    dir_stack.push(dirent_node_id);
                     continue 'outer;
                 }
 
-                if inode_set.insert(child_inode) {
-                    *arena[current_id].get_mut().size_mut() += child_size;
-                }
+                match dirent_node.inode() {
+                    Ok(inode) => {
+                        #[cfg(unix)]
+                        column_metadata.update_inode_attr_widths(&inode);
 
-                *arena[current_id].get_mut().size_mut() += inode_set
-                    .insert(child_inode)
-                    .then_some(child_size)
-                    .unwrap_or(0);
+                        *current_dirsize += inode_set
+                            .insert(inode)
+                            .then(|| dirent_node.size().value())
+                            .unwrap_or(0);
+                    },
+                    Err(err) => {
+                        log::warn!(
+                            "Failed to query inode of {} which may affect disk usage report: {err}",
+                            dirent_node.path().display(),
+                        );
+                    },
+                };
             }
 
-            dfs_stack.pop();
+            dir_stack.pop();
 
-            if let Some(parent_id) = current_id.ancestors(&arena).nth(1) {
-                let current_dir_size = { arena[current_id].get().size().value() };
-                *arena[parent_id].get_mut().size_mut() += current_dir_size;
+            // To play nicely with aliasing rules around mutable refs
+            let current_dirsize = *current_dirsize;
+
+            if let Some(parent_dir) = dir_stack.last() {
+                if let Some(parent_dirsize) = dirsize_map.get_mut(parent_dir) {
+                    *parent_dirsize += current_dirsize;
+                }
+            }
+        }
+
+        for (dir_id, dirsize) in dirsize_map.into_iter() {
+            let dir = arena[dir_id].get_mut();
+            *dir.size_mut() += dirsize;
+
+            if let Some(dirents) = branches.remove(dir.path()) {
+                for dirent_id in dirents {
+                    dir_id.append(dirent_id, &mut arena);
+                }
             }
         }
 
         column_metadata.update_size_width(arena[root_id].get(), ctx);
 
-        if let Some(comparator) = order::comparator(ctx) {
-            Self::tree_sort(root_id, &mut arena, comparator);
-        }
+        //if let Some(comparator) = order::comparator(ctx.sort, ctx.dir_order) {
+            //Self::tree_sort(root_id, &mut arena, comparator);
+        //}
 
         let tree = Self { root_id, arena };
 
@@ -122,25 +138,25 @@ impl Tree {
             root_id,
         } = Self::load(ctx)?;
 
-        let mut dfs_stack = vec![root_id];
+        let mut dir_stack = vec![root_id];
 
-        'outer: while let Some(node_id) = dfs_stack.last() {
-            let current_id = *node_id;
+        'outer: while let Some(node_id) = dir_stack.last() {
+            let current_dir = *node_id;
 
-            let current_node_path = arena[current_id].get().path();
+            let current_node_path = arena[current_dir].get().path();
 
-            let Some(children) = branches.get_mut(current_node_path) else {
-                dfs_stack.pop();
+            let Some(dirents) = branches.get_mut(current_node_path) else {
+                dir_stack.pop();
                 continue;
             };
 
-            while let Some(child_node_id) = children.pop() {
-                current_id.append(child_node_id, &mut arena);
+            while let Some(dirent_node_id) = dirents.pop() {
+                current_dir.append(dirent_node_id, &mut arena);
 
-                let child_node = arena[child_node_id].get();
+                let dirent_node = arena[dirent_node_id].get();
 
                 #[cfg(unix)]
-                match child_node.inode() {
+                match dirent_node.inode() {
                     Ok(value) => {
                         column_metadata.update_inode_attr_widths(&value);
                         value
@@ -148,23 +164,23 @@ impl Tree {
                     Err(err) => {
                         log::warn!(
                             "Failed to query inode of {}: {err}",
-                            child_node.path().display(),
+                            dirent_node.path().display(),
                         );
                         continue;
                     },
                 };
 
-                if child_node.file_type().is_some_and(|f| f.is_dir()) {
-                    dfs_stack.push(child_node_id);
+                if dirent_node.file_type().is_some_and(|f| f.is_dir()) {
+                    dir_stack.push(dirent_node_id);
                     continue 'outer;
                 }
             }
 
-            dfs_stack.pop();
+            dir_stack.pop();
         }
 
         if !matches!(ctx.sort, Sort::Size | Sort::Rsize) {
-            if let Some(comparator) = order::comparator(ctx) {
+            if let Some(comparator) = order::comparator(ctx.sort, ctx.dir_order) {
                 Self::tree_sort(root_id, &mut arena, comparator);
             }
         }

@@ -168,7 +168,7 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
             log::warn!("{e}");
         }
 
-        if utils::node_is_dir(node) && depth < max_depth {
+        if node.is_dir() && depth < max_depth {
             if is_last_sibling(node_id, depth) {
                 inherited_prefix_components.push(SEP);
             } else {
