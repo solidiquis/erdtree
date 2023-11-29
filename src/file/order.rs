@@ -8,15 +8,11 @@ pub type FileComparator = dyn Fn(&File, &File) -> Ordering;
 /// Yields function pointer to the appropriate `File` comparator.
 pub fn comparator(sort: Sort, dir_order: DirOrder) -> Option<Box<FileComparator>> {
     match dir_order {
-        DirOrder::First if matches!(sort, Sort::None) => Some(Box::new(move |a, b| {
-            dir_first_comparator(a, b)
-        })),
+        DirOrder::First if matches!(sort, Sort::None) => Some(Box::new(dir_first_comparator)),
         DirOrder::First => Some(Box::new(move |a, b| {
             dir_first_comparator_with_fallback(a, b, base_comparator(sort))
         })),
-        DirOrder::Last if matches!(sort, Sort::None) => Some(Box::new(move |a, b| {
-            dir_last_comparator(a, b)
-        })),
+        DirOrder::Last if matches!(sort, Sort::None) => Some(Box::new(dir_last_comparator)),
         DirOrder::Last => Some(Box::new(move |a, b| {
             dir_last_comparator_with_fallback(a, b, base_comparator(sort))
         })),
@@ -43,7 +39,7 @@ fn dir_first_comparator(a: &File, b: &File) -> Ordering {
     match (a.is_dir(), b.is_dir()) {
         (true, false) => Ordering::Greater,
         (false, true) => Ordering::Less,
-        _ => Ordering::Equal
+        _ => Ordering::Equal,
     }
 }
 
@@ -61,14 +57,11 @@ fn dir_last_comparator_with_fallback(
 }
 
 /// Orders directories last relative to all other file-types.
-fn dir_last_comparator(
-    a: &File,
-    b: &File,
-) -> Ordering {
+fn dir_last_comparator(a: &File, b: &File) -> Ordering {
     match (a.is_dir(), b.is_dir()) {
         (true, false) => Ordering::Less,
         (false, true) => Ordering::Greater,
-        _ => Ordering::Equal
+        _ => Ordering::Equal,
     }
 }
 
@@ -90,9 +83,9 @@ fn base_comparator(sort_type: Sort) -> Box<FileComparator> {
 }
 
 mod time_stamping {
-    pub(self) use super::File;
-    pub(self) use core::cmp::Ordering;
-    pub(self) use std::time::SystemTime;
+    use super::File;
+    use core::cmp::Ordering;
+    use std::time::SystemTime;
 
     pub mod accessed {
         use super::*;

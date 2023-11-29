@@ -1,8 +1,11 @@
-use super::order::{self, FileComparator};
+use super::order;
 use crate::{
     error::prelude::*,
     file::File,
-    user::{args::{Layout, SortType, Sort}, column, Context},
+    user::{
+        args::{Layout, Sort, SortType},
+        column, Context,
+    },
 };
 use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
@@ -128,9 +131,11 @@ impl Tree {
                         comparator(node_a, node_b)
                     });
 
-                    all_dirents.into_iter().for_each(|n| root_id.append(n, &mut arena));
-                }
-               _ => {
+                    all_dirents
+                        .into_iter()
+                        .for_each(|n| root_id.append(n, &mut arena));
+                },
+                _ => {
                     for (dir_id, dirsize) in dirsize_map.into_iter() {
                         let dir = arena[dir_id].get_mut();
                         *dir.size_mut() += dirsize;
@@ -178,51 +183,72 @@ impl Tree {
             root_id,
         } = Self::load(ctx)?;
 
-        let mut dir_stack = vec![root_id];
-
-        'outer: while let Some(node_id) = dir_stack.last() {
-            let current_dir = *node_id;
-
-            let current_node_path = arena[current_dir].get().path();
-
-            let Some(dirents) = branches.get_mut(current_node_path) else {
-                dir_stack.pop();
-                continue;
-            };
-
-            while let Some(dirent_node_id) = dirents.pop() {
-                current_dir.append(dirent_node_id, &mut arena);
-
-                let dirent_node = arena[dirent_node_id].get();
-
-                #[cfg(unix)]
-                match dirent_node.inode() {
-                    Ok(value) => {
-                        column_metadata.update_inode_attr_widths(&value);
-                        value
-                    },
-                    Err(err) => {
-                        log::warn!(
-                            "Failed to query inode of {}: {err}",
-                            dirent_node.path().display(),
-                        );
-                        continue;
-                    },
-                };
-
-                if dirent_node.file_type().is_some_and(|f| f.is_dir()) {
-                    dir_stack.push(dirent_node_id);
-                    continue 'outer;
+        #[cfg(unix)]
+        macro_rules! update_metadata {
+            ($dirent_id:expr) => {
+                let dirent = arena[$dirent_id].get();
+                if let Ok(inode) = dirent.inode() {
+                    column_metadata.update_inode_attr_widths(&inode);
                 }
-            }
-
-            dir_stack.pop();
+            };
         }
 
-        if !matches!(ctx.sort, Sort::Size | Sort::Rsize) {
-            if let Some(comparator) = order::comparator(ctx.sort, ctx.dir_order) {
-                Self::tree_sort(root_id, &mut arena, comparator);
-            }
+        match ctx.sort_type {
+            SortType::Flat if matches!(ctx.layout, Layout::Flat) => {
+                let mut all_dirents = branches
+                    .values()
+                    .flatten()
+                    .filter_map(|n| (*n != root_id).then_some(*n))
+                    .collect::<Vec<_>>();
+
+                if let Some(comparator) = order::comparator(Sort::None, ctx.dir_order) {
+                    all_dirents.sort_by(|id_a, id_b| {
+                        let node_a = arena[*id_a].get();
+                        let node_b = arena[*id_b].get();
+                        comparator(node_a, node_b)
+                    });
+                }
+
+                for dirent_id in all_dirents {
+                    root_id.append(dirent_id, &mut arena);
+
+                    #[cfg(unix)]
+                    update_metadata!(dirent_id);
+                }
+            },
+            _ => {
+                let dirs = arena
+                    .iter()
+                    .filter_map(|node| {
+                        if node.get().is_dir() {
+                            arena
+                                .get_node_id(node)
+                                .map(|n| (node.get().path().to_path_buf(), n))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                dirs.into_iter().for_each(|(path, dir)| {
+                    if let Some(mut dirents) = branches.remove(&path) {
+                        if let Some(comparator) = order::comparator(Sort::None, ctx.dir_order) {
+                            dirents.sort_by(|id_a, id_b| {
+                                let node_a = arena[*id_a].get();
+                                let node_b = arena[*id_b].get();
+                                comparator(node_a, node_b)
+                            });
+                        }
+
+                        for dirent_id in dirents {
+                            dir.append(dirent_id, &mut arena);
+
+                            #[cfg(unix)]
+                            update_metadata!(dirent_id);
+                        }
+                    }
+                });
+            },
         }
 
         let tree = Self { root_id, arena };
@@ -290,11 +316,6 @@ impl Tree {
 
     pub fn arena(&self) -> &Arena<File> {
         &self.arena
-    }
-
-    /// Sort [`File`]s in the `arena` with the provided `comparator`.
-    pub fn tree_sort(root_id: NodeId, arena: &mut Arena<File>, comparator: Box<FileComparator>) {
-        todo!()
     }
 }
 

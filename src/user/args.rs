@@ -135,7 +135,7 @@ pub enum SortType {
     #[default]
     Tree,
     /// Sort directory entries relative to all directory entries
-    Flat
+    Flat,
 }
 
 /// How directories should be ordered relative to regular files.

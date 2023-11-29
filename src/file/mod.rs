@@ -147,7 +147,10 @@ impl File {
     }
 
     pub fn display_path<'a>(&'a self, path_prefix: Option<&'a Path>) -> DisplayPath<'a> {
-        DisplayPath { file: self, path_prefix }
+        DisplayPath {
+            file: self,
+            path_prefix,
+        }
     }
 
     #[cfg(unix)]
@@ -207,9 +210,10 @@ impl Display for DisplayPath<'_> {
         let display = match self.path_prefix {
             Some(prefix) => {
                 let path = self.file.path();
-                path.strip_prefix(prefix).map_or_else(|_| path.display(), |p| p.display())
+                path.strip_prefix(prefix)
+                    .map_or_else(|_| path.display(), |p| p.display())
             },
-            None => self.file.path().display()
+            None => self.file.path().display(),
         };
 
         let link_target = self.file.symlink_target().map(|p| p.canonicalize());

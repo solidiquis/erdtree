@@ -77,7 +77,7 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                 let long_format = long::Format::new(file, ctx);
                 writeln!(buf, "{long_format} {prefix}{name}")
             })),
-        }
+        },
     }
 }
 
@@ -117,6 +117,6 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                     writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
                 }))
             }
-        }
+        },
     }
 }
