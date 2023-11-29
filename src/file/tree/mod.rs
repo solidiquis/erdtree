@@ -1,9 +1,9 @@
+use super::order::{self, FileComparator};
 use crate::{
     error::prelude::*,
     file::File,
-    user::{args::Sort, column, Context},
+    user::{args::{Layout, SortType, Sort}, column, Context},
 };
-use super::order::{self, FileComparator};
 use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
 use std::{ops::Deref, path::PathBuf};
@@ -108,22 +108,62 @@ impl Tree {
             }
         }
 
-        for (dir_id, dirsize) in dirsize_map.into_iter() {
-            let dir = arena[dir_id].get_mut();
-            *dir.size_mut() += dirsize;
+        match order::comparator(ctx.sort, ctx.dir_order) {
+            Some(comparator) => match ctx.sort_type {
+                SortType::Flat if matches!(ctx.layout, Layout::Flat) => {
+                    for (dir_id, dirsize) in dirsize_map.into_iter() {
+                        let dir = arena[dir_id].get_mut();
+                        *dir.size_mut() += dirsize;
+                    }
 
-            if let Some(dirents) = branches.remove(dir.path()) {
-                for dirent_id in dirents {
-                    dir_id.append(dirent_id, &mut arena);
+                    let mut all_dirents = branches
+                        .values()
+                        .flatten()
+                        .filter_map(|n| (*n != root_id).then_some(*n))
+                        .collect::<Vec<_>>();
+
+                    all_dirents.sort_by(|id_a, id_b| {
+                        let node_a = arena[*id_a].get();
+                        let node_b = arena[*id_b].get();
+                        comparator(node_a, node_b)
+                    });
+
+                    all_dirents.into_iter().for_each(|n| root_id.append(n, &mut arena));
                 }
-            }
+               _ => {
+                    for (dir_id, dirsize) in dirsize_map.into_iter() {
+                        let dir = arena[dir_id].get_mut();
+                        *dir.size_mut() += dirsize;
+
+                        if let Some(mut dirents) = branches.remove(dir.path()) {
+                            dirents.sort_by(|id_a, id_b| {
+                                let node_a = arena[*id_a].get();
+                                let node_b = arena[*id_b].get();
+                                comparator(node_a, node_b)
+                            });
+
+                            for dirent_id in dirents {
+                                dir_id.append(dirent_id, &mut arena);
+                            }
+                        }
+                    }
+                },
+            },
+            None => {
+                for (dir_id, dirsize) in dirsize_map.into_iter() {
+                    let dir = arena[dir_id].get_mut();
+                    *dir.size_mut() += dirsize;
+
+                    if let Some(dirents) = branches.remove(dir.path()) {
+                        for dirent_id in dirents {
+                            dir_id.append(dirent_id, &mut arena);
+                        }
+                    }
+                }
+            },
         }
 
         column_metadata.update_size_width(arena[root_id].get(), ctx);
-
-        //if let Some(comparator) = order::comparator(ctx.sort, ctx.dir_order) {
-            //Self::tree_sort(root_id, &mut arena, comparator);
-        //}
 
         let tree = Self { root_id, arena };
 
@@ -236,9 +276,7 @@ impl Tree {
         let to_prune = self
             .root_id
             .descendants(&self.arena)
-            .filter(|n| {
-                self.arena[*n].get().is_dir() && n.children(&self.arena).count() == 0
-            })
+            .filter(|n| self.arena[*n].get().is_dir() && n.children(&self.arena).count() == 0)
             .collect::<Vec<_>>();
 
         to_prune
@@ -258,7 +296,6 @@ impl Tree {
     pub fn tree_sort(root_id: NodeId, arena: &mut Arena<File>, comparator: Box<FileComparator>) {
         todo!()
     }
-
 }
 
 impl Deref for Tree {

@@ -26,13 +26,13 @@ mod row;
 
 pub fn output(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     match ctx.layout {
-        Layout::Regular => tree(file_tree, ctx),
-        Layout::Inverted => inverted_tree(file_tree, ctx),
+        Layout::Tree => tree(file_tree, ctx),
+        Layout::InvertedTree => inverted_tree(file_tree, ctx),
         Layout::Flat => flat(file_tree, ctx),
     }
 }
 
-fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
+fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     let arena = file_tree.arena();
     let root = file_tree.root_id();
     let max_depth = ctx.level();
@@ -47,7 +47,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
 
     let mut inherited_prefix_components = vec![""];
 
-    let mut formatter = row::formatter(&mut buf, ctx);
+    let mut formatter = row::formatter(&mut buf, ctx)?;
 
     let mut reverse_traverse = root.reverse_traverse(arena);
     reverse_traverse.next();
@@ -105,7 +105,7 @@ fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     Ok(buf)
 }
 
-pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
+pub fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     let arena = file_tree.arena();
     let root = file_tree.root_id();
     let max_depth = ctx.level();
@@ -120,7 +120,7 @@ pub fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
 
     let mut inherited_prefix_components = vec![""];
 
-    let mut formatter = row::formatter(&mut buf, ctx);
+    let mut formatter = row::formatter(&mut buf, ctx)?;
 
     let mut traverse = root.traverse(arena);
     traverse.next();
@@ -188,7 +188,7 @@ fn flat(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     let max_depth = ctx.level();
     let mut buf = String::new();
 
-    let mut formatter = row::formatter(&mut buf, ctx);
+    let mut formatter = row::formatter(&mut buf, ctx)?;
 
     for node_edge in root.traverse(arena) {
         let node_id = match node_edge {

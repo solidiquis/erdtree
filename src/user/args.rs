@@ -71,22 +71,21 @@ pub enum TimeFormat {
     Default,
 }
 
-/// Which layout to use when rendering the tree.
+/// Which layout to use when rendering the file-tree
 #[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum Layout {
     /// Outputs the tree with the root node at the bottom of the output
     #[default]
-    Regular,
+    InvertedTree,
 
     /// Outputs the tree with the root node at the top of the output
-    Inverted,
+    Tree,
 
     /// Outputs a flat layout using paths rather than an ASCII tree
     Flat,
 }
 
-/// Order in which to print entries relative to their siblings (tree layouts) or all others (flat
-/// layout).
+/// Which field to sort directory entries by
 #[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum Sort {
     /// No ordering.
@@ -127,6 +126,16 @@ pub enum Sort {
     /// Sort entries by older to newer Alteration Date
     #[value(alias("rmtime"))]
     Rmod,
+}
+
+/// Whether to sort directory entries relative either to their siblings or all directory entries
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub enum SortType {
+    /// Sort directory entries relative to their siblings
+    #[default]
+    Tree,
+    /// Sort directory entries relative to all directory entries
+    Flat
 }
 
 /// How directories should be ordered relative to regular files.

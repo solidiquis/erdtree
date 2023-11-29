@@ -43,8 +43,15 @@ pub struct File {
     unix_attrs: unix::Attrs,
 }
 
+/// [`Display`] implementation concerned with human-readable presentation of the file-name.
 pub struct DisplayName<'a> {
     file: &'a File,
+}
+
+/// [`Display`] implementation concerned with human-readable presentation of the file-path.
+pub struct DisplayPath<'a> {
+    file: &'a File,
+    path_prefix: Option<&'a Path>,
 }
 
 impl File {
@@ -139,6 +146,10 @@ impl File {
         DisplayName { file: self }
     }
 
+    pub fn display_path<'a>(&'a self, path_prefix: Option<&'a Path>) -> DisplayPath<'a> {
+        DisplayPath { file: self, path_prefix }
+    }
+
     #[cfg(unix)]
     pub fn unix_attrs(&self) -> &unix::Attrs {
         &self.unix_attrs
@@ -181,11 +192,32 @@ impl Deref for File {
 impl Display for DisplayName<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let file_name = self.file.file_name().to_string_lossy();
+        let link_target = self.file.symlink_target().map(|p| p.canonicalize());
 
-        if let Some(link_target) = self.file.symlink_target() {
-            write!(f, "{file_name} \u{2192} {}", link_target.display())
+        if let Some(Ok(target)) = link_target {
+            write!(f, "{file_name} \u{2192} {}", target.display())
         } else {
             write!(f, "{file_name}")
+        }
+    }
+}
+
+impl Display for DisplayPath<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let display = match self.path_prefix {
+            Some(prefix) => {
+                let path = self.file.path();
+                path.strip_prefix(prefix).map_or_else(|_| path.display(), |p| p.display())
+            },
+            None => self.file.path().display()
+        };
+
+        let link_target = self.file.symlink_target().map(|p| p.canonicalize());
+
+        if let Some(Ok(target)) = link_target {
+            write!(f, "{display} \u{2192} {}", target.display())
+        } else {
+            write!(f, "{display}")
         }
     }
 }

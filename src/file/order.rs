@@ -1,5 +1,5 @@
 use super::File;
-use crate::user::{args::{Sort, DirOrder}, Context};
+use crate::user::args::{DirOrder, Sort};
 use std::cmp::Ordering;
 
 /// Comparator type used to sort [File]s.
@@ -7,23 +7,26 @@ pub type FileComparator = dyn Fn(&File, &File) -> Ordering;
 
 /// Yields function pointer to the appropriate `File` comparator.
 pub fn comparator(sort: Sort, dir_order: DirOrder) -> Option<Box<FileComparator>> {
-    if matches!(sort, Sort::None) {
-        return None;
-    }
-
     match dir_order {
-        DirOrder::First => {
-            Some(Box::new(move |a, b| dir_first_comparator(a, b, base_comparator(sort))))
-        },
-        DirOrder::Last => {
-            Some(Box::new(move |a, b| dir_last_comparator(a, b, base_comparator(sort))))
-        },
+        DirOrder::First if matches!(sort, Sort::None) => Some(Box::new(move |a, b| {
+            dir_first_comparator(a, b)
+        })),
+        DirOrder::First => Some(Box::new(move |a, b| {
+            dir_first_comparator_with_fallback(a, b, base_comparator(sort))
+        })),
+        DirOrder::Last if matches!(sort, Sort::None) => Some(Box::new(move |a, b| {
+            dir_last_comparator(a, b)
+        })),
+        DirOrder::Last => Some(Box::new(move |a, b| {
+            dir_last_comparator_with_fallback(a, b, base_comparator(sort))
+        })),
+        DirOrder::None if matches!(sort, Sort::None) => None,
         DirOrder::None => Some(base_comparator(sort)),
     }
 }
 
 /// Orders directories first. Provides a fallback if inputs are not directories.
-fn dir_first_comparator(
+fn dir_first_comparator_with_fallback(
     a: &File,
     b: &File,
     fallback: impl Fn(&File, &File) -> Ordering,
@@ -35,8 +38,17 @@ fn dir_first_comparator(
     }
 }
 
+/// Orders directories first relative to all other file-types.
+fn dir_first_comparator(a: &File, b: &File) -> Ordering {
+    match (a.is_dir(), b.is_dir()) {
+        (true, false) => Ordering::Greater,
+        (false, true) => Ordering::Less,
+        _ => Ordering::Equal
+    }
+}
+
 /// Orders directories last. Provides a fallback if inputs are not directories.
-fn dir_last_comparator(
+fn dir_last_comparator_with_fallback(
     a: &File,
     b: &File,
     fallback: impl Fn(&File, &File) -> Ordering,
@@ -45,6 +57,18 @@ fn dir_last_comparator(
         (true, false) => Ordering::Less,
         (false, true) => Ordering::Greater,
         _ => fallback(a, b),
+    }
+}
+
+/// Orders directories last relative to all other file-types.
+fn dir_last_comparator(
+    a: &File,
+    b: &File,
+) -> Ordering {
+    match (a.is_dir(), b.is_dir()) {
+        (true, false) => Ordering::Less,
+        (false, true) => Ordering::Greater,
+        _ => Ordering::Equal
     }
 }
 
@@ -61,9 +85,7 @@ fn base_comparator(sort_type: Sort) -> Box<FileComparator> {
         Sort::Rcreate => time_stamping::created::rev_comparator,
         Sort::Mod => time_stamping::modified::comparator,
         Sort::Rmod => time_stamping::modified::rev_comparator,
-
-        // Hacky...
-        Sort::None => unreachable!(),
+        Sort::None => |_: &File, _: &File| Ordering::Equal,
     })
 }
 
@@ -77,8 +99,14 @@ mod time_stamping {
 
         /// Comparator that sorts [File]s by Last Access timestamp, newer to older.
         pub fn comparator(a: &File, b: &File) -> Ordering {
-            let a_stamp = a.metadata().accessed().unwrap_or_else(|_| SystemTime::now());
-            let b_stamp = b.metadata().accessed().unwrap_or_else(|_| SystemTime::now());
+            let a_stamp = a
+                .metadata()
+                .accessed()
+                .unwrap_or_else(|_| SystemTime::now());
+            let b_stamp = b
+                .metadata()
+                .accessed()
+                .unwrap_or_else(|_| SystemTime::now());
             b_stamp.cmp(&a_stamp)
         }
 
@@ -109,8 +137,14 @@ mod time_stamping {
 
         /// Comparator that sorts [File]s by Alteration timestamp, newer to older.
         pub fn comparator(a: &File, b: &File) -> Ordering {
-            let a_stamp = a.metadata().modified().unwrap_or_else(|_| SystemTime::now());
-            let b_stamp = b.metadata().modified().unwrap_or_else(|_| SystemTime::now());
+            let a_stamp = a
+                .metadata()
+                .modified()
+                .unwrap_or_else(|_| SystemTime::now());
+            let b_stamp = b
+                .metadata()
+                .modified()
+                .unwrap_or_else(|_| SystemTime::now());
             b_stamp.cmp(&a_stamp)
         }
 

@@ -89,9 +89,13 @@ pub struct Context {
     #[arg(short, long)]
     pub prune: bool,
 
-    /// How to sort entries
+    /// Field whereby to sort entries
     #[arg(short, long, value_enum, default_value_t)]
     pub sort: args::Sort,
+
+    /// Sort entries relative either to their siblings or all other entries
+    #[arg(long, value_enum, default_value_t)]
+    pub sort_type: args::SortType,
 
     /// Sort directories before or after all other file types
     #[arg(short, long, value_enum, default_value_t)]
