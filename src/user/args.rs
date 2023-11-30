@@ -131,10 +131,12 @@ pub enum Sort {
 /// Whether to sort directory entries relative either to their siblings or all directory entries
 #[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum SortType {
-    /// Sort directory entries relative to their siblings
+    /// Sort directory entries relative to their siblings. Only applies when using 'tree' or
+    /// 'inverted-tree' layout.
     #[default]
     Tree,
-    /// Sort directory entries relative to all directory entries
+    /// Sort directory entries relative to all directory entries. Only applies when using 'flat'
+    /// layout.
     Flat,
 }
 
@@ -150,4 +152,34 @@ pub enum DirOrder {
 
     /// Sort directories below files
     Last,
+}
+
+/// File-types found in both Unix and Windows.
+#[derive(Copy, Clone, Debug, ValueEnum, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
+pub enum FileType {
+    /// A regular file
+    #[default]
+    File,
+
+    /// A directory
+    Dir,
+
+    /// A symlink
+    Symlink,
+
+    /// A FIFO
+    #[cfg(unix)]
+    Pipe,
+
+    /// A socket
+    #[cfg(unix)]
+    Socket,
+
+    /// A character device
+    #[cfg(unix)]
+    Char,
+
+    /// A block device
+    #[cfg(unix)]
+    Block,
 }

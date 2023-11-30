@@ -11,7 +11,10 @@ use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
 use std::{ops::Deref, path::PathBuf};
 
-/// Parallel disk reading
+/// Concerned with filtering via file-type, globbing, and regular expressions.
+mod filter;
+
+/// Parallel disk reading.
 mod traverse;
 
 /// Representation of the file-tree that is traversed starting from the root directory whose index

@@ -121,7 +121,7 @@ mod walker {
         let walker = builder
             .follow_links(ctx.follow)
             .git_ignore(ctx.gitignore)
-            .git_global(ctx.gitignore)
+            .git_global(ctx.global_gitignore)
             .threads(ctx.threads)
             .hidden(ctx.no_hidden)
             .same_file_system(ctx.same_fs);

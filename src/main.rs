@@ -56,6 +56,10 @@ fn run() -> Result<()> {
         file_tree.prune();
     }
 
+    if !ctx.file_type.is_empty() {
+        file_tree.filter_file_type(&ctx)
+    }
+
     let output = render::output(&file_tree, &ctx)?;
 
     let mut stdout = stdout().lock();

@@ -14,6 +14,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(unix)]
+use crate::file::unix::permissions::{file_type::FileType, SymbolicNotation};
+
 /// Concerned with querying information about a file's underlying inode.
 pub mod inode;
 use inode::{INodeError, Inode};
@@ -87,8 +90,12 @@ impl File {
     ) -> Result<Self, io::Error> {
         let path = data.path();
 
-        let (symlink_target, metadata) = if *follow {
-            (fs::read_link(path).ok(), fs::metadata(path)?)
+        let (symlink_target, metadata) = if data.file_type().is_some_and(|ft| ft.is_symlink()) {
+            if *follow {
+                (fs::read_link(path).ok(), fs::metadata(path)?)
+            } else {
+                (fs::read_link(path).ok(), fs::symlink_metadata(path)?)
+            }
         } else {
             (None, fs::symlink_metadata(path)?)
         };
@@ -179,8 +186,48 @@ impl File {
             .map(|dt| format!("{dt}"))
     }
 
+    #[cfg(unix)]
+    pub fn is_fifo(&self) -> bool {
+        self.metadata()
+            .permissions()
+            .try_mode_symbolic_notation()
+            .map_or(false, |mode| mode.file_type() == &FileType::Fifo)
+    }
+
+    #[cfg(unix)]
+    pub fn is_socket(&self) -> bool {
+        self.metadata()
+            .permissions()
+            .try_mode_symbolic_notation()
+            .map_or(false, |mode| mode.file_type() == &FileType::Socket)
+    }
+
+    #[cfg(unix)]
+    pub fn is_char_device(&self) -> bool {
+        self.metadata()
+            .permissions()
+            .try_mode_symbolic_notation()
+            .map_or(false, |mode| mode.file_type() == &FileType::CharDevice)
+    }
+
+    #[cfg(unix)]
+    pub fn is_block_device(&self) -> bool {
+        self.metadata()
+            .permissions()
+            .try_mode_symbolic_notation()
+            .map_or(false, |mode| mode.file_type() == &FileType::BlockDevice)
+    }
+
     pub fn is_dir(&self) -> bool {
         self.file_type().is_some_and(|ft| ft.is_dir())
+    }
+
+    pub fn is_file(&self) -> bool {
+        self.file_type().is_some_and(|ft| ft.is_file())
+    }
+
+    pub fn is_symlink(&self) -> bool {
+        self.file_type().is_some_and(|ft| ft.is_symlink())
     }
 }
 

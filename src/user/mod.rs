@@ -30,17 +30,29 @@ pub struct Context {
     #[arg(long)]
     pub no_git: bool,
 
-    /// Ignore files in .gitignore
-    #[arg(short = 'i', long)]
-    pub gitignore: bool,
-
     /// Report byte size in either binary or SI units
     #[arg(short, long, value_enum, default_value_t)]
     pub byte_units: args::BytePresentation,
 
+    /// Sort directories before or after all other file types
+    #[arg(short, long, value_enum, default_value_t)]
+    pub dir_order: args::DirOrder,
+
+    /// Filter for specified file types
+    #[arg(short = 'F', long, value_enum)]
+    pub file_type: Vec<args::FileType>,
+
     /// Follow symlinks
     #[arg(short = 'f', long)]
     pub follow: bool,
+
+    /// Ignore files that match rules in all .gitignore files encountered during traversal
+    #[arg(short = 'i', long)]
+    pub gitignore: bool,
+
+    /// Ignore files that match rules in the global .gitignore file
+    #[arg(long)]
+    pub global_gitignore: bool,
 
     /// Show extended metadata and attributes
     #[cfg(unix)]
@@ -85,8 +97,12 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t)]
     pub metric: args::Metric,
 
-    /// Omit empty directories from the output
+    /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
+    pub pattern: Option<String>,
+
+    /// Omit empty directories from the output
+    #[arg(short = 'P', long)]
     pub prune: bool,
 
     /// Field whereby to sort entries
@@ -97,9 +113,9 @@ pub struct Context {
     #[arg(long, value_enum, default_value_t)]
     pub sort_type: args::SortType,
 
-    /// Sort directories before or after all other file types
-    #[arg(short, long, value_enum, default_value_t)]
-    pub dir_order: args::DirOrder,
+    /// Don't compute disk-usage and omit file size from output
+    #[arg(short = 'S', long)]
+    pub suppress_size: bool,
 
     /// Which kind of layout to use when rendering the output
     #[arg(short = 'y', long, value_enum, default_value_t)]
@@ -112,10 +128,6 @@ pub struct Context {
     /// Prevent traversal into directories that are on different filesystems
     #[arg(short = 'x', long = "one-file-system")]
     pub same_fs: bool,
-
-    /// Don't compute disk-usage and omit file size from output
-    #[arg(long)]
-    pub suppress_size: bool,
 
     /// Prints logs at the end of the output
     #[arg(short = 'v', long = "verbose")]
