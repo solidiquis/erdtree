@@ -11,7 +11,7 @@ use ahash::{HashMap, HashSet};
 use indextree::{Arena, NodeId};
 use std::{ops::Deref, path::PathBuf};
 
-/// Concerned with filtering via file-type, globbing, and regular expressions.
+/// Concerned with pruning and filtering via file-type, globbing, and regular expressions.
 mod filter;
 
 /// Parallel disk reading.
@@ -298,19 +298,6 @@ impl Tree {
             column_metadata,
             root_id,
         })
-    }
-
-    /// Remove directories that have no children.
-    pub fn prune(&mut self) {
-        let to_prune = self
-            .root_id
-            .descendants(&self.arena)
-            .filter(|n| self.arena[*n].get().is_dir() && n.children(&self.arena).count() == 0)
-            .collect::<Vec<_>>();
-
-        to_prune
-            .into_iter()
-            .for_each(|n| n.remove_subtree(&mut self.arena));
     }
 
     pub fn root_id(&self) -> NodeId {

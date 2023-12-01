@@ -52,13 +52,7 @@ fn run() -> Result<()> {
         })?
     };
 
-    if ctx.prune {
-        file_tree.prune();
-    }
-
-    if !ctx.file_type.is_empty() {
-        file_tree.filter_file_type(&ctx)
-    }
+    file_tree.filter_nodes(&ctx)?;
 
     let output = render::output(&file_tree, &ctx)?;
 

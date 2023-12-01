@@ -1,4 +1,5 @@
 use crate::{
+    error::prelude::*,
     file::{tree::Tree, File},
     user::{
         args::{FileType, Layout},
@@ -6,24 +7,79 @@ use crate::{
     },
 };
 use ahash::HashSet;
-use indextree::NodeId;
+use indextree::{NodeEdge, NodeId};
+use regex::Regex;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("A regex pattern was not provided")]
+    MissingRegexPattern,
+
+    #[error("{0}")]
+    InvalidRegex(regex::Error),
+}
 
 /// Predicate used for filtering a [`File`] based on [`FileType`].
 pub type FileTypeFilter = dyn Fn(&File) -> bool;
 
 impl Tree {
+    /// Filter [`File`]s in the [`indextree::Arena`] based on provided [`Context`]. The order in
+    /// which the filters are applied matters.
+    pub fn filter_nodes(&mut self, ctx: &Context) -> Result<()> {
+        if !ctx.file_type.is_empty() {
+            self.filter_file_type(ctx);
+        }
+
+        if ctx.pattern.is_some() {
+            self.filter_regex(ctx)?;
+        }
+
+        if ctx.prune {
+            self.prune();
+        }
+
+        Ok(())
+    }
+
+    /// Remove all directories that have no children.
+    fn prune(&mut self) {
+        let mut pruning = true;
+
+        while pruning {
+            let mut to_remove = vec![];
+
+            for node_edge in self.root_id.traverse(&self.arena) {
+                match node_edge {
+                    NodeEdge::Start(_) => continue,
+                    NodeEdge::End(n) => {
+                        if self.arena[n].get().is_dir() && n.children(&self.arena).count() == 0 {
+                            to_remove.push(n);
+                        }
+                    },
+                }
+            }
+
+            if !to_remove.is_empty() {
+                to_remove
+                    .into_iter()
+                    .for_each(|n| n.remove_subtree(&mut self.arena));
+                continue;
+            }
+
+            pruning = false;
+        }
+    }
+
     /// Updates the [`Tree`]'s inner [`indextree::Arena`] to only contain files of certain
-    /// file-types.
+    /// file-types. This should not affect disk-usage calculations.
+    ///
+    /// TODO: Consider using Rayon for parallel filtering.
     pub fn filter_file_type(
         &mut self,
         Context {
             layout, file_type, ..
         }: &Context,
     ) {
-        if file_type.is_empty() {
-            return;
-        }
-
         let mut filters = Vec::<Box<FileTypeFilter>>::new();
 
         for ft in HashSet::from_iter(file_type) {
@@ -56,6 +112,46 @@ impl Tree {
 
         to_remove
             .into_iter()
-            .for_each(|n| n.detach(&mut self.arena));
+            .for_each(|n| n.remove_subtree(&mut self.arena));
+    }
+
+    pub fn filter_regex(
+        &mut self,
+        Context {
+            pattern, layout, ..
+        }: &Context,
+    ) -> Result<()> {
+        let re_pattern = pattern
+            .as_ref()
+            .ok_or(Error::MissingRegexPattern)
+            .into_report(ErrorCategory::User)?;
+
+        let regex = Regex::new(re_pattern)
+            .map_err(Error::InvalidRegex)
+            .into_report(ErrorCategory::User)?;
+
+        let to_remove = match layout {
+            Layout::Flat => self
+                .root_id
+                .descendants(&self.arena)
+                .filter(|node_id| {
+                    !regex.is_match(self.arena[*node_id].get().path().to_string_lossy().as_ref())
+                })
+                .collect::<Vec<_>>(),
+            _ => self
+                .root_id
+                .descendants(&self.arena)
+                .filter(|node_id| {
+                    let node = self.arena[*node_id].get();
+                    !node.is_dir() && !regex.is_match(node.path().to_string_lossy().as_ref())
+                })
+                .collect::<Vec<_>>(),
+        };
+
+        to_remove
+            .into_iter()
+            .for_each(|n| n.remove_subtree(&mut self.arena));
+
+        Ok(())
     }
 }

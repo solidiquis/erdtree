@@ -97,7 +97,8 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t)]
     pub metric: args::Metric,
 
-    /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
+    /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files by their
+    /// relative path
     #[arg(short, long)]
     pub pattern: Option<String>,
 
