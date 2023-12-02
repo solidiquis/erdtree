@@ -3,11 +3,12 @@ use crate::{
     file::{tree::Tree, File},
     user::{
         args::{FileType, Layout},
-        Context,
+        Context, Globbing,
     },
 };
 use ahash::HashSet;
-use indextree::{NodeEdge, NodeId};
+use ignore::overrides::OverrideBuilder;
+use indextree::NodeId;
 use regex::Regex;
 
 #[derive(Debug, thiserror::Error)]
@@ -31,7 +32,13 @@ impl Tree {
         }
 
         if ctx.pattern.is_some() {
-            self.filter_regex(ctx)?;
+            let Globbing { glob, iglob } = ctx.globbing;
+
+            if glob || iglob {
+                self.filter_glob(ctx)?;
+            } else {
+                self.filter_regex(ctx)?;
+            }
         }
 
         if ctx.prune {
@@ -48,14 +55,9 @@ impl Tree {
         while pruning {
             let mut to_remove = vec![];
 
-            for node_edge in self.root_id.traverse(&self.arena) {
-                match node_edge {
-                    NodeEdge::Start(_) => continue,
-                    NodeEdge::End(n) => {
-                        if self.arena[n].get().is_dir() && n.children(&self.arena).count() == 0 {
-                            to_remove.push(n);
-                        }
-                    },
+            for n in self.root_id.descendants(&self.arena) {
+                if self.arena[n].get().is_dir() && n.children(&self.arena).count() == 0 {
+                    to_remove.push(n);
                 }
             }
 
@@ -65,7 +67,6 @@ impl Tree {
                     .for_each(|n| n.remove_subtree(&mut self.arena));
                 continue;
             }
-
             pruning = false;
         }
     }
@@ -115,6 +116,7 @@ impl Tree {
             .for_each(|n| n.remove_subtree(&mut self.arena));
     }
 
+    /// Remove nodes/sub-trees that don't match the provided regular expression, `pattern`.
     pub fn filter_regex(
         &mut self,
         Context {
@@ -147,6 +149,70 @@ impl Tree {
                 })
                 .collect::<Vec<_>>(),
         };
+
+        to_remove
+            .into_iter()
+            .for_each(|n| n.remove_subtree(&mut self.arena));
+
+        Ok(())
+    }
+
+    fn filter_glob(&mut self, ctx: &Context) -> Result<()> {
+        let Context {
+            globbing: Globbing { iglob, .. },
+            pattern,
+            ..
+        } = ctx;
+
+        let dir = ctx.dir_canonical()?;
+        let mut override_builder = OverrideBuilder::new(dir);
+
+        let mut negated_glob = false;
+
+        let overrides = {
+            if *iglob {
+                override_builder
+                    .case_insensitive(true)
+                    .into_report(ErrorCategory::Internal)
+                    .context(error_source!())?;
+            }
+
+            if let Some(ref glob) = pattern {
+                let trim = glob.trim_start();
+                negated_glob = trim.starts_with('!');
+
+                if negated_glob {
+                    override_builder
+                        .add(trim.trim_start_matches('!'))
+                        .into_report(ErrorCategory::Internal)
+                        .context(error_source!())?;
+                } else {
+                    override_builder
+                        .add(trim)
+                        .into_report(ErrorCategory::Internal)
+                        .context(error_source!())?;
+                }
+            }
+
+            override_builder.build().into_report(ErrorCategory::User)?
+        };
+
+        let no_match = |node_id: &NodeId| {
+            let dirent = self.arena[*node_id].get();
+
+            if dirent.is_dir() {
+                false
+            } else {
+                let matched = overrides.matched(dirent.path(), dirent.is_dir());
+                !(negated_glob ^ matched.is_whitelist())
+            }
+        };
+
+        let to_remove = self
+            .root_id
+            .descendants(&self.arena)
+            .filter(no_match)
+            .collect::<Vec<_>>();
 
         to_remove
             .into_iter()

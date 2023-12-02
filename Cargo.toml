@@ -34,7 +34,7 @@ ahash = "0.8.6"
 ansi_term = "0.12.1"
 anyhow = "1.0.75"
 chrono = { version = "0.4.24", default-features = false, features = ["clock", "std"] }
-clap = { version = "4.1.1", features = ["derive"] }
+clap = { version = "4.4.10", features = ["derive"] }
 clap_complete = "4.1.1"
 config = { version = "0.13.3", default-features = false, features = ["toml"] }
 crossterm = "0.26.1"

@@ -1,5 +1,5 @@
 use crate::error::prelude::*;
-use clap::Parser;
+use clap::{Args, Parser};
 use std::{env, fs, path::PathBuf};
 
 /// Enum definitions for enumerated command-line arguments.
@@ -56,37 +56,42 @@ pub struct Context {
 
     /// Show extended metadata and attributes
     #[cfg(unix)]
-    #[arg(short, long)]
+    #[arg(short, long, group = "ls-long")]
     pub long: bool,
 
     /// Show file's groups
     #[cfg(unix)]
-    #[arg(long)]
+    #[arg(long, requires = "ls-long")]
     pub group: bool,
 
     /// Show each file's ino
     #[cfg(unix)]
-    #[arg(long)]
+    #[arg(long, requires = "ls-long")]
     pub ino: bool,
 
     /// Show the total number of hardlinks to the underlying inode
     #[cfg(unix)]
-    #[arg(long)]
+    #[arg(long, requires = "ls-long")]
     pub nlink: bool,
 
     /// Show permissions in numeric octal format instead of symbolic
     #[cfg(unix)]
-    #[arg(long, requires = "long")]
+    #[arg(long, requires = "ls-long")]
     pub octal: bool,
 
     /// Which kind of timestamp to use
     #[cfg(unix)]
-    #[arg(long, value_enum, requires = "long", default_value_t)]
+    #[arg(long, value_enum, requires = "ls-long", default_value_t)]
     pub time: args::TimeStamp,
 
     /// Which format to use for the timestamp; default by default
     #[cfg(unix)]
-    #[arg(long = "time-format", value_enum, requires = "long", default_value_t)]
+    #[arg(
+        long = "time-format",
+        requires = "ls-long",
+        value_enum,
+        default_value_t
+    )]
     pub time_format: args::TimeFormat,
 
     /// Maximum depth to display
@@ -99,8 +104,11 @@ pub struct Context {
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files by their
     /// relative path
-    #[arg(short, long)]
+    #[arg(short, long, group = "searching")]
     pub pattern: Option<String>,
+
+    #[command(flatten)]
+    pub globbing: Globbing,
 
     /// Omit empty directories from the output
     #[arg(short = 'P', long)]
@@ -139,6 +147,18 @@ pub struct Context {
     //////////////////////////
     #[clap(skip = column::Metadata::default())]
     pub column_metadata: column::Metadata,
+}
+
+#[derive(Args, Debug)]
+#[group(multiple = false)]
+pub struct Globbing {
+    /// Enables glob based searching instead of regular expressions
+    #[arg(long, requires = "searching")]
+    pub glob: bool,
+
+    /// Enables case-insensitive glob based searching instead of regular expressions
+    #[arg(long, requires = "searching")]
+    pub iglob: bool,
 }
 
 impl Context {
