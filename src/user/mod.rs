@@ -50,6 +50,10 @@ pub struct Context {
     #[arg(short = 'i', long)]
     pub gitignore: bool,
 
+    /// Display file icons
+    #[arg(short = 'I', long)]
+    pub icons: bool,
+
     /// Ignore files that match rules in the global .gitignore file
     #[arg(long)]
     pub global_gitignore: bool,

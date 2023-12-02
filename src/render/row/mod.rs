@@ -23,13 +23,24 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                     let base = root.ancestors().nth(1);
                     let name = file.display_path(base);
                     let column::Metadata { max_size_width, .. } = ctx.column_metadata;
-                    writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(buf, "{size:>max_size_width$} {prefix}{icon:<2}{name}")
+                    } else {
+                        writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+                    }
                 })),
 
                 (false, true) => Ok(Box::new(move |file, prefix| {
                     let base = root.ancestors().nth(1);
                     let name = file.display_path(base);
-                    writeln!(buf, "{prefix}{name}")
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(buf, "{prefix}{icon:<2}{name}")
+                    } else {
+                        writeln!(buf, "{prefix}{name}")
+                    }
                 })),
 
                 (true, false) => Ok(Box::new(move |file, prefix| {
@@ -39,14 +50,28 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                     let col_widths = ctx.column_metadata;
                     let column::Metadata { max_size_width, .. } = col_widths;
                     let long_format = long::Format::new(file, ctx);
-                    writeln!(buf, "{long_format} {size:>max_size_width$} {prefix}{name}")
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(
+                            buf,
+                            "{long_format} {size:>max_size_width$} {prefix}{icon:<2}{name}"
+                        )
+                    } else {
+                        writeln!(buf, "{long_format} {size:>max_size_width$} {prefix}{name}")
+                    }
                 })),
 
                 (true, true) => Ok(Box::new(move |file, prefix| {
                     let base = root.ancestors().nth(1);
                     let name = file.display_path(base);
                     let long_format = long::Format::new(file, ctx);
-                    writeln!(buf, "{long_format} {prefix}{name}")
+
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(buf, "{long_format} {prefix}{icon:<2}{name}")
+                    } else {
+                        writeln!(buf, "{long_format} {prefix}{name}")
+                    }
                 })),
             }
         },
@@ -55,12 +80,22 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                 let size = format!("{}", file.size());
                 let name = file.display_name();
                 let column::Metadata { max_size_width, .. } = ctx.column_metadata;
-                writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+                if ctx.icons {
+                    let icon = file.icon();
+                    writeln!(buf, "{size:>max_size_width$} {prefix}{icon:<2}{name}")
+                } else {
+                    writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+                }
             })),
 
             (false, true) => Ok(Box::new(|file, prefix| {
                 let name = file.display_name();
-                writeln!(buf, "{prefix}{name}")
+                if ctx.icons {
+                    let icon = file.icon();
+                    writeln!(buf, "{prefix}{icon:<2}{name}")
+                } else {
+                    writeln!(buf, "{prefix}{name}")
+                }
             })),
 
             (true, false) => Ok(Box::new(|file, prefix| {
@@ -69,13 +104,26 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                 let col_widths = ctx.column_metadata;
                 let column::Metadata { max_size_width, .. } = col_widths;
                 let long_format = long::Format::new(file, ctx);
-                writeln!(buf, "{long_format} {size:>max_size_width$} {prefix}{name}")
+                if ctx.icons {
+                    let icon = file.icon();
+                    writeln!(
+                        buf,
+                        "{long_format} {size:>max_size_width$} {prefix}{icon:<2}{name}"
+                    )
+                } else {
+                    writeln!(buf, "{long_format} {size:>max_size_width$} {prefix}{name}")
+                }
             })),
 
             (true, true) => Ok(Box::new(|file, prefix| {
                 let name = file.display_name();
                 let long_format = long::Format::new(file, ctx);
-                writeln!(buf, "{long_format} {prefix}{name}")
+                if ctx.icons {
+                    let icon = file.icon();
+                    writeln!(buf, "{long_format} {prefix}{icon:<2}{name}")
+                } else {
+                    writeln!(buf, "{long_format} {prefix}{name}")
+                }
             })),
         },
     }
@@ -91,7 +139,12 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                 Ok(Box::new(move |file, prefix| {
                     let base = root.ancestors().nth(1);
                     let name = file.display_path(base);
-                    writeln!(buf, "{prefix}{name}")
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(buf, "{prefix}{icon:<2}{name}")
+                    } else {
+                        writeln!(buf, "{prefix}{name}")
+                    }
                 }))
             } else {
                 Ok(Box::new(move |file, prefix| {
@@ -99,7 +152,12 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                     let base = root.ancestors().nth(1);
                     let name = file.display_path(base);
                     let column::Metadata { max_size_width, .. } = ctx.column_metadata;
-                    writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(buf, "{size:>max_size_width$} {prefix}{icon:<2}{name}")
+                    } else {
+                        writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+                    }
                 }))
             }
         },
@@ -107,14 +165,24 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
             if ctx.suppress_size {
                 Ok(Box::new(|file, prefix| {
                     let name = file.display_name();
-                    writeln!(buf, "{prefix}{name}")
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(buf, "{prefix}{icon:<2}{name}")
+                    } else {
+                        writeln!(buf, "{prefix}{name}")
+                    }
                 }))
             } else {
                 Ok(Box::new(|file, prefix| {
                     let size = format!("{}", file.size());
                     let name = file.display_name();
                     let column::Metadata { max_size_width, .. } = ctx.column_metadata;
-                    writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+                    if ctx.icons {
+                        let icon = file.icon();
+                        writeln!(buf, "{size:>max_size_width$} {prefix}{icon:<2}{name}")
+                    } else {
+                        writeln!(buf, "{size:>max_size_width$} {prefix}{name}")
+                    }
                 }))
             }
         },

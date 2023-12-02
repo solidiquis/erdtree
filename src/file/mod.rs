@@ -1,9 +1,6 @@
 use crate::{
-    disk,
-    user::{
-        args::{Metric, TimeFormat, TimeStamp},
-        Context,
-    },
+    disk, icon,
+    user::{args::Metric, Context},
 };
 use ignore::DirEntry;
 use std::{
@@ -15,7 +12,10 @@ use std::{
 };
 
 #[cfg(unix)]
-use crate::file::unix::permissions::{file_type::FileType, SymbolicNotation};
+use crate::{
+    file::unix::permissions::{file_type::FileType, SymbolicNotation},
+    user::args::{TimeFormat, TimeStamp},
+};
 
 /// Concerned with querying information about a file's underlying inode.
 pub mod inode;
@@ -158,6 +158,10 @@ impl File {
             file: self,
             path_prefix,
         }
+    }
+
+    pub fn icon(&self) -> &str {
+        icon::compute(self)
     }
 
     #[cfg(unix)]

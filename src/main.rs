@@ -18,6 +18,9 @@ use error::prelude::*;
 /// Erdtree's representation of a file.
 mod file;
 
+/// Concerned with file icons.
+mod icon;
+
 /// Concerned with logging throughout the application.
 mod logging;
 

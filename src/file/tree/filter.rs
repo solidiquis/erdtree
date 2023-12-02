@@ -56,7 +56,10 @@ impl Tree {
             let mut to_remove = vec![];
 
             for n in self.root_id.descendants(&self.arena).skip(1) {
-                if !n.is_removed(&self.arena) && self.arena[n].get().is_dir() && n.children(&self.arena).count() == 0 {
+                if !n.is_removed(&self.arena)
+                    && self.arena[n].get().is_dir()
+                    && n.children(&self.arena).count() == 0
+                {
                     to_remove.push(n);
                 }
             }
