@@ -193,6 +193,7 @@ fn flat(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
     for node_edge in root.traverse(arena) {
         let node_id = match node_edge {
             NodeEdge::Start(_) => continue,
+            NodeEdge::End(id) if id.is_removed(arena) => continue,
             NodeEdge::End(id) => id,
         };
 

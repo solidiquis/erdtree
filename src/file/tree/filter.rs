@@ -132,27 +132,38 @@ impl Tree {
             .map_err(Error::InvalidRegex)
             .into_report(ErrorCategory::User)?;
 
-        let to_remove = match layout {
-            Layout::Flat => self
-                .root_id
-                .descendants(&self.arena)
-                .filter(|node_id| {
-                    !regex.is_match(self.arena[*node_id].get().path().to_string_lossy().as_ref())
-                })
-                .collect::<Vec<_>>(),
-            _ => self
-                .root_id
-                .descendants(&self.arena)
-                .filter(|node_id| {
-                    let node = self.arena[*node_id].get();
-                    !node.is_dir() && !regex.is_match(node.path().to_string_lossy().as_ref())
-                })
-                .collect::<Vec<_>>(),
-        };
+        match layout {
+            Layout::Flat => {
+                let to_remove = self
+                    .root_id
+                    .descendants(&self.arena)
+                    .skip(1)
+                    .filter(|node_id| {
+                        !regex
+                            .is_match(self.arena[*node_id].get().path().to_string_lossy().as_ref())
+                    })
+                    .collect::<Vec<_>>();
 
-        to_remove
-            .into_iter()
-            .for_each(|n| n.remove_subtree(&mut self.arena));
+                to_remove
+                    .into_iter()
+                    .for_each(|n| n.remove(&mut self.arena));
+            },
+            _ => {
+                let to_remove = self
+                    .root_id
+                    .descendants(&self.arena)
+                    .skip(1)
+                    .filter(|node_id| {
+                        let node = self.arena[*node_id].get();
+                        !node.is_dir() && !regex.is_match(node.path().to_string_lossy().as_ref())
+                    })
+                    .collect::<Vec<_>>();
+
+                to_remove
+                    .into_iter()
+                    .for_each(|n| n.remove_subtree(&mut self.arena));
+            },
+        };
 
         Ok(())
     }
@@ -161,6 +172,7 @@ impl Tree {
         let Context {
             globbing: Globbing { iglob, .. },
             pattern,
+            layout,
             ..
         } = ctx;
 
@@ -197,26 +209,45 @@ impl Tree {
             override_builder.build().into_report(ErrorCategory::User)?
         };
 
-        let no_match = |node_id: &NodeId| {
-            let dirent = self.arena[*node_id].get();
+        match layout {
+            Layout::Flat => {
+                let to_remove = self
+                    .root_id
+                    .descendants(&self.arena)
+                    .skip(1)
+                    .filter(|node_id| {
+                        let dirent = self.arena[*node_id].get();
+                        let matched = overrides.matched(dirent.path(), dirent.is_dir());
+                        !(negated_glob ^ matched.is_whitelist())
+                    })
+                    .collect::<Vec<_>>();
 
-            if dirent.is_dir() {
-                false
-            } else {
-                let matched = overrides.matched(dirent.path(), dirent.is_dir());
-                !(negated_glob ^ matched.is_whitelist())
-            }
-        };
+                to_remove
+                    .into_iter()
+                    .for_each(|n| n.remove(&mut self.arena));
+            },
+            _ => {
+                let to_remove = self
+                    .root_id
+                    .descendants(&self.arena)
+                    .skip(1)
+                    .filter(|node_id| {
+                        let dirent = self.arena[*node_id].get();
 
-        let to_remove = self
-            .root_id
-            .descendants(&self.arena)
-            .filter(no_match)
-            .collect::<Vec<_>>();
+                        if dirent.is_dir() {
+                            false
+                        } else {
+                            let matched = overrides.matched(dirent.path(), dirent.is_dir());
+                            !(negated_glob ^ matched.is_whitelist())
+                        }
+                    })
+                    .collect::<Vec<_>>();
 
-        to_remove
-            .into_iter()
-            .for_each(|n| n.remove_subtree(&mut self.arena));
+                to_remove
+                    .into_iter()
+                    .for_each(|n| n.remove_subtree(&mut self.arena));
+            },
+        }
 
         Ok(())
     }
