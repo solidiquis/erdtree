@@ -18,7 +18,7 @@ pub enum Metric {
 
     /// Total amount of blocks allocated to store a file on disk
     #[cfg(unix)]
-    Blocks,
+    Block,
 }
 
 /// Whether to report byte size using SI or binary prefixes or no prefix.

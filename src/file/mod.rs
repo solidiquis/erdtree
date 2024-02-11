@@ -107,7 +107,7 @@ impl File {
             Metric::Line => disk::Usage::init_line_count(&data, &metadata, *follow)?,
 
             #[cfg(unix)]
-            Metric::Blocks => disk::Usage::init_blocks(&metadata),
+            Metric::Block => disk::Usage::init_blocks(&metadata),
         };
 
         #[cfg(unix)]

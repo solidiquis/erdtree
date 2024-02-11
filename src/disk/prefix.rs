@@ -3,7 +3,7 @@ use std::{
     fmt::{self, Display},
 };
 
-/// https://en.wikipedia.org/wiki/Binary_prefix
+/// <https://en.wikipedia.org/wiki/Binary_prefix>
 #[derive(Debug, PartialEq)]
 pub enum Binary {
     Base,
@@ -14,7 +14,7 @@ pub enum Binary {
     Pebi,
 }
 
-/// https://en.wikipedia.org/wiki/International_System_of_Units
+/// <https://en.wikipedia.org/wiki/International_System_of_Units>
 #[derive(Debug, PartialEq)]
 pub enum Si {
     Base,

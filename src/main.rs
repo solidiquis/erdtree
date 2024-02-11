@@ -1,4 +1,5 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
+use clap::CommandFactory;
 use log::Log;
 use std::{
     io::{stdout, Write},
@@ -7,6 +8,7 @@ use std::{
 
 /// Defines the command-line interface and the context used throughout Erdtree.
 mod user;
+use user::Context;
 
 /// Concerned with disk usage calculation and presentation.
 mod disk;
@@ -27,6 +29,8 @@ mod logging;
 /// Concerned with rendering the program output.
 mod render;
 
+const BIN_NAME: &str = "erd";
+
 fn main() -> ExitCode {
     if let Err(e) = run() {
         eprintln!("{e}");
@@ -37,6 +41,11 @@ fn main() -> ExitCode {
 
 fn run() -> Result<()> {
     let mut ctx = user::Context::init()?;
+
+    if let Some(shell) = ctx.completions {
+        clap_complete::generate(shell, &mut Context::command(), BIN_NAME, &mut stdout());
+        return Ok(());
+    }
 
     let logger = ctx
         .verbose

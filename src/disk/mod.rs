@@ -10,7 +10,7 @@ use std::{
 /// Binary and SI prefixes.
 pub mod prefix;
 
-/// https://doc.rust-lang.org/std/os/unix/fs/trait.MetadataExt.html#tymethod.blocks
+/// <https://doc.rust-lang.org/std/os/unix/fs/trait.MetadataExt.html#tymethod.blocks>
 #[cfg(unix)]
 const BLOCK_SIZE: u64 = 512;
 
@@ -93,7 +93,7 @@ impl Usage {
     }
 
     /// Gets the apparent file size rather than disk usage. Refer to `--apparent-size` in the man
-    /// pages of `du`: https://man7.org/linux/man-pages/man1/du.1.html
+    /// pages of `du`: <https://man7.org/linux/man-pages/man1/du.1.html>
     pub fn init_logical(metadata: &Metadata, presentation: BytePresentation) -> Self {
         let value = metadata.is_dir().then_some(0).unwrap_or(metadata.len());
 

@@ -8,6 +8,9 @@ pub mod args;
 /// Concerned with properties of columns in the output which is essentially a 2D grid.
 pub mod column;
 
+/// Concerned with loading and parsing the optional `erdtree.toml` config file.
+mod config;
+
 /// Defines the CLI whose purpose is to capture user arguments and reconcile them with arguments
 /// found with a config file if relevant.
 #[derive(Parser, Debug)]
@@ -22,17 +25,21 @@ pub struct Context {
     /// Directory to traverse; defaults to current working directory
     dir: Option<PathBuf>,
 
-    /// Ignore hidden files
+    /// Run the program ignoring hidden files
     #[arg(short = '.', long)]
     pub no_hidden: bool,
 
-    /// Ignore .git directory
+    /// Run the program skipping the .git directory
     #[arg(long)]
     pub no_git: bool,
 
     /// Report byte size in either binary or SI units
     #[arg(short, long, value_enum, default_value_t)]
     pub byte_units: args::BytePresentation,
+
+    /// Use configuration of a named table rather than the top-level table in .erdtree.toml
+    #[arg(short = 'c', long)]
+    pub config: Option<String>,
 
     /// Sort directories before or after all other file types
     #[arg(short, long, value_enum, default_value_t)]
@@ -46,7 +53,7 @@ pub struct Context {
     #[arg(short = 'f', long)]
     pub follow: bool,
 
-    /// Ignore files that match rules in all .gitignore files encountered during traversal
+    /// Run the program ignoring files that match rules in all .gitignore files encountered during traversal
     #[arg(short = 'i', long)]
     pub gitignore: bool,
 
@@ -106,6 +113,10 @@ pub struct Context {
     #[arg(short, long, value_enum, default_value_t)]
     pub metric: args::Metric,
 
+    /// Run the program without reading .erdtree.toml
+    #[arg(short, long)]
+    pub no_config: bool,
+
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files by their
     /// relative path
     #[arg(short, long, group = "searching")]
@@ -145,6 +156,10 @@ pub struct Context {
     /// Prints logs at the end of the output
     #[arg(short = 'v', long = "verbose")]
     pub verbose: bool,
+
+    #[arg(long)]
+    /// Print completions for a given shell to stdout
+    pub completions: Option<clap_complete::Shell>,
 
     //////////////////////////
     /* INTERNAL USAGE BELOW */
