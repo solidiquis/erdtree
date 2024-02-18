@@ -1,58 +1,211 @@
-use crate::{context::Context, tree::Tree};
-use std::marker::PhantomData;
+use crate::{
+    error::prelude::*,
+    file,
+    user::{args::Layout, Context},
+};
+use indextree::{NodeEdge, NodeId};
 
-/// Module containing all of the layout variants.
-pub mod layout;
+/// Used for padding between tree branches.
+pub const SEP: &str = "   ";
 
-/// Concerned with how to construct a single row in the output grid.
-pub mod grid;
+/// The `│` box drawing character.
+pub const VLINE: &str = "\u{2502}  ";
 
-/// Utility module to fetch the appropriate theme used to paint the box-drawing characters of the
-/// output tree.
-pub mod theme;
+/// The `┌─` box drawing character.
+pub const UL_CORNER: &str = "\u{250C}\u{2500} ";
 
-/// Concerned with how to construct the long output.
-#[cfg(unix)]
-pub mod long;
+/// The `└─` box drawing characters.
+pub const BL_CORNER: &str = "\u{2514}\u{2500} ";
 
-/// The struct that is generic over T, which is generally expected to be a unit-struct that
-/// ultimately determines which variant to use for the output.
-pub struct Engine<T> {
-    ctx: Context,
-    tree: Tree,
-    layout: PhantomData<T>,
+/// The `├─` box drawing characters.
+pub const ROTATED_T: &str = "\u{251C}\u{2500} ";
+
+/// Concerned with the presentation of a single [`crate::file::File`] which constitutes a single
+/// row in the program output.
+mod row;
+
+pub fn output(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
+    match ctx.layout {
+        Layout::Tree => tree(file_tree, ctx),
+        Layout::InvertedTree => inverted_tree(file_tree, ctx),
+        Layout::Flat => flat(file_tree, ctx),
+    }
 }
 
-/// The flat output that is similar to `du`, without the ASCII tree.
-pub struct Flat;
+fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
+    let arena = file_tree.arena();
+    let root = file_tree.root_id();
+    let max_depth = ctx.level();
 
-/// Same as [`Flat`] but the root is at the top of the output.
-pub struct FlatInverted;
+    let mut buf = String::new();
 
-/// The tree output with the root directory at the bottom of the output.
-pub struct Regular;
+    let is_first_sibling = |node_id: NodeId, depth: usize| {
+        (depth > 0)
+            .then(|| node_id.following_siblings(arena).nth(1).is_none())
+            .unwrap_or(false)
+    };
 
-/// The tree output with the root directory at the top of the output. More like the traditional
-/// `tree` command.
-pub struct Inverted;
+    let mut inherited_prefix_components = vec![""];
 
-impl<T> Engine<T> {
-    /// Initializes a new [Engine].
-    pub const fn new(tree: Tree, ctx: Context) -> Self {
-        Self {
-            ctx,
-            tree,
-            layout: PhantomData,
+    let mut formatter = row::formatter(&mut buf, ctx)?;
+
+    let mut reverse_traverse = root.reverse_traverse(arena);
+    reverse_traverse.next();
+
+    for node_edge in reverse_traverse {
+        let (node, node_id, depth) = match node_edge {
+            NodeEdge::Start(node_id) => {
+                let node = arena[node_id].get();
+                let depth = node.depth();
+
+                if node.is_dir() {
+                    inherited_prefix_components.pop();
+                }
+
+                if depth > max_depth {
+                    continue;
+                }
+
+                (node, node_id, depth)
+            },
+            NodeEdge::End(node_id) => {
+                let node = arena[node_id].get();
+                let depth = node.depth();
+
+                if node.is_dir() {
+                    if is_first_sibling(node_id, depth) {
+                        inherited_prefix_components.push(SEP);
+                    } else {
+                        inherited_prefix_components.push(VLINE);
+                    }
+                }
+                continue;
+            },
+        };
+
+        let prefix = format!(
+            "{}{}",
+            inherited_prefix_components.join(""),
+            (depth > 0)
+                .then(|| {
+                    is_first_sibling(node_id, depth)
+                        .then_some(UL_CORNER)
+                        .unwrap_or(ROTATED_T)
+                })
+                .unwrap_or("")
+        );
+
+        if let Err(e) = formatter(node, prefix) {
+            log::warn!("{e}");
         }
     }
 
-    /// Getter for the inner [Context] object.
-    const fn context(&self) -> &Context {
-        &self.ctx
+    drop(formatter);
+
+    Ok(buf)
+}
+
+pub fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
+    let arena = file_tree.arena();
+    let root = file_tree.root_id();
+    let max_depth = ctx.level();
+
+    let mut buf = String::new();
+
+    let is_last_sibling = |node_id: NodeId, depth: usize| {
+        (depth > 0)
+            .then(|| node_id.following_siblings(arena).nth(1).is_none())
+            .unwrap_or(false)
+    };
+
+    let mut inherited_prefix_components = vec![""];
+
+    let mut formatter = row::formatter(&mut buf, ctx)?;
+
+    let mut traverse = root.traverse(arena);
+    traverse.next();
+
+    formatter(arena[root].get(), "".to_string())
+        .into_report(ErrorCategory::Internal)
+        .context(error_source!())?;
+
+    for node_edge in traverse {
+        let (node, node_id, depth) = match node_edge {
+            NodeEdge::Start(node_id) => {
+                let node = arena[node_id].get();
+                let depth = node.depth();
+
+                if depth > max_depth {
+                    continue;
+                }
+
+                (node, node_id, depth)
+            },
+            NodeEdge::End(node_id) => {
+                let node = arena[node_id].get();
+                let depth = node.depth();
+
+                if node.is_dir() && depth < max_depth {
+                    inherited_prefix_components.pop();
+                }
+                continue;
+            },
+        };
+
+        let prefix = format!(
+            "{}{}",
+            inherited_prefix_components.join(""),
+            (depth > 0)
+                .then(|| {
+                    is_last_sibling(node_id, depth)
+                        .then_some(BL_CORNER)
+                        .unwrap_or(ROTATED_T)
+                })
+                .unwrap_or("")
+        );
+
+        if let Err(e) = formatter(node, prefix) {
+            log::warn!("{e}");
+        }
+
+        if node.is_dir() && depth < max_depth {
+            if is_last_sibling(node_id, depth) {
+                inherited_prefix_components.push(SEP);
+            } else {
+                inherited_prefix_components.push(VLINE);
+            }
+        }
     }
 
-    /// Getter for the inner [Tree] data structure.
-    const fn tree(&self) -> &Tree {
-        &self.tree
+    drop(formatter);
+
+    Ok(buf)
+}
+
+fn flat(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
+    let arena = file_tree.arena();
+    let root = file_tree.root_id();
+    let max_depth = ctx.level();
+    let mut buf = String::new();
+
+    let mut formatter = row::formatter(&mut buf, ctx)?;
+
+    for node_edge in root.traverse(arena) {
+        let node_id = match node_edge {
+            NodeEdge::Start(_) => continue,
+            NodeEdge::End(id) if id.is_removed(arena) => continue,
+            NodeEdge::End(id) => id,
+        };
+
+        let node = arena[node_id].get();
+
+        if node.depth() > max_depth {
+            continue;
+        }
+
+        formatter(node, "".to_string()).into_report(ErrorCategory::Warning)?;
     }
+    drop(formatter);
+
+    Ok(buf)
 }

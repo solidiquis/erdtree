@@ -1,9 +1,0 @@
-# Long argument
---icons
---human
-
-# or short argument
--l
-
-# args can be passed like this
--d logical

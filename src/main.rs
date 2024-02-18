@@ -1,130 +1,78 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
-#![warn(
-    clippy::all,
-    clippy::cargo,
-    clippy::complexity,
-    clippy::correctness,
-    clippy::nursery,
-    clippy::pedantic,
-    clippy::perf,
-    clippy::style,
-    clippy::suspicious
-)]
-#![allow(clippy::cast_precision_loss, clippy::struct_excessive_bools, clippy::wildcard_imports)]
-
 use clap::CommandFactory;
-use context::{layout, Context};
-use progress::{Indicator, IndicatorHandle, Message};
-use render::{Engine, Flat, FlatInverted, Inverted, Regular};
+use log::Log;
 use std::{
-    error::Error,
     io::{stdout, Write},
     process::ExitCode,
 };
-use tree::Tree;
 
-/// Operations to wrangle ANSI escaped strings.
-mod ansi;
+/// Defines the command-line interface and the context used throughout Erdtree.
+mod user;
+use user::Context;
 
-/// CLI rules and definitions as well as context to be injected throughout the entire program.
-mod context;
+/// Concerned with disk usage calculation and presentation.
+mod disk;
 
-/// Operations relevant to the computation and presentation of disk usage.
-mod disk_usage;
+/// Error handling and reporting utilities to be used throughout the Erdtree.
+mod error;
+use error::prelude::*;
 
-/// Filesystem operations.
-mod fs;
+/// Erdtree's representation of a file.
+mod file;
 
-/// All things related to icons on how to map certain files to the appropriate icons.
-mod icons;
+/// Concerned with file icons.
+mod icon;
 
-/// Concerned with displaying a progress indicator when stdout is a tty.
-mod progress;
+/// Concerned with logging throughout the application.
+mod logging;
 
-/// Concerned with taking an initialized [`tree::Tree`] and its [`tree::node::Node`]s and rendering the output.
+/// Concerned with rendering the program output.
 mod render;
 
-/// Global used throughout the program to paint the output.
-mod styles;
-
-/// Houses the primary data structures that are used to virtualize the filesystem, containing also
-/// information on how the tree output should be ultimately rendered.
-mod tree;
-
-/// Utilities relating to interacting with tty properties.
-mod tty;
-
-/// Common utilities across all modules.
-mod utils;
+const BIN_NAME: &str = "erd";
 
 fn main() -> ExitCode {
     if let Err(e) = run() {
         eprintln!("{e}");
         return ExitCode::FAILURE;
     }
-
     ExitCode::SUCCESS
 }
 
-fn run() -> Result<(), Box<dyn Error>> {
-    let ctx = Context::try_init()?;
+fn run() -> Result<()> {
+    let mut ctx = user::Context::init()?;
 
     if let Some(shell) = ctx.completions {
-        clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout());
+        clap_complete::generate(shell, &mut Context::command(), BIN_NAME, &mut stdout());
         return Ok(());
     }
 
-    styles::init(ctx.no_color());
+    let logger = ctx
+        .verbose
+        .then_some(logging::LoggityLog::init())
+        .transpose()?;
 
-    let indicator = Indicator::maybe_init(&ctx);
-
-    let (tree, ctx) = {
-        match Tree::try_init(ctx, indicator.as_ref()) {
-            Ok(res) => res,
-            Err(err) => {
-                IndicatorHandle::terminate(indicator);
-                return Err(Box::new(err));
-            },
-        }
+    let mut file_tree = if ctx.suppress_size {
+        file::Tree::init_without_disk_usage(&ctx).map(|(tree, column_metadata)| {
+            ctx.update_column_metadata(column_metadata);
+            tree
+        })?
+    } else {
+        file::Tree::init(&ctx).map(|(tree, column_metadata)| {
+            ctx.update_column_metadata(column_metadata);
+            tree
+        })?
     };
 
-    macro_rules! compute_output {
-        ($t:ty) => {{
-            let render = Engine::<$t>::new(tree, ctx);
-            format!("{render}")
-        }};
-    }
+    file_tree.filter_nodes(&ctx)?;
 
-    let output = match ctx.layout {
-        layout::Type::Flat => compute_output!(Flat),
-        layout::Type::Iflat => compute_output!(FlatInverted),
-        layout::Type::Inverted => compute_output!(Inverted),
-        layout::Type::Regular => compute_output!(Regular),
-    };
+    let output = render::output(&file_tree, &ctx)?;
 
-    if let Some(mut progress) = indicator {
-        progress
-            .mailbox()
-            .send(Message::RenderReady)
-            .map_err(|_e| tree::error::Error::Terminated)?;
+    let mut stdout = stdout().lock();
+    writeln!(stdout, "{output}").into_report(ErrorCategory::Warning)?;
 
-        progress
-            .join_handle
-            .take()
-            .map(|h| h.join().unwrap())
-            .transpose()?;
-    }
-
-    #[cfg(debug_assertions)]
-    {
-        if std::env::var_os("ERDTREE_DEBUG").is_none() {
-            let _ = writeln!(stdout(), "{output}");
-        }
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        let _ = writeln!(stdout(), "{output}");
+    if let Some(logger) = logger {
+        logger.flush();
     }
 
     Ok(())
