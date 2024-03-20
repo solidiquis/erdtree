@@ -58,7 +58,7 @@ pub mod time;
 #[command(about = "erdtree (erd) is a cross-platform, multi-threaded, and general purpose filesystem and disk usage utility.", long_about = None)]
 pub struct Context {
     /// Directory to traverse; defaults to current working directory
-    dir: Option<PathBuf>,
+    pub dir: Option<PathBuf>,
 
     /// Use configuration of named table rather than the top-level table in .erdtree.toml
     #[arg(short = 'c', long)]
@@ -125,7 +125,7 @@ pub struct Context {
 
     /// Maximum depth to display
     #[arg(short = 'L', long, value_name = "NUM")]
-    level: Option<usize>,
+    pub level: Option<usize>,
 
     /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files
     #[arg(short, long)]
