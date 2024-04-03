@@ -1,10 +1,11 @@
 use crate::{
-    context::{column, Context},
+    context::{column, layout, Context},
     disk_usage::file_size::FileSize,
     fs::inode::Inode,
     progress::{IndicatorHandle, Message},
     utils,
 };
+
 use count::FileCount;
 use error::Error;
 use ignore::{WalkBuilder, WalkParallel};
@@ -55,7 +56,28 @@ impl Tree {
     ) -> Result<(Self, Context)> {
         let mut column_properties = column::Properties::from(&ctx);
 
-        let (arena, root_id) = Self::traverse(&ctx, &mut column_properties, indicator)?;
+        let (mut arena, root_id) = Self::traverse(&ctx, &mut column_properties, indicator)?;
+
+        match ctx.layout {
+            layout::Type::Flat | layout::Type::Iflat => {
+                let mut nodes: Vec<NodeId> = Vec::new();
+                for child in root_id.children(&arena).into_iter() {
+                    nodes.push(child)
+                }
+                let node_comparator = node::cmp::comparator(&ctx);
+
+                nodes.sort_by(|&id_a, &id_b| {
+                    let node_a = arena.get(id_a).unwrap().get();
+                    let node_b = arena.get(id_b).unwrap().get();
+                    node_comparator(node_a, node_b)
+                });
+
+                for node in nodes.iter() {
+                    root_id.append(*node, &mut arena)
+                }
+            },
+            _ => {},
+        };
 
         ctx.update_column_properties(&column_properties);
 
@@ -64,7 +86,6 @@ impl Tree {
         }
 
         let tree = Self::new(arena, root_id);
-
         if tree.is_stump() {
             return Err(Error::NoMatches);
         }
@@ -163,6 +184,7 @@ impl Tree {
                     &mut inodes,
                     column_properties,
                     ctx,
+                    root_id,
                 );
 
                 if ctx.prune || ctx.pattern.is_some() {
@@ -197,6 +219,7 @@ impl Tree {
         inode_set: &mut HashSet<Inode>,
         column_properties: &mut column::Properties,
         ctx: &Context,
+        root_id: NodeId,
     ) {
         let current_node = tree[current_node_id].get_mut();
 
@@ -216,6 +239,7 @@ impl Tree {
                     inode_set,
                     column_properties,
                     ctx,
+                    root_id,
                 );
             }
 
@@ -245,15 +269,25 @@ impl Tree {
 
         Self::update_column_properties(column_properties, dir, ctx);
 
-        children.sort_by(|&id_a, &id_b| {
-            let node_a = tree[id_a].get();
-            let node_b = tree[id_b].get();
-            node_comparator(node_a, node_b)
-        });
+        match ctx.layout {
+            layout::Type::Flat | layout::Type::Iflat => {
+                // don't bother sorting, flat layouts will need to be resorted downstream
+            },
+            _ => {
+                children.sort_by(|&id_a, &id_b| {
+                    let node_a = tree[id_a].get();
+                    let node_b = tree[id_b].get();
+                    node_comparator(node_a, node_b)
+                });
+            },
+        }
 
         // Append children to current node.
         for child_id in children {
-            current_node_id.append(child_id, tree);
+            match ctx.layout {
+                layout::Type::Flat | layout::Type::Iflat => root_id.append(child_id, tree),
+                _ => current_node_id.append(child_id, tree),
+            }
         }
     }
 
