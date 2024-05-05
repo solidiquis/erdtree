@@ -46,10 +46,14 @@ impl From<INodeError> for fmt::Error {
 impl Display for Format<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Context {
-            group: enable_group,
-            ino: enable_ino,
-            nlink: enable_nlink,
-            octal: enable_octal,
+            long:
+                crate::user::Long {
+                    group: enable_group,
+                    ino: enable_ino,
+                    nlink: enable_nlink,
+                    octal: enable_octal,
+                    ..
+                },
             column_metadata,
             ..
         } = self.ctx;

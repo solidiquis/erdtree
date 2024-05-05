@@ -15,7 +15,7 @@ keywords = ["tree", "find", "ls", "du", "commandline"]
 exclude = ["assets/*", "scripts/*", "example/*"]
 readme = "README.md"
 license = "MIT"
-rust-version = "1.76.0"
+rust-version = "1.78.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -36,7 +36,7 @@ anyhow = "1.0.75"
 chrono = { version = "0.4.24", default-features = false, features = ["clock", "std"] }
 clap = { version = "4.4.10", features = ["derive"] }
 clap_complete = "4.1.1"
-config = { version = "0.13.3", default-features = false, features = ["toml"] }
+config = { version = "0.14.0", default-features = false, features = ["toml"] }
 crossterm = "0.26.1"
 ctrlc = "3.4.0"
 dirs = "5.0"

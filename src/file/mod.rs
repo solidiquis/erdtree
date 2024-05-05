@@ -112,6 +112,7 @@ impl File {
 
         #[cfg(unix)]
         let unix_attrs = long
+            .long
             .then(|| unix::Attrs::from((&metadata, &data)))
             .unwrap_or_else(unix::Attrs::default);
 
@@ -173,7 +174,7 @@ impl File {
     pub fn timestamp_from_ctx(&self, ctx: &Context) -> Option<String> {
         use chrono::{DateTime, Local};
 
-        let system_time = match ctx.time {
+        let system_time = match ctx.long.time.unwrap_or_default() {
             TimeStamp::Mod => self.metadata().accessed().ok(),
             TimeStamp::Create => self.metadata().created().ok(),
             TimeStamp::Access => self.metadata().accessed().ok(),
@@ -181,12 +182,14 @@ impl File {
 
         system_time
             .map(DateTime::<Local>::from)
-            .map(|local_time| match ctx.time_format {
-                TimeFormat::Default => local_time.format("%d %h %H:%M %g"),
-                TimeFormat::Iso => local_time.format("%Y-%m-%d %H:%M:%S"),
-                TimeFormat::IsoStrict => local_time.format("%Y-%m-%dT%H:%M:%S%Z"),
-                TimeFormat::Short => local_time.format("%Y-%m-%d"),
-            })
+            .map(
+                |local_time| match ctx.long.time_format.unwrap_or_default() {
+                    TimeFormat::Default => local_time.format("%d %h %H:%M %g"),
+                    TimeFormat::Iso => local_time.format("%Y-%m-%d %H:%M:%S"),
+                    TimeFormat::IsoStrict => local_time.format("%Y-%m-%dT%H:%M:%S%Z"),
+                    TimeFormat::Short => local_time.format("%Y-%m-%d"),
+                },
+            )
             .map(|dt| format!("{dt}"))
     }
 

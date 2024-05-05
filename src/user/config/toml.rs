@@ -36,13 +36,14 @@ fn toml_from_env() -> Option<Config> {
 /// Concerned with how to load `.erdtree.toml` on Unix systems.
 #[cfg(unix)]
 mod unix {
-    use super::super::{CONFIG_DIR, ERDTREE_CONFIG_TOML, ERDTREE_DIR, HOME, XDG_CONFIG_HOME};
+    use super::super::{
+        CONFIG_DIR, ERDTREE_CONFIG_FILE, ERDTREE_CONFIG_TOML, ERDTREE_DIR, HOME, XDG_CONFIG_HOME,
+    };
     use config::{Config, File};
     use std::{env, ffi::OsStr, path::PathBuf};
 
     /// Looks for `.erdtree.toml` in the following locations in order:
     ///
-    /// - `$ERDTREE_TOML_PATH`
     /// - `$XDG_CONFIG_HOME/erdtree/.erdtree.toml`
     /// - `$XDG_CONFIG_HOME/.erdtree.toml`
     /// - `$HOME/.config/erdtree/.erdtree.toml`
@@ -93,15 +94,14 @@ mod unix {
             None => return None, // Why don't you have `HOME` set? Weirdo.
         };
 
-        let file = home
+        let source = home
             .join(CONFIG_DIR)
             .join(ERDTREE_DIR)
-            .join(ERDTREE_CONFIG_TOML)
-            .file_stem()
-            .and_then(OsStr::to_str)
+            .join(ERDTREE_CONFIG_FILE)
+            .to_str()
             .map(File::with_name)?;
 
-        if let Ok(config) = Config::builder().add_source(file).build() {
+        if let Ok(config) = Config::builder().add_source(source).build() {
             return Some(config);
         }
 
@@ -118,7 +118,7 @@ mod unix {
 /// Concerned with how to load `.erdtree.toml` on Windows.
 #[cfg(windows)]
 mod windows {
-    use super::super::{ERDTREE_CONFIG_TOML, ERDTREE_DIR};
+    use super::super::{ERDTREE_CONFIG_FILE, ERDTREE_DIR};
     use config::{Config, File};
 
     /// Try to read in config from the following location:
@@ -133,9 +133,8 @@ mod windows {
         let file = dirs::config_dir().and_then(|config_dir| {
             config_dir
                 .join(ERDTREE_DIR)
-                .join(ERDTREE_CONFIG_TOML)
+                .join(ERDTREE_CONFIG_FILE)
                 .to_str()
-                .and_then(|s| s.strip_suffix(".toml"))
                 .map(File::with_name)
         })?;
 

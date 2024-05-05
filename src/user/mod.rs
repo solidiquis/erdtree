@@ -1,5 +1,6 @@
 use crate::error::prelude::*;
-use clap::{Args, Parser};
+use ahash::HashMap;
+use clap::{parser::ValueSource, ArgMatches, Args, CommandFactory, FromArgMatches, Parser};
 use std::{env, fs, path::PathBuf};
 
 /// Enum definitions for enumerated command-line arguments.
@@ -10,6 +11,9 @@ pub mod column;
 
 /// Concerned with loading and parsing the optional `erdtree.toml` config file.
 mod config;
+
+#[cfg(test)]
+mod test;
 
 /// Defines the CLI whose purpose is to capture user arguments and reconcile them with arguments
 /// found with a config file if relevant.
@@ -65,45 +69,9 @@ pub struct Context {
     #[arg(long)]
     pub global_gitignore: bool,
 
-    /// Show extended metadata and attributes
     #[cfg(unix)]
-    #[arg(short, long, group = "ls-long")]
-    pub long: bool,
-
-    /// Show file's groups
-    #[cfg(unix)]
-    #[arg(long, requires = "ls-long")]
-    pub group: bool,
-
-    /// Show each file's ino
-    #[cfg(unix)]
-    #[arg(long, requires = "ls-long")]
-    pub ino: bool,
-
-    /// Show the total number of hardlinks to the underlying inode
-    #[cfg(unix)]
-    #[arg(long, requires = "ls-long")]
-    pub nlink: bool,
-
-    /// Show permissions in numeric octal format instead of symbolic
-    #[cfg(unix)]
-    #[arg(long, requires = "ls-long")]
-    pub octal: bool,
-
-    /// Which kind of timestamp to use
-    #[cfg(unix)]
-    #[arg(long, value_enum, requires = "ls-long", default_value_t)]
-    pub time: args::TimeStamp,
-
-    /// Which format to use for the timestamp; default by default
-    #[cfg(unix)]
-    #[arg(
-        long = "time-format",
-        requires = "ls-long",
-        value_enum,
-        default_value_t
-    )]
-    pub time_format: args::TimeFormat,
+    #[command(flatten)]
+    pub long: Long,
 
     /// Maximum depth to display
     #[arg(short = 'L', long, value_name = "NUM")]
@@ -117,13 +85,8 @@ pub struct Context {
     #[arg(short, long)]
     pub no_config: bool,
 
-    /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files by their
-    /// relative path
-    #[arg(short, long, group = "searching")]
-    pub pattern: Option<String>,
-
     #[command(flatten)]
-    pub globbing: Globbing,
+    pub search: Search,
 
     /// Omit empty directories from the output
     #[arg(short = 'P', long)]
@@ -169,8 +132,13 @@ pub struct Context {
 }
 
 #[derive(Args, Debug)]
-#[group(multiple = false)]
-pub struct Globbing {
+#[group(required = false, multiple = false)]
+pub struct Search {
+    /// Regular expression (or glob if '--glob' or '--iglob' is used) used to match files by their
+    /// relative path
+    #[arg(short, long, group = "searching")]
+    pub pattern: Option<String>,
+
     /// Enables glob based searching instead of regular expressions
     #[arg(long, requires = "searching")]
     pub glob: bool,
@@ -180,16 +148,57 @@ pub struct Globbing {
     pub iglob: bool,
 }
 
+#[cfg(unix)]
+#[derive(Args, Debug)]
+#[group(required = false, multiple = true)]
+pub struct Long {
+    /// Show extended metadata and attributes
+    #[arg(short, long, group = "ls-long")]
+    pub long: bool,
+
+    /// Show file's groups
+    #[arg(long, requires = "ls-long")]
+    pub group: bool,
+
+    /// Show each file's ino
+    #[arg(long, requires = "ls-long")]
+    pub ino: bool,
+
+    /// Show the total number of hardlinks to the underlying inode
+    #[arg(long, requires = "ls-long")]
+    pub nlink: bool,
+
+    /// Show permissions in numeric octal format instead of symbolic
+    #[arg(long, requires = "ls-long")]
+    pub octal: bool,
+
+    /// Which kind of timestamp to use
+    #[arg(long, value_enum, requires = "ls-long")]
+    pub time: Option<args::TimeStamp>,
+
+    /// Which format to use for the timestamp; default by default
+    #[arg(long = "time-format", requires = "ls-long", value_enum)]
+    pub time_format: Option<args::TimeFormat>,
+}
+
 impl Context {
     pub fn init() -> Result<Self> {
-        let mut clargs = Self::parse();
+        let clargs = Self::command().get_matches();
+        let user_config = Self::load_config(&clargs)?;
 
-        if clargs.dir.is_none() {
+        let mut ctx = if let Some(ref config) = user_config {
+            let reconciled_args = Self::reconcile_args(&clargs, config);
+            Self::try_parse_from(reconciled_args).into_report(ErrorCategory::User)?
+        } else {
+            Self::from_arg_matches(&clargs).into_report(ErrorCategory::User)?
+        };
+
+        if ctx.dir.is_none() {
             let current_dir = Self::get_current_dir()?;
-            clargs.dir = Some(current_dir);
+            ctx.dir = Some(current_dir);
         }
 
-        Ok(clargs)
+        Ok(ctx)
     }
 
     pub fn dir(&self) -> Option<&PathBuf> {
@@ -223,5 +232,93 @@ impl Context {
 
     fn default_num_threads() -> usize {
         std::thread::available_parallelism().map_or(3, usize::from)
+    }
+
+    fn load_config(clargs: &ArgMatches) -> Result<Option<ArgMatches>> {
+        let cmd = Self::from_arg_matches(clargs).into_report(ErrorCategory::User)?;
+
+        if cmd.no_config {
+            return Ok(None);
+        }
+
+        let Some(raw_config) = config::toml::load() else {
+            return Ok(None);
+        };
+
+        match config::parse::args(raw_config, cmd.config.as_deref()) {
+            Ok(config) => Ok(config),
+            Err(err) => match err {
+                config::parse::Error::TableNotFound(_) => Err(err).into_report(ErrorCategory::User),
+                _ => Err(err).into_report(ErrorCategory::Internal),
+            },
+        }
+    }
+
+    /// Reconcile args between command-line and user config.
+    fn reconcile_args(clargs: &ArgMatches, config: &ArgMatches) -> Vec<String> {
+        let mut arg_id_map = HashMap::<clap::Id, clap::Arg>::default();
+
+        for arg_def in Self::command().get_arguments() {
+            if arg_def.is_positional() {
+                continue;
+            }
+            arg_id_map.insert(arg_def.get_id().clone(), arg_def.clone());
+        }
+
+        let mut args = vec![crate::BIN_NAME.to_string()];
+
+        let mut push_args = |arg_name: String, arg_id: &str, src: &ArgMatches| {
+            if let Ok(Some(mut bool_args)) = src.try_get_many::<bool>(arg_id) {
+                if bool_args.all(|arg| *arg) {
+                    args.push(arg_name);
+                }
+                return;
+            }
+
+            let vals = src
+                .get_raw_occurrences(arg_id)
+                .unwrap()
+                .flat_map(|i| {
+                    i.map(|o| o.to_string_lossy().into_owned())
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+
+            args.push(arg_name);
+            args.extend_from_slice(&vals);
+        };
+
+        for arg_id in arg_id_map.keys() {
+            let arg_id_str = arg_id.as_str();
+
+            let Some(arg_def) = arg_id_map.get(arg_id) else {
+                continue;
+            };
+
+            let arg_name = arg_def.get_long().map_or_else(
+                || arg_def.get_short().map(|c| format!("-{c}")).unwrap(),
+                |long| format!("--{long}"),
+            );
+
+            let confarg_vs = config.value_source(arg_id_str);
+            let clarg_vs = clargs.value_source(arg_id_str);
+
+            match (clarg_vs, confarg_vs) {
+                (None, None) => continue,
+                (Some(_), None) => push_args(arg_name, arg_id_str, clargs),
+                (None, Some(_)) => push_args(arg_name, arg_id_str, config),
+                (Some(clarg), Some(conf)) => match (clarg, conf) {
+                    // Prioritize config argument over default
+                    (ValueSource::DefaultValue, ValueSource::CommandLine) => {
+                        push_args(arg_name, arg_id_str, config)
+                    },
+
+                    // Prioritize user argument in all other cases
+                    _ => push_args(arg_name, arg_id_str, clargs),
+                },
+            }
+        }
+
+        args.into_iter().collect::<Vec<_>>()
     }
 }

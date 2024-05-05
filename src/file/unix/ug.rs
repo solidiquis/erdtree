@@ -8,14 +8,6 @@ impl UserGroupInfo for Metadata {}
 
 /// Trait that allows for files to query their owner and group.
 pub trait UserGroupInfo: MetadataExt {
-    /// Attemps to query the owner of the implementor.
-    fn try_get_owner(&self) -> Result<String, Error> {
-        unsafe {
-            let uid = self.uid();
-            try_get_user(uid)
-        }
-    }
-
     /// Attempts to query both the owner and group of the implementor.
     fn try_get_owner_and_group(&self) -> Result<(Owner, Group), Error> {
         unsafe {

@@ -3,7 +3,7 @@ use crate::{
     file::{tree::Tree, File},
     user::{
         args::{FileType, Layout},
-        Context, Globbing,
+        Context, Search,
     },
 };
 use ahash::HashSet;
@@ -31,8 +31,8 @@ impl Tree {
             self.filter_file_type(ctx);
         }
 
-        if ctx.pattern.is_some() {
-            let Globbing { glob, iglob } = ctx.globbing;
+        if ctx.search.pattern.is_some() {
+            let Search { glob, iglob, .. } = ctx.search;
 
             if glob || iglob {
                 self.filter_glob(ctx)?;
@@ -123,7 +123,9 @@ impl Tree {
     pub fn filter_regex(
         &mut self,
         Context {
-            pattern, layout, ..
+            search: Search { pattern, .. },
+            layout,
+            ..
         }: &Context,
     ) -> Result<()> {
         let re_pattern = pattern
@@ -174,8 +176,7 @@ impl Tree {
     /// Filtering via globbing
     fn filter_glob(&mut self, ctx: &Context) -> Result<()> {
         let Context {
-            globbing: Globbing { iglob, .. },
-            pattern,
+            search: Search { pattern, iglob, .. },
             layout,
             ..
         } = ctx;

@@ -1,13 +1,5 @@
-use crate::user;
 use ahash::HashMap;
-use clap::{
-    ArgMatches,
-    Command,
-    CommandFactory,
-    error::Error as ClapError,
-    FromArgMatches,
-    Parser
-};
+use clap::{error::Error as ClapError, ArgMatches, CommandFactory};
 use config::{Config, ConfigError};
 use toml::Value;
 
@@ -20,7 +12,7 @@ pub enum Error {
     TableNotFound(String),
 
     #[error("Error while parsing config arguments: {0}")]
-    Parse(#[from] ClapError)
+    Parse(#[from] ClapError),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -31,7 +23,7 @@ pub fn args(conf: Config, table_name: Option<&str>) -> Result<Option<ArgMatches>
     let maybe_config = conf.try_deserialize::<toml::Table>().map(|raw_config| {
         deep_transform_keys(raw_config, |mut key| {
             key.make_ascii_lowercase();
-            format!("--{}", key.replace("_", "-"))
+            format!("--{}", key.replace('_', "-"))
         })
     })?;
 
@@ -43,10 +35,10 @@ pub fn args(conf: Config, table_name: Option<&str>) -> Result<Option<ArgMatches>
         Some(name) => match config.remove(&format!("--{name}")) {
             Some(Value::Table(sub_table)) => {
                 config = sub_table;
-            }
+            },
             _ => return Err(Error::TableNotFound(name.to_string())),
-        }
-        None => remove_sub_tables(&mut config)
+        },
+        None => remove_sub_tables(&mut config),
     }
 
     let arg_matches = into_args(config)?;
@@ -66,21 +58,20 @@ fn into_args(conf: TomlConfig) -> Result<ArgMatches> {
                         args.push(farg)
                     }
                 }
-            }
+            },
             Value::Boolean(arg) if arg => {
                 args.push(arg_name.clone());
-            }
+            },
             _ => {
                 if let Some(farg) = fmt_arg(param) {
                     args.push(arg_name.clone());
                     args.push(farg)
                 }
-            }
+            },
         }
     }
 
-    let cmd = crate::user::Context::command()
-        .try_get_matches_from(args)?;
+    let cmd = crate::user::Context::command().try_get_matches_from(args)?;
 
     Ok(cmd)
 }
@@ -88,11 +79,11 @@ fn into_args(conf: TomlConfig) -> Result<ArgMatches> {
 /// Formats basic primitive types into OS args. Will ignore table and array types.
 fn fmt_arg(val: Value) -> Option<String> {
     match val {
-        Value::Float(p) =>  Some(format!("{p}")),
-        Value::String(p) => Some(format!("{p}")),
-        Value::Datetime(p) => Some(format!("{p}")),
-        Value::Integer(p) => Some(format!("{p}")),
-        _ => None
+        Value::Float(p) => Some(p.to_string()),
+        Value::String(p) => Some(p.to_string()),
+        Value::Datetime(p) => Some(p.to_string()),
+        Value::Integer(p) => Some(p.to_string()),
+        _ => None,
     }
 }
 
@@ -115,7 +106,7 @@ fn deep_transform_keys(toml: TomlConfig, transformer: KeyTransformer) -> Option<
     let mut dfs_stack_src = vec![Value::Table(toml)];
     let mut dfs_stack_dst = vec![("".to_string(), toml::map::Map::default())];
 
-    let mut key_iters = HashMap::default(); 
+    let mut key_iters = HashMap::default();
 
     'outer: while !dfs_stack_src.is_empty() {
         let Some(Value::Table(current_node)) = dfs_stack_src.last_mut() else {
@@ -126,9 +117,9 @@ fn deep_transform_keys(toml: TomlConfig, transformer: KeyTransformer) -> Option<
             continue;
         };
 
-        let keys = key_iters.entry(dst_key.clone()).or_insert_with(|| {
-            current_node.keys().cloned().collect::<Vec<_>>().into_iter()
-        });
+        let keys = key_iters
+            .entry(dst_key.clone())
+            .or_insert_with(|| current_node.keys().cloned().collect::<Vec<_>>().into_iter());
 
         for key in keys {
             match current_node.remove(&key) {
@@ -138,12 +129,12 @@ fn deep_transform_keys(toml: TomlConfig, transformer: KeyTransformer) -> Option<
                         dfs_stack_dst.push((transformed_key, toml::map::Map::default()));
                         dfs_stack_src.push(value);
                         continue 'outer;
-                    }
+                    },
                     _ => {
                         let transformed_key = transformer(key);
                         copy_dst.insert(transformed_key, value);
-                    }
-                }
+                    },
+                },
                 None => continue,
             }
         }

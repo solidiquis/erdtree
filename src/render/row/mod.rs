@@ -17,7 +17,7 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
         Layout::Flat => {
             let root = ctx.dir_canonical()?;
 
-            match (ctx.long, ctx.suppress_size) {
+            match (ctx.long.long, ctx.suppress_size) {
                 (false, false) => Ok(Box::new(move |file, prefix| {
                     let size = format!("{}", file.size());
                     let base = root.ancestors().nth(1);
@@ -75,7 +75,7 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                 })),
             }
         },
-        _ => match (ctx.long, ctx.suppress_size) {
+        _ => match (ctx.long.long, ctx.suppress_size) {
             (false, false) => Ok(Box::new(|file, prefix| {
                 let size = format!("{}", file.size());
                 let name = file.display_name();
