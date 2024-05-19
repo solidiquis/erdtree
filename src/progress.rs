@@ -1,6 +1,8 @@
 use crossterm::{
     cursor,
+    execute,
     ExecutableCommand,
+    style::Print,
     terminal::{self, ClearType},
 };
 use std::{
@@ -14,7 +16,7 @@ use std::{
 };
 
 /// For progress indicator to throttle printin.
-pub const RENDER_INTERVAL_MS: u64 = 33;
+pub const RENDER_INTERVAL_MS: u64 = 16;
 
 /// To notify the progress indicator
 static NOTIFIER: OnceLock<Sender<Message>> = OnceLock::new();
@@ -35,13 +37,6 @@ enum IndicatorState {
     #[default]
     Indexing,
     PreparingOutput,
-}
-
-#[derive(Default)]
-pub struct FileCounter {
-    num_file: usize,
-    num_dir: usize,
-    num_link: usize,
 }
 
 impl Indicator {
@@ -95,14 +90,12 @@ impl Indicator {
                     if time_last_print.elapsed() < threshold {
                         continue;
                     }
-                    let _ = stdout.execute(terminal::Clear(ClearType::CurrentLine));
                     let _ = write!(stdout, "{self}");
                     let _ = stdout.execute(cursor::RestorePosition);
                     time_last_print = std::time::Instant::now();
                 }
                 self.update_state(IndicatorState::PreparingOutput);
-                let _ = stdout.execute(terminal::Clear(ClearType::CurrentLine));
-                let _ = write!(stdout, "{self}");
+                let _ = execute!(stdout, terminal::Clear(ClearType::CurrentLine), Print(self));
             });
 
             let out = op();
