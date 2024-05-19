@@ -1,130 +1,93 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
-#![warn(
-    clippy::all,
-    clippy::cargo,
-    clippy::complexity,
-    clippy::correctness,
-    clippy::nursery,
-    clippy::pedantic,
-    clippy::perf,
-    clippy::style,
-    clippy::suspicious
-)]
-#![allow(clippy::cast_precision_loss, clippy::struct_excessive_bools, clippy::wildcard_imports)]
-
 use clap::CommandFactory;
-use context::{layout, Context};
-use progress::{Indicator, IndicatorHandle, Message};
-use render::{Engine, Flat, FlatInverted, Inverted, Regular};
-use std::{
-    error::Error,
-    io::{stdout, Write},
-    process::ExitCode,
-};
-use tree::Tree;
+use std::{io::stdout, process::ExitCode};
 
-/// Operations to wrangle ANSI escaped strings.
-mod ansi;
+/// Concerned with disk usage calculation and presentation.
+mod disk;
 
-/// CLI rules and definitions as well as context to be injected throughout the entire program.
-mod context;
+/// Error handling and reporting utilities to be used throughout the Erdtree.
+mod error;
+use error::prelude::*;
 
-/// Operations relevant to the computation and presentation of disk usage.
-mod disk_usage;
+/// Erdtree's representation of a file.
+mod file;
 
-/// Filesystem operations.
-mod fs;
+/// Concerned with file icons.
+mod icon;
 
-/// All things related to icons on how to map certain files to the appropriate icons.
-mod icons;
-
-/// Concerned with displaying a progress indicator when stdout is a tty.
+/// Progress indicator.
 mod progress;
 
-/// Concerned with taking an initialized [`tree::Tree`] and its [`tree::node::Node`]s and rendering the output.
+/// Defines the command-line interface and the context used throughout Erdtree.
+mod user;
+use user::Context;
+
+/// For basic performance measurements when compiling for debug.
+#[cfg(debug_assertions)]
+#[macro_use]
+mod perf;
+
+/// Concerned with rendering the program output.
 mod render;
+use render::Renderer;
 
-/// Global used throughout the program to paint the output.
-mod styles;
-
-/// Houses the primary data structures that are used to virtualize the filesystem, containing also
-/// information on how the tree output should be ultimately rendered.
-mod tree;
-
-/// Utilities relating to interacting with tty properties.
-mod tty;
-
-/// Common utilities across all modules.
-mod utils;
+const BIN_NAME: &str = "erd";
 
 fn main() -> ExitCode {
     if let Err(e) = run() {
         eprintln!("{e}");
         return ExitCode::FAILURE;
     }
-
     ExitCode::SUCCESS
 }
 
-fn run() -> Result<(), Box<dyn Error>> {
-    let ctx = Context::try_init()?;
+fn run() -> Result<()> {
+    #[cfg(debug_assertions)]
+    {
+        perf::init_global();
+        perf::begin_recording("crate::main");
+    }
+
+    #[cfg(debug_assertions)]
+    crate::perf::begin_recording("crate::user::Context::init");
+
+    let mut ctx = user::Context::init()?;
+
+    #[cfg(debug_assertions)]
+    crate::perf::finish_recording("crate::user::Context::init");
 
     if let Some(shell) = ctx.completions {
-        clap_complete::generate(shell, &mut Context::command(), "erd", &mut stdout());
+        clap_complete::generate(shell, &mut Context::command(), BIN_NAME, &mut stdout());
         return Ok(());
     }
 
-    styles::init(ctx.no_color());
+    let (mut file_tree, accumulator, column_metadata) = {
+        progress::init_indicator(&ctx)?.show_progress(|| {
+            if ctx.suppress_size {
+                file::Tree::init_without_disk_usage(&ctx)
+            } else {
+                file::Tree::init(&ctx)
+            }
+        })
+    }?;
 
-    let indicator = Indicator::maybe_init(&ctx);
+    ctx.update_column_metadata(column_metadata);
 
-    let (tree, ctx) = {
-        match Tree::try_init(ctx, indicator.as_ref()) {
-            Ok(res) => res,
-            Err(err) => {
-                IndicatorHandle::terminate(indicator);
-                return Err(Box::new(err));
-            },
-        }
-    };
+    file_tree.filter_nodes(&ctx)?;
 
-    macro_rules! compute_output {
-        ($t:ty) => {{
-            let render = Engine::<$t>::new(tree, ctx);
-            format!("{render}")
-        }};
-    }
+    Renderer::new(&ctx, &file_tree).render()?;
 
-    let output = match ctx.layout {
-        layout::Type::Flat => compute_output!(Flat),
-        layout::Type::Iflat => compute_output!(FlatInverted),
-        layout::Type::Inverted => compute_output!(Inverted),
-        layout::Type::Regular => compute_output!(Regular),
-    };
-
-    if let Some(mut progress) = indicator {
-        progress
-            .mailbox()
-            .send(Message::RenderReady)
-            .map_err(|_e| tree::error::Error::Terminated)?;
-
-        progress
-            .join_handle
-            .take()
-            .map(|h| h.join().unwrap())
-            .transpose()?;
+    if !ctx.no_report {
+        println!("{accumulator}");
     }
 
     #[cfg(debug_assertions)]
     {
-        if std::env::var_os("ERDTREE_DEBUG").is_none() {
-            let _ = writeln!(stdout(), "{output}");
-        }
-    }
+        perf::finish_recording("crate::main");
 
-    #[cfg(not(debug_assertions))]
-    {
-        let _ = writeln!(stdout(), "{output}");
+        if ctx.debug {
+            perf::output(std::io::stdout());
+        }
     }
 
     Ok(())
