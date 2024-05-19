@@ -35,7 +35,7 @@ pub fn args(conf: Config, table_name: Option<&str>) -> Result<Option<ArgMatches>
         Some(name) => match config.remove(&format!("--{name}")) {
             Some(Value::Table(sub_table)) => {
                 config = sub_table;
-            },
+            }
             _ => return Err(Error::TableNotFound(name.to_string())),
         },
         None => remove_sub_tables(&mut config),
@@ -58,16 +58,16 @@ fn into_args(conf: TomlConfig) -> Result<ArgMatches> {
                         args.push(farg)
                     }
                 }
-            },
+            }
             Value::Boolean(arg) if arg => {
                 args.push(arg_name.clone());
-            },
+            }
             _ => {
                 if let Some(farg) = fmt_arg(param) {
                     args.push(arg_name.clone());
                     args.push(farg)
                 }
-            },
+            }
         }
     }
 
@@ -129,11 +129,11 @@ fn deep_transform_keys(toml: TomlConfig, transformer: KeyTransformer) -> Option<
                         dfs_stack_dst.push((transformed_key, toml::map::Map::default()));
                         dfs_stack_src.push(value);
                         continue 'outer;
-                    },
+                    }
                     _ => {
                         let transformed_key = transformer(key);
                         copy_dst.insert(transformed_key, value);
-                    },
+                    }
                 },
                 None => continue,
             }

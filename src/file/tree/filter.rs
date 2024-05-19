@@ -90,7 +90,7 @@ impl Tree {
             match ft {
                 FileType::Dir if matches!(layout, Layout::Tree | Layout::InvertedTree) => {
                     filters.push(Box::new(|f| f.is_dir()))
-                },
+                }
                 FileType::Dir => filters.push(Box::new(|f| f.is_dir())),
                 FileType::File => filters.push(Box::new(|f| f.is_file())),
                 FileType::Symlink => filters.push(Box::new(|f| f.is_symlink())),
@@ -152,7 +152,7 @@ impl Tree {
                 to_remove
                     .into_iter()
                     .for_each(|n| n.remove(&mut self.arena));
-            },
+            }
             _ => {
                 let to_remove = self
                     .root_id
@@ -167,7 +167,7 @@ impl Tree {
                 to_remove
                     .into_iter()
                     .for_each(|n| n.remove_subtree(&mut self.arena));
-            },
+            }
         };
 
         Ok(())
@@ -230,7 +230,7 @@ impl Tree {
                 to_remove
                     .into_iter()
                     .for_each(|n| n.remove(&mut self.arena));
-            },
+            }
             _ => {
                 let to_remove = self
                     .root_id
@@ -251,7 +251,7 @@ impl Tree {
                 to_remove
                     .into_iter()
                     .for_each(|n| n.remove_subtree(&mut self.arena));
-            },
+            }
         }
 
         Ok(())

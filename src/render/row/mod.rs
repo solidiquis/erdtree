@@ -74,7 +74,7 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                     }
                 })),
             }
-        },
+        }
         _ => match (ctx.long.long, ctx.suppress_size) {
             (false, false) => Ok(Box::new(|file, prefix| {
                 let size = format!("{}", file.size());
@@ -160,7 +160,7 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                     }
                 }))
             }
-        },
+        }
         _ => {
             if ctx.suppress_size {
                 Ok(Box::new(|file, prefix| {
@@ -185,6 +185,6 @@ pub fn formatter<'a>(buf: &'a mut String, ctx: &'a Context) -> Result<RowFormatt
                     }
                 }))
             }
-        },
+        }
     }
 }

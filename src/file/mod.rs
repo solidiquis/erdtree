@@ -46,6 +46,14 @@ pub struct File {
     unix_attrs: unix::Attrs,
 }
 
+// For keeping track of the count of file-types while loading from disk.
+#[derive(Default)]
+pub struct Accumulator {
+    num_file: usize,
+    num_dir: usize,
+    num_link: usize,
+}
+
 /// [`Display`] implementation concerned with human-readable presentation of the file-name.
 pub struct DisplayName<'a> {
     file: &'a File,
@@ -246,6 +254,24 @@ impl Deref for File {
     }
 }
 
+impl Accumulator {
+    pub fn total(&self) -> usize {
+        self.num_dir + self.num_file + self.num_link
+    }
+
+    pub fn increment(&mut self, ft: Option<fs::FileType>) {
+        let Some(file_type) = ft else { return };
+
+        if file_type.is_file() {
+            self.num_file += 1;
+        } else if file_type.is_dir() {
+            self.num_dir += 1;
+        } else if file_type.is_symlink() {
+            self.num_link += 1;
+        }
+    }
+}
+
 impl Display for DisplayName<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let file_name = self.file.file_name().to_string_lossy();
@@ -266,7 +292,7 @@ impl Display for DisplayPath<'_> {
                 let path = self.file.path();
                 path.strip_prefix(prefix)
                     .map_or_else(|_| path.display(), |p| p.display())
-            },
+            }
             None => self.file.path().display(),
         };
 
@@ -277,5 +303,31 @@ impl Display for DisplayPath<'_> {
         } else {
             write!(f, "{display}")
         }
+    }
+}
+
+impl Display for Accumulator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut displayed_count = Vec::new();
+
+        match self.num_dir {
+            n if n > 1 => displayed_count.push(format!("{} directories", n)),
+            1 => displayed_count.push("1 directory".to_string()),
+            _ => (),
+        }
+
+        match self.num_file {
+            n if n > 1 => displayed_count.push(format!("{} files", n)),
+            1 => displayed_count.push("1 file".to_string()),
+            _ => (),
+        }
+
+        match self.num_link {
+            n if n > 1 => displayed_count.push(format!("{} links", n)),
+            1 => displayed_count.push("1 link".to_string()),
+            _ => (),
+        }
+
+        writeln!(f, "{}", displayed_count.join(", "))
     }
 }
