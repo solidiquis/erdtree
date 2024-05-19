@@ -1,7 +1,11 @@
 use crate::error::prelude::*;
 use ahash::HashMap;
 use clap::{parser::ValueSource, ArgMatches, Args, CommandFactory, FromArgMatches, Parser};
-use std::{env, fs, path::PathBuf};
+use std::{
+    env,
+    fs,
+    path::PathBuf,
+};
 
 /// Enum definitions for enumerated command-line arguments.
 pub mod args;
@@ -85,6 +89,10 @@ pub struct Context {
     #[arg(short, long)]
     pub no_config: bool,
 
+    /// Hide the progress indicator
+    #[arg(long)]
+    pub no_progress: bool,
+
     #[command(flatten)]
     pub search: Search,
 
@@ -116,10 +124,6 @@ pub struct Context {
     #[arg(short = 'x', long = "one-file-system")]
     pub same_fs: bool,
 
-    /// Prints logs at the end of the output
-    #[arg(short = 'v', long = "verbose")]
-    pub verbose: bool,
-
     #[arg(long)]
     /// Print completions for a given shell to stdout
     pub completions: Option<clap_complete::Shell>,
@@ -129,6 +133,11 @@ pub struct Context {
     //////////////////////////
     #[clap(skip = column::Metadata::default())]
     pub column_metadata: column::Metadata,
+
+    #[cfg(debug_assertions)]
+    #[arg(long)]
+    // Output debug information at the end of the output
+    pub debug: bool,
 }
 
 #[derive(Args, Debug)]
@@ -193,7 +202,9 @@ impl Context {
             Self::from_arg_matches(&clargs).into_report(ErrorCategory::User)?
         };
 
-        if ctx.dir.is_none() {
+        if let Some(dir_arg) = clargs.get_one::<PathBuf>("dir").cloned() {
+            ctx.dir = Some(dir_arg) 
+        } else {
             let current_dir = Self::get_current_dir()?;
             ctx.dir = Some(current_dir);
         }

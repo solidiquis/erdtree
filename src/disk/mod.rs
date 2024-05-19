@@ -119,10 +119,7 @@ impl Usage {
             std::fs::read_to_string(data.path()).map(|data| data.split_whitespace().count())?;
 
         let word_count = u64::try_from(word_count).map_or_else(
-            |e| {
-                log::warn!("Usage::init_word_count {e}");
-                Self::WordCount(word_count as u64)
-            },
+            |_| Self::WordCount(word_count as u64),
             Self::WordCount,
         );
 
@@ -144,10 +141,7 @@ impl Usage {
         let line_count = fs::read_to_string(data.path()).map(|data| data.lines().count())?;
 
         let line_count = u64::try_from(line_count).map_or_else(
-            |e| {
-                log::warn!("Usage::init_line_count {e}");
-                Self::WordCount(line_count as u64)
-            },
+            |_| Self::WordCount(line_count as u64),
             Self::LineCount,
         );
 

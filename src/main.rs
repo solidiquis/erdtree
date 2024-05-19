@@ -1,14 +1,9 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
 use clap::CommandFactory;
-use log::Log;
 use std::{
-    io::{stdout, Write},
+    io::stdout,
     process::ExitCode,
 };
-
-/// Defines the command-line interface and the context used throughout Erdtree.
-mod user;
-use user::Context;
 
 /// Concerned with disk usage calculation and presentation.
 mod disk;
@@ -23,11 +18,22 @@ mod file;
 /// Concerned with file icons.
 mod icon;
 
-/// Concerned with logging throughout the application.
-mod logging;
+/// Progress indicator.
+mod progress;
+
+/// Defines the command-line interface and the context used throughout Erdtree.
+mod user;
+use user::Context;
+
+
+/// For basic performance measurements when compiling for debug.
+#[cfg(debug_assertions)]
+#[macro_use]
+mod perf;
 
 /// Concerned with rendering the program output.
 mod render;
+use render::Renderer;
 
 const BIN_NAME: &str = "erd";
 
@@ -40,39 +46,55 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<()> {
+    #[cfg(debug_assertions)]
+    {
+        perf::init_global();
+        perf::begin_recording("crate::main");
+    }
+
+    #[cfg(debug_assertions)]
+    crate::perf::begin_recording("crate::user::Context::init");
+
     let mut ctx = user::Context::init()?;
+
+    #[cfg(debug_assertions)]
+    crate::perf::finish_recording("crate::user::Context::init");
 
     if let Some(shell) = ctx.completions {
         clap_complete::generate(shell, &mut Context::command(), BIN_NAME, &mut stdout());
         return Ok(());
     }
 
-    let logger = ctx
-        .verbose
-        .then_some(logging::LoggityLog::init())
-        .transpose()?;
-
-    let mut file_tree = if ctx.suppress_size {
-        file::Tree::init_without_disk_usage(&ctx).map(|(tree, column_metadata)| {
-            ctx.update_column_metadata(column_metadata);
-            tree
-        })?
+    // TODO: Use accumulator
+    let (mut file_tree, _accumulator, column_metadata) = if ctx.no_progress {
+        if ctx.suppress_size {
+            file::Tree::init_without_disk_usage(&ctx)
+        } else {
+            file::Tree::init(&ctx)
+        }
     } else {
-        file::Tree::init(&ctx).map(|(tree, column_metadata)| {
-            ctx.update_column_metadata(column_metadata);
-            tree
-        })?
-    };
+        progress::Indicator::init().show_progress(|| {
+            if ctx.suppress_size {
+                file::Tree::init_without_disk_usage(&ctx)
+            } else {
+                file::Tree::init(&ctx)
+            }
+        })
+    }?;
+
+    ctx.update_column_metadata(column_metadata);
 
     file_tree.filter_nodes(&ctx)?;
 
-    let output = render::output(&file_tree, &ctx)?;
+    Renderer::new(&ctx, &file_tree).render()?;
 
-    let mut stdout = stdout().lock();
-    writeln!(stdout, "{output}").into_report(ErrorCategory::Warning)?;
+    #[cfg(debug_assertions)]
+    {
+        perf::finish_recording("crate::main");
 
-    if let Some(logger) = logger {
-        logger.flush();
+        if ctx.debug {
+            perf::output(std::io::stdout());
+        }
     }
 
     Ok(())

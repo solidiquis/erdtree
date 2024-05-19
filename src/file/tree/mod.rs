@@ -2,6 +2,7 @@ use super::order;
 use crate::{
     error::prelude::*,
     file::File,
+    progress,
     user::{
         args::{Layout, Sort, SortType},
         column, Context,
@@ -41,13 +42,13 @@ pub enum TreeError {
 
 impl Tree {
     /// Like [`Tree::init`] but leverages parallelism for disk-reads and [`File`] initialization.
-    pub fn init(ctx: &Context) -> Result<(Self, column::Metadata)> {
-        let TransitionState {
+    pub fn init(ctx: &Context) -> Result<(Self, super::Accumulator, column::Metadata)> {
+        let (TransitionState {
             mut arena,
             mut branches,
             mut column_metadata,
             root_id,
-        } = Self::load(ctx)?;
+        }, accumulator)= Self::load(ctx)?;
 
         let mut dir_stack = vec![root_id];
         let mut inode_set = HashSet::default();
@@ -83,23 +84,15 @@ impl Tree {
                     continue 'outer;
                 }
 
-                match dirent_node.inode() {
-                    Ok(inode) => {
-                        #[cfg(unix)]
-                        column_metadata.update_inode_attr_widths(&inode);
+                if let Ok(inode) = dirent_node.inode() {
+                    #[cfg(unix)]
+                    column_metadata.update_inode_attr_widths(&inode);
 
-                        *current_dirsize += inode_set
-                            .insert(inode)
-                            .then(|| dirent_node.size().value())
-                            .unwrap_or(0);
-                    },
-                    Err(err) => {
-                        log::warn!(
-                            "Failed to query inode of {} which may affect disk usage report: {err}",
-                            dirent_node.path().display(),
-                        );
-                    },
-                };
+                    *current_dirsize += inode_set
+                        .insert(inode)
+                        .then(|| dirent_node.size().value())
+                        .unwrap_or(0);
+                }
             }
 
             dir_stack.pop();
@@ -175,16 +168,16 @@ impl Tree {
 
         let tree = Self { root_id, arena };
 
-        Ok((tree, column_metadata))
+        Ok((tree, accumulator, column_metadata))
     }
 
-    pub fn init_without_disk_usage(ctx: &Context) -> Result<(Self, column::Metadata)> {
-        let TransitionState {
+    pub fn init_without_disk_usage(ctx: &Context) -> Result<(Self, super::Accumulator, column::Metadata)> {
+        let (TransitionState {
             mut arena,
             mut branches,
             mut column_metadata,
             root_id,
-        } = Self::load(ctx)?;
+        }, accumulator)= Self::load(ctx)?;
 
         #[cfg(unix)]
         macro_rules! update_metadata {
@@ -256,16 +249,20 @@ impl Tree {
 
         let tree = Self { root_id, arena };
 
-        Ok((tree, column_metadata))
+        Ok((tree, accumulator, column_metadata))
     }
 
     /// Reads data from disk and aggregates data along with metadata into a [`TransitionState`]
     /// which callers would then consume to construct a [`Tree`].
-    fn load(ctx: &Context) -> Result<TransitionState> {
+    fn load(ctx: &Context) -> Result<(TransitionState, super::Accumulator)> {
         let mut arena = Arena::new();
         let mut branches = HashMap::<PathBuf, Vec<NodeId>>::default();
         let mut column_metadata = column::Metadata::default();
         let mut maybe_root_id = None;
+        let mut accumulator = super::Accumulator::default();
+
+        // To notify the progress indicator
+        let notifier = progress::Indicator::use_notifier();
 
         traverse::run(ctx, |file| {
             #[cfg(unix)]
@@ -274,6 +271,9 @@ impl Tree {
             let node_id = arena.new_node(file);
             let file = arena[node_id].get();
             let file_path = file.path();
+
+            accumulator.increment(file.file_type());
+            progress::Indicator::notify(&notifier, accumulator.total());
 
             maybe_root_id = (file.depth() == 0).then_some(node_id).or(maybe_root_id);
 
@@ -287,17 +287,21 @@ impl Tree {
             Ok(())
         })?;
 
+        progress::Indicator::finish(&notifier);
+
         let root_id = maybe_root_id
             .ok_or(TreeError::RootDir)
             .into_report(ErrorCategory::Internal)
             .context(error_source!())?;
 
-        Ok(TransitionState {
+        let ts = TransitionState {
             arena,
             branches,
             column_metadata,
             root_id,
-        })
+        };
+
+        Ok((ts, accumulator))
     }
 
     pub fn root_id(&self) -> NodeId {

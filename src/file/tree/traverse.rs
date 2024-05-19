@@ -24,9 +24,9 @@ where
             loop {
                 match rx.recv().into_report(ErrorCategory::Internal) {
                     Ok(TraversalState::Ongoing(file)) => op(file)?,
-                    Ok(TraversalState::Error(e)) => log::warn!("{e}"),
                     Ok(TraversalState::Done) => break,
                     Err(e) => return Err(e),
+                    _ => (),
                 }
             }
             Ok(())

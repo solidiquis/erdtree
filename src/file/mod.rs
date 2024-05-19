@@ -46,6 +46,14 @@ pub struct File {
     unix_attrs: unix::Attrs,
 }
 
+// For keeping track of the count of file-types while loading from disk.
+#[derive(Default)]
+pub struct Accumulator {
+    num_file: usize,
+    num_dir: usize,
+    num_link: usize,
+}
+
 /// [`Display`] implementation concerned with human-readable presentation of the file-name.
 pub struct DisplayName<'a> {
     file: &'a File,
@@ -243,6 +251,26 @@ impl Deref for File {
 
     fn deref(&self) -> &Self::Target {
         &self.data
+    }
+}
+
+impl Accumulator {
+    pub fn total(&self) -> usize {
+        self.num_dir + self.num_file + self.num_link
+    }
+
+    pub fn increment(&mut self, ft: Option<fs::FileType>) {
+        let Some(file_type) = ft else {
+            return
+        };
+
+        if file_type.is_file() {
+            self.num_file += 1;
+        } else if file_type.is_dir() {
+            self.num_dir += 1;
+        } else if file_type.is_symlink() {
+            self.num_link += 1;
+        }
     }
 }
 

@@ -4,6 +4,7 @@ use crate::{
     user::{args::Layout, Context},
 };
 use indextree::{NodeEdge, NodeId};
+use std::io::{self, Write};
 
 /// Used for padding between tree branches.
 pub const SEP: &str = "   ";
@@ -24,188 +25,199 @@ pub const ROTATED_T: &str = "\u{251C}\u{2500} ";
 /// row in the program output.
 mod row;
 
-pub fn output(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
-    match ctx.layout {
-        Layout::Tree => tree(file_tree, ctx),
-        Layout::InvertedTree => inverted_tree(file_tree, ctx),
-        Layout::Flat => flat(file_tree, ctx),
-    }
+pub struct Renderer<'a> {
+    ctx: &'a Context,
+    file_tree: &'a file::Tree,
 }
 
-fn inverted_tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
-    let arena = file_tree.arena();
-    let root = file_tree.root_id();
-    let max_depth = ctx.level();
+impl<'a> Renderer<'a> {
+    pub fn new(ctx: &'a Context, file_tree: &'a file::Tree) -> Self {
+        Self { ctx, file_tree }
+    }
 
-    let mut buf = String::new();
+    pub fn render(self) -> Result<()> {
+        let out = match self.ctx.layout {
+            Layout::Tree => self.tree(),
+            Layout::InvertedTree => self.inverted_tree(),
+            Layout::Flat => self.flat(),
+        }?;
 
-    let is_first_sibling = |node_id: NodeId, depth: usize| {
-        (depth > 0)
-            .then(|| node_id.following_siblings(arena).nth(1).is_none())
-            .unwrap_or(false)
-    };
+        writeln!(io::stdout(), "{out}").into_report(ErrorCategory::Warning)?;
 
-    let mut inherited_prefix_components = vec![""];
+        Ok(())
+    }
 
-    let mut formatter = row::formatter(&mut buf, ctx)?;
+    fn inverted_tree(&self) -> Result<String> {
+        let arena = self.file_tree.arena();
+        let root = self.file_tree.root_id();
+        let max_depth = self.ctx.level();
 
-    let mut reverse_traverse = root.reverse_traverse(arena);
-    reverse_traverse.next();
+        let mut buf = String::new();
 
-    for node_edge in reverse_traverse {
-        let (node, node_id, depth) = match node_edge {
-            NodeEdge::Start(node_id) => {
-                let node = arena[node_id].get();
-                let depth = node.depth();
+        let is_first_sibling = |node_id: NodeId, depth: usize| {
+            (depth > 0)
+                .then(|| node_id.following_siblings(arena).nth(1).is_none())
+                .unwrap_or(false)
+        };
 
-                if node.is_dir() {
-                    inherited_prefix_components.pop();
-                }
+        let mut inherited_prefix_components = vec![""];
 
-                if depth > max_depth {
-                    continue;
-                }
+        let mut formatter = row::formatter(&mut buf, self.ctx)?;
 
-                (node, node_id, depth)
-            },
-            NodeEdge::End(node_id) => {
-                let node = arena[node_id].get();
-                let depth = node.depth();
+        let mut reverse_traverse = root.reverse_traverse(arena);
+        reverse_traverse.next();
 
-                if node.is_dir() {
-                    if is_first_sibling(node_id, depth) {
-                        inherited_prefix_components.push(SEP);
-                    } else {
-                        inherited_prefix_components.push(VLINE);
+        for node_edge in reverse_traverse {
+            let (node, node_id, depth) = match node_edge {
+                NodeEdge::Start(node_id) => {
+                    let node = arena[node_id].get();
+                    let depth = node.depth();
+
+                    if node.is_dir() {
+                        inherited_prefix_components.pop();
                     }
-                }
-                continue;
-            },
-        };
 
-        let prefix = format!(
-            "{}{}",
-            inherited_prefix_components.join(""),
-            (depth > 0)
-                .then(|| {
-                    is_first_sibling(node_id, depth)
-                        .then_some(UL_CORNER)
-                        .unwrap_or(ROTATED_T)
-                })
-                .unwrap_or("")
-        );
+                    if depth > max_depth {
+                        continue;
+                    }
 
-        if let Err(e) = formatter(node, prefix) {
-            log::warn!("{e}");
+                    (node, node_id, depth)
+                },
+                NodeEdge::End(node_id) => {
+                    let node = arena[node_id].get();
+                    let depth = node.depth();
+
+                    if node.is_dir() {
+                        if is_first_sibling(node_id, depth) {
+                            inherited_prefix_components.push(SEP);
+                        } else {
+                            inherited_prefix_components.push(VLINE);
+                        }
+                    }
+                    continue;
+                },
+            };
+
+            let prefix = format!(
+                "{}{}",
+                inherited_prefix_components.join(""),
+                (depth > 0)
+                    .then(|| {
+                        is_first_sibling(node_id, depth)
+                            .then_some(UL_CORNER)
+                            .unwrap_or(ROTATED_T)
+                    })
+                    .unwrap_or("")
+            );
+
+            let _ = formatter(node, prefix);
         }
+
+        drop(formatter);
+
+        Ok(buf)
     }
 
-    drop(formatter);
+    pub fn tree(&self) -> Result<String> {
+        let arena = self.file_tree.arena();
+        let root = self.file_tree.root_id();
+        let max_depth = self.ctx.level();
 
-    Ok(buf)
-}
+        let mut buf = String::new();
 
-pub fn tree(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
-    let arena = file_tree.arena();
-    let root = file_tree.root_id();
-    let max_depth = ctx.level();
-
-    let mut buf = String::new();
-
-    let is_last_sibling = |node_id: NodeId, depth: usize| {
-        (depth > 0)
-            .then(|| node_id.following_siblings(arena).nth(1).is_none())
-            .unwrap_or(false)
-    };
-
-    let mut inherited_prefix_components = vec![""];
-
-    let mut formatter = row::formatter(&mut buf, ctx)?;
-
-    let mut traverse = root.traverse(arena);
-    traverse.next();
-
-    formatter(arena[root].get(), "".to_string())
-        .into_report(ErrorCategory::Internal)
-        .context(error_source!())?;
-
-    for node_edge in traverse {
-        let (node, node_id, depth) = match node_edge {
-            NodeEdge::Start(node_id) => {
-                let node = arena[node_id].get();
-                let depth = node.depth();
-
-                if depth > max_depth {
-                    continue;
-                }
-
-                (node, node_id, depth)
-            },
-            NodeEdge::End(node_id) => {
-                let node = arena[node_id].get();
-                let depth = node.depth();
-
-                if node.is_dir() && depth < max_depth {
-                    inherited_prefix_components.pop();
-                }
-                continue;
-            },
+        let is_last_sibling = |node_id: NodeId, depth: usize| {
+            (depth > 0)
+                .then(|| node_id.following_siblings(arena).nth(1).is_none())
+                .unwrap_or(false)
         };
 
-        let prefix = format!(
-            "{}{}",
-            inherited_prefix_components.join(""),
-            (depth > 0)
-                .then(|| {
-                    is_last_sibling(node_id, depth)
-                        .then_some(BL_CORNER)
-                        .unwrap_or(ROTATED_T)
-                })
-                .unwrap_or("")
-        );
+        let mut inherited_prefix_components = vec![""];
 
-        if let Err(e) = formatter(node, prefix) {
-            log::warn!("{e}");
-        }
+        let mut formatter = row::formatter(&mut buf, self.ctx)?;
 
-        if node.is_dir() && depth < max_depth {
-            if is_last_sibling(node_id, depth) {
-                inherited_prefix_components.push(SEP);
-            } else {
-                inherited_prefix_components.push(VLINE);
+        let mut traverse = root.traverse(arena);
+        traverse.next();
+
+        formatter(arena[root].get(), "".to_string())
+            .into_report(ErrorCategory::Internal)
+            .context(error_source!())?;
+
+        for node_edge in traverse {
+            let (node, node_id, depth) = match node_edge {
+                NodeEdge::Start(node_id) => {
+                    let node = arena[node_id].get();
+                    let depth = node.depth();
+
+                    if depth > max_depth {
+                        continue;
+                    }
+
+                    (node, node_id, depth)
+                },
+                NodeEdge::End(node_id) => {
+                    let node = arena[node_id].get();
+                    let depth = node.depth();
+
+                    if node.is_dir() && depth < max_depth {
+                        inherited_prefix_components.pop();
+                    }
+                    continue;
+                },
+            };
+
+            let prefix = format!(
+                "{}{}",
+                inherited_prefix_components.join(""),
+                (depth > 0)
+                    .then(|| {
+                        is_last_sibling(node_id, depth)
+                            .then_some(BL_CORNER)
+                            .unwrap_or(ROTATED_T)
+                    })
+                    .unwrap_or("")
+            );
+
+            let _ = formatter(node, prefix);
+
+            if node.is_dir() && depth < max_depth {
+                if is_last_sibling(node_id, depth) {
+                    inherited_prefix_components.push(SEP);
+                } else {
+                    inherited_prefix_components.push(VLINE);
+                }
             }
         }
+
+        drop(formatter);
+
+        Ok(buf)
     }
 
-    drop(formatter);
+    fn flat(&self) -> Result<String> {
+        let arena = self.file_tree.arena();
+        let root = self.file_tree.root_id();
+        let max_depth = self.ctx.level();
+        let mut buf = String::new();
 
-    Ok(buf)
-}
+        let mut formatter = row::formatter(&mut buf, self.ctx)?;
 
-fn flat(file_tree: &file::Tree, ctx: &Context) -> Result<String> {
-    let arena = file_tree.arena();
-    let root = file_tree.root_id();
-    let max_depth = ctx.level();
-    let mut buf = String::new();
+        for node_edge in root.traverse(arena) {
+            let node_id = match node_edge {
+                NodeEdge::Start(_) => continue,
+                NodeEdge::End(id) if id.is_removed(arena) => continue,
+                NodeEdge::End(id) => id,
+            };
 
-    let mut formatter = row::formatter(&mut buf, ctx)?;
+            let node = arena[node_id].get();
 
-    for node_edge in root.traverse(arena) {
-        let node_id = match node_edge {
-            NodeEdge::Start(_) => continue,
-            NodeEdge::End(id) if id.is_removed(arena) => continue,
-            NodeEdge::End(id) => id,
-        };
+            if node.depth() > max_depth {
+                continue;
+            }
 
-        let node = arena[node_id].get();
-
-        if node.depth() > max_depth {
-            continue;
+            formatter(node, "".to_string()).into_report(ErrorCategory::Warning)?;
         }
+        drop(formatter);
 
-        formatter(node, "".to_string()).into_report(ErrorCategory::Warning)?;
+        Ok(buf)
     }
-    drop(formatter);
-
-    Ok(buf)
 }
