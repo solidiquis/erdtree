@@ -82,7 +82,7 @@ impl<'a> Renderer<'a> {
                     }
 
                     (node, node_id, depth)
-                },
+                }
                 NodeEdge::End(node_id) => {
                     let node = arena[node_id].get();
                     let depth = node.depth();
@@ -95,7 +95,7 @@ impl<'a> Renderer<'a> {
                         }
                     }
                     continue;
-                },
+                }
             };
 
             let prefix = format!(
@@ -153,7 +153,7 @@ impl<'a> Renderer<'a> {
                     }
 
                     (node, node_id, depth)
-                },
+                }
                 NodeEdge::End(node_id) => {
                     let node = arena[node_id].get();
                     let depth = node.depth();
@@ -162,7 +162,7 @@ impl<'a> Renderer<'a> {
                         inherited_prefix_components.pop();
                     }
                     continue;
-                },
+                }
             };
 
             let prefix = format!(

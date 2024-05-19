@@ -30,7 +30,7 @@ wildcard_imports = "allow"
 obfuscated_if_else = "allow"
 
 [dependencies]
-ahash = "0.8.6"
+ahash = "0.8.11"
 ansi_term = "0.12.1"
 anyhow = "1.0.75"
 chrono = { version = "0.4.24", default-features = false, features = ["clock", "std"] }
@@ -38,16 +38,16 @@ clap = { version = "4.5.4", features = ["derive"] }
 clap_complete = "4.1.1"
 config = { version = "0.14.0", default-features = false, features = ["toml"] }
 crossterm = "0.27.0"
-ctrlc = "3.4.0"
+ctrlc = "3.4.4"
 dirs = "5.0"
 errno = "0.3.1"
 filesize = "0.2.0"
-ignore = "0.4.2"
+ignore = "0.4.22"
 indextree = "4.6.0"
-lscolors = { version = "0.13.0", features = ["ansi_term"] }
+lscolors = { version = "0.17.0", features = ["ansi_term"] }
 once_cell = "1.19.0"
-regex = "1.7.3"
-terminal_size = "0.2.6"
+regex = "1.10.4"
+terminal_size = "0.3.0"
 thiserror = "1.0.40"
 toml = "0.8.8"
 

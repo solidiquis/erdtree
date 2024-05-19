@@ -1,11 +1,7 @@
 use crate::error::prelude::*;
 use ahash::HashMap;
 use clap::{parser::ValueSource, ArgMatches, Args, CommandFactory, FromArgMatches, Parser};
-use std::{
-    env,
-    fs,
-    path::PathBuf,
-};
+use std::{env, fs, path::PathBuf};
 
 /// Enum definitions for enumerated command-line arguments.
 pub mod args;
@@ -92,6 +88,10 @@ pub struct Context {
     /// Hide the progress indicator
     #[arg(long)]
     pub no_progress: bool,
+
+    /// Hide the file count at the end of the output
+    #[arg(long)]
+    pub no_report: bool,
 
     #[command(flatten)]
     pub search: Search,
@@ -203,7 +203,7 @@ impl Context {
         };
 
         if let Some(dir_arg) = clargs.get_one::<PathBuf>("dir").cloned() {
-            ctx.dir = Some(dir_arg) 
+            ctx.dir = Some(dir_arg)
         } else {
             let current_dir = Self::get_current_dir()?;
             ctx.dir = Some(current_dir);
@@ -322,7 +322,7 @@ impl Context {
                     // Prioritize config argument over default
                     (ValueSource::DefaultValue, ValueSource::CommandLine) => {
                         push_args(arg_name, arg_id_str, config)
-                    },
+                    }
 
                     // Prioritize user argument in all other cases
                     _ => push_args(arg_name, arg_id_str, clargs),

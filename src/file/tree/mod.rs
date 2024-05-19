@@ -43,12 +43,15 @@ pub enum TreeError {
 impl Tree {
     /// Like [`Tree::init`] but leverages parallelism for disk-reads and [`File`] initialization.
     pub fn init(ctx: &Context) -> Result<(Self, super::Accumulator, column::Metadata)> {
-        let (TransitionState {
-            mut arena,
-            mut branches,
-            mut column_metadata,
-            root_id,
-        }, accumulator)= Self::load(ctx)?;
+        let (
+            TransitionState {
+                mut arena,
+                mut branches,
+                mut column_metadata,
+                root_id,
+            },
+            accumulator,
+        ) = Self::load(ctx)?;
 
         let mut dir_stack = vec![root_id];
         let mut inode_set = HashSet::default();
@@ -130,7 +133,7 @@ impl Tree {
                     all_dirents
                         .into_iter()
                         .for_each(|n| root_id.append(n, &mut arena));
-                },
+                }
                 _ => {
                     for (dir_id, dirsize) in dirsize_map.into_iter() {
                         let dir = arena[dir_id].get_mut();
@@ -148,7 +151,7 @@ impl Tree {
                             }
                         }
                     }
-                },
+                }
             },
             None => {
                 for (dir_id, dirsize) in dirsize_map.into_iter() {
@@ -161,7 +164,7 @@ impl Tree {
                         }
                     }
                 }
-            },
+            }
         }
 
         column_metadata.update_size_width(arena[root_id].get(), ctx);
@@ -171,13 +174,18 @@ impl Tree {
         Ok((tree, accumulator, column_metadata))
     }
 
-    pub fn init_without_disk_usage(ctx: &Context) -> Result<(Self, super::Accumulator, column::Metadata)> {
-        let (TransitionState {
-            mut arena,
-            mut branches,
-            mut column_metadata,
-            root_id,
-        }, accumulator)= Self::load(ctx)?;
+    pub fn init_without_disk_usage(
+        ctx: &Context,
+    ) -> Result<(Self, super::Accumulator, column::Metadata)> {
+        let (
+            TransitionState {
+                mut arena,
+                mut branches,
+                mut column_metadata,
+                root_id,
+            },
+            accumulator,
+        ) = Self::load(ctx)?;
 
         #[cfg(unix)]
         macro_rules! update_metadata {
@@ -211,7 +219,7 @@ impl Tree {
                     #[cfg(unix)]
                     update_metadata!(dirent_id);
                 }
-            },
+            }
             _ => {
                 let dirs = arena
                     .iter()
@@ -244,7 +252,7 @@ impl Tree {
                         }
                     }
                 });
-            },
+            }
         }
 
         let tree = Self { root_id, arena };

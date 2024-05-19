@@ -260,9 +260,7 @@ impl Accumulator {
     }
 
     pub fn increment(&mut self, ft: Option<fs::FileType>) {
-        let Some(file_type) = ft else {
-            return
-        };
+        let Some(file_type) = ft else { return };
 
         if file_type.is_file() {
             self.num_file += 1;
@@ -294,7 +292,7 @@ impl Display for DisplayPath<'_> {
                 let path = self.file.path();
                 path.strip_prefix(prefix)
                     .map_or_else(|_| path.display(), |p| p.display())
-            },
+            }
             None => self.file.path().display(),
         };
 
@@ -305,5 +303,31 @@ impl Display for DisplayPath<'_> {
         } else {
             write!(f, "{display}")
         }
+    }
+}
+
+impl Display for Accumulator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut displayed_count = Vec::new();
+
+        match self.num_dir {
+            n if n > 1 => displayed_count.push(format!("{} directories", n)),
+            1 => displayed_count.push("1 directory".to_string()),
+            _ => (),
+        }
+
+        match self.num_file {
+            n if n > 1 => displayed_count.push(format!("{} files", n)),
+            1 => displayed_count.push("1 file".to_string()),
+            _ => (),
+        }
+
+        match self.num_link {
+            n if n > 1 => displayed_count.push(format!("{} links", n)),
+            1 => displayed_count.push("1 link".to_string()),
+            _ => (),
+        }
+
+        writeln!(f, "{}", displayed_count.join(", "))
     }
 }

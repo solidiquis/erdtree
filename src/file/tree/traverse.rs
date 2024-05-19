@@ -76,16 +76,16 @@ impl ParallelVisitor for Visitor<'_> {
             Err(e) => {
                 let _ = self.send(TraversalState::Error(e));
                 return WalkState::Continue;
-            },
+            }
         };
 
         match File::init(entry, self.ctx).into_report(ErrorCategory::Warning) {
             Ok(file) => {
                 let _ = self.send(TraversalState::Ongoing(file));
-            },
+            }
             Err(e) => {
                 let _ = self.send(TraversalState::Error(e));
-            },
+            }
         }
 
         WalkState::Continue

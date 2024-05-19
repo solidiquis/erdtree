@@ -1,13 +1,13 @@
+use crate::error::prelude::*;
 use crossterm::{
-    cursor,
-    execute,
-    ExecutableCommand,
+    cursor, execute,
     style::Print,
     terminal::{self, ClearType},
+    ExecutableCommand,
 };
 use std::{
-    io::{self, Write},
     fmt,
+    io::{self, IsTerminal, Write},
     sync::{
         mpsc::{self, Receiver, Sender},
         OnceLock,
@@ -21,11 +21,35 @@ pub const RENDER_INTERVAL_MS: u64 = 16;
 /// To notify the progress indicator
 static NOTIFIER: OnceLock<Sender<Message>> = OnceLock::new();
 
+pub fn init_indicator<F, T>(
+    ctx: &crate::user::Context,
+) -> Result<Box<dyn ProgressIndicator<F, T>>> {
+    if ctx.no_progress || !io::stdout().is_terminal() {
+        return Ok(Box::new(NoOpIndicator::new()));
+    }
+
+    ctrlc::try_set_handler(|| {
+        let _ = io::stdout().execute(cursor::Show);
+        std::process::exit(libc::SIGINT + 128);
+    })
+    .into_report(ErrorCategory::Internal)?;
+
+    Ok(Box::new(Indicator::new()))
+}
+
+pub trait ProgressIndicator<F, T> {
+    fn show_progress(&mut self, op: F) -> T
+    where
+        F: FnOnce() -> T;
+}
+
 pub struct Indicator {
     counter: usize,
     state: IndicatorState,
     mailbox: Receiver<Message>,
 }
+
+pub struct NoOpIndicator;
 
 pub enum Message {
     Indexing(usize),
@@ -40,7 +64,7 @@ enum IndicatorState {
 }
 
 impl Indicator {
-    pub fn init() -> Self {
+    fn new() -> Self {
         let (tx, rx) = mpsc::channel();
 
         NOTIFIER.set(tx).unwrap();
@@ -71,9 +95,18 @@ impl Indicator {
             let _ = n.send(Message::DoneIndexing);
         }
     }
+}
 
-    pub fn show_progress<F, T>(mut self, op: F) -> T
-    where F: FnOnce() -> T
+impl NoOpIndicator {
+    fn new() -> Self {
+        NoOpIndicator {}
+    }
+}
+
+impl<F, T> ProgressIndicator<F, T> for Indicator {
+    fn show_progress(&mut self, op: F) -> T
+    where
+        F: FnOnce() -> T,
     {
         let _ = io::stdout().execute(cursor::Hide);
 
@@ -83,7 +116,7 @@ impl Indicator {
                 let mut time_last_print = std::time::Instant::now();
                 let mut stdout = io::stdout();
                 let _ = stdout.execute(cursor::SavePosition);
-                
+
                 while let Ok(Message::Indexing(count)) = self.mailbox.recv() {
                     self.counter = count;
 
@@ -107,6 +140,15 @@ impl Indicator {
         let _ = io::stdout().execute(cursor::Show);
 
         comp_result
+    }
+}
+
+impl<F, T> ProgressIndicator<F, T> for NoOpIndicator {
+    fn show_progress(&mut self, op: F) -> T
+    where
+        F: FnOnce() -> T,
+    {
+        op()
     }
 }
 

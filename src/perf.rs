@@ -1,14 +1,13 @@
 use ahash::HashMap;
 use once_cell::sync::Lazy;
 use std::{
-    io,
-    fmt,
+    fmt, io,
     sync::{
         mpsc::{self, Sender},
         OnceLock,
     },
-    time::{Duration, Instant},
     thread::{self, JoinHandle},
+    time::{Duration, Instant},
 };
 
 static mut GLOBAL_PERF_METRICS: OnceLock<PerfMetrics> = OnceLock::new();
@@ -76,23 +75,19 @@ pub fn finish_recording(name: &str) {
     OUTPUT_NOTIFIER
         .get()
         .cloned()
-        .and_then(|tx| {
-            tx.send(Message::Recording(recording)).ok()
-        });
+        .and_then(|tx| tx.send(Message::Recording(recording)).ok());
 }
 
 pub fn output<T: io::Write>(mut w: T) {
-    OUTPUT_NOTIFIER.get().cloned().and_then(|tx| {
-        tx.send(Message::Terminate).ok()
-    });
+    OUTPUT_NOTIFIER
+        .get()
+        .cloned()
+        .and_then(|tx| tx.send(Message::Terminate).ok());
 
     let mut recordings = unsafe {
         GLOBAL_PERF_METRICS
             .get_mut()
-            .and_then(|PerfMetrics(join)| {
-                join.take()
-                    .and_then(|h| h.join().ok())
-            })
+            .and_then(|PerfMetrics(join)| join.take().and_then(|h| h.join().ok()))
             .unwrap()
     };
 

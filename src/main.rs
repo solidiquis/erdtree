@@ -1,9 +1,6 @@
 #![cfg_attr(windows, feature(windows_by_handle))]
 use clap::CommandFactory;
-use std::{
-    io::stdout,
-    process::ExitCode,
-};
+use std::{io::stdout, process::ExitCode};
 
 /// Concerned with disk usage calculation and presentation.
 mod disk;
@@ -24,7 +21,6 @@ mod progress;
 /// Defines the command-line interface and the context used throughout Erdtree.
 mod user;
 use user::Context;
-
 
 /// For basic performance measurements when compiling for debug.
 #[cfg(debug_assertions)]
@@ -65,15 +61,8 @@ fn run() -> Result<()> {
         return Ok(());
     }
 
-    // TODO: Use accumulator
-    let (mut file_tree, _accumulator, column_metadata) = if ctx.no_progress {
-        if ctx.suppress_size {
-            file::Tree::init_without_disk_usage(&ctx)
-        } else {
-            file::Tree::init(&ctx)
-        }
-    } else {
-        progress::Indicator::init().show_progress(|| {
+    let (mut file_tree, accumulator, column_metadata) = {
+        progress::init_indicator(&ctx)?.show_progress(|| {
             if ctx.suppress_size {
                 file::Tree::init_without_disk_usage(&ctx)
             } else {
@@ -87,6 +76,10 @@ fn run() -> Result<()> {
     file_tree.filter_nodes(&ctx)?;
 
     Renderer::new(&ctx, &file_tree).render()?;
+
+    if !ctx.no_report {
+        println!("{accumulator}");
+    }
 
     #[cfg(debug_assertions)]
     {

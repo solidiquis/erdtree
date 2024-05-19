@@ -118,10 +118,8 @@ impl Usage {
         let word_count =
             std::fs::read_to_string(data.path()).map(|data| data.split_whitespace().count())?;
 
-        let word_count = u64::try_from(word_count).map_or_else(
-            |_| Self::WordCount(word_count as u64),
-            Self::WordCount,
-        );
+        let word_count = u64::try_from(word_count)
+            .map_or_else(|_| Self::WordCount(word_count as u64), Self::WordCount);
 
         Ok(word_count)
     }
@@ -140,10 +138,8 @@ impl Usage {
 
         let line_count = fs::read_to_string(data.path()).map(|data| data.lines().count())?;
 
-        let line_count = u64::try_from(line_count).map_or_else(
-            |_| Self::WordCount(line_count as u64),
-            Self::LineCount,
-        );
+        let line_count = u64::try_from(line_count)
+            .map_or_else(|_| Self::WordCount(line_count as u64), Self::LineCount);
 
         Ok(line_count)
     }
@@ -186,7 +182,7 @@ impl Display for Usage {
                             let bytes = ($v as f64) / prefix.base_value();
                             write!(f, "{bytes:.FLOAT_PRECISION$} {prefix}B")
                         }
-                    },
+                    }
                     BytePresentation::Si => {
                         let prefix = prefix::Si::from($v);
 
@@ -196,7 +192,7 @@ impl Display for Usage {
                             let bytes = ($v as f64) / prefix.base_value();
                             write!(f, "{bytes:.1} {prefix}B")
                         }
-                    },
+                    }
                 }
             };
         }
